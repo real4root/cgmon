@@ -1,6 +1,6 @@
 [package]
 name = "cgmon"
-version = "2.4.20"
+version = "2.4.21"
 edition = "2021"
 publish = false
 description = "Монитор CGNAT/WAN для OpenWrt (2.x, Rust)"

@@ -1,243 +1,308 @@
 # cgmon
 
-Монитор внешнего канала, conntrack/NAT, устройств, портов и трафика для роутеров
-**OpenWrt / ImmortalWrt** (в том числе за CGNAT провайдера) и центр сбора сбоев
-с нескольких роутеров. Один статический бинарник **~2 МБ**, **3–5 МБ памяти**,
-веб-страница и уведомления в Telegram. Работает даже на старом MIPS-роутере с
-64 МБ памяти. Простыми словами — [docs/users.md](docs/users.md).
+**English** · [Русский](README.ru.md)
 
-![Главная страница](docs/screenshots/1-main.png)
+A monitor for the internet uplink, conntrack/NAT, devices, switch ports and traffic
+on **OpenWrt / ImmortalWrt** routers — including routers behind carrier-grade NAT —
+plus a hub that collects failures from many routers. One static binary of
+**~2 MB** using **3–5 MB of RAM**, with a web page and Telegram alerts. It runs
+even on an old MIPS router with 64 MB of memory. For a plain-language tour, see
+[docs/users.md](docs/users.md).
+
+![Main page](docs/screenshots/1-main.png)
 
 | | | |
 |---|---|---|
-| [![Устройства](docs/screenshots/2-devices.png)](docs/screenshots/2-devices.png) Устройства и cgfinder | [![Порт](docs/screenshots/3-ports.png)](docs/screenshots/3-ports.png) Порт: обрывы, CRC, скорость | [![Инциденты](docs/screenshots/4-incidents.png)](docs/screenshots/4-incidents.png) Инциденты и down detector |
-| [![Центр сбора](docs/screenshots/5-hub.png)](docs/screenshots/5-hub.png) Центр сбора | [![Маршрутизация](docs/screenshots/6-routing.png)](docs/screenshots/6-routing.png) Шлюзы и адресная маршрутизация | [![Настройки](docs/screenshots/7-settings.png)](docs/screenshots/7-settings.png) Настройки: две сети через два шлюза |
-| [![Телефон](docs/screenshots/8-phone.png)](docs/screenshots/8-phone.png) На телефоне | | |
+| [![Devices](docs/screenshots/2-devices.png)](docs/screenshots/2-devices.png) Devices and cgfinder | [![Port](docs/screenshots/3-ports.png)](docs/screenshots/3-ports.png) Port details: link drops, CRC, speed | [![Settings](docs/screenshots/7-settings.png)](docs/screenshots/7-settings.png) Settings: two networks over two gateways |
+| [![Hub](docs/screenshots/5-hub.png)](docs/screenshots/5-hub.png) Collection hub | [![Routing](docs/screenshots/6-routing.png)](docs/screenshots/6-routing.png) Gateways and per-network routing | [![Phone](docs/screenshots/8-phone.png)](docs/screenshots/8-phone.png) On a phone |
 
-> Версия 2.x написана на Rust и заменяет 1.x на Go. Конфиг, страница, CGI, сокет
-> и формат отчётов на центр совместимы: центр 2.x принимает отчёты 1.x.
+> Version 2.x is written in Rust and replaces the 1.x Go version. The config file,
+> web page, CGI, socket and hub report format are compatible: a 2.x hub accepts
+> reports from 1.x routers.
 
-## Как это устроено
+## The idea: a conductor, not a router
 
-cgmon — надстройка над тем, что уже есть в ядре Linux и в OpenWrt. **Сам он
-трафик не маршрутизирует и через себя не пропускает**: пакеты пересылает ядро,
-а cgmon наблюдает и по ситуации добавляет, меняет и убирает свои правила:
+cgmon builds on what the Linux kernel and OpenWrt already provide. **It never
+routes traffic and no packet ever passes through it**: the kernel forwards
+everything, while cgmon watches and, when the situation calls for it, adds,
+changes or removes its own rules:
 
-- **nftables** — свои таблицы рядом с firewall (`inet cgmon` — лимитер,
-  `inet cgmon_acct` — учёт трафика, `inet cgmon_route` — метки соединений для
-  обхода, `inet cgmon_gw` — карты шлюзов, `inet cgmon_v6` — отказ по протоколу).
-  Правила firewall не правятся, firewall не перезагружается;
-- **маршрутизация ядра** — `ip rule` по меткам соединений и свои таблицы маршрутов;
-  смена основного шлюза — `ip route replace`;
-- **tc** — дерево очередей SQM и скорость шейпера отдачи;
-- **DNS** — только в общем режиме DNS-страховки (SmartDNS или dnsmasq). Адресный
-  режим и обход DNS-сервер не трогают.
+- **nftables** — its own tables next to the firewall (`inet cgmon` — limiter,
+  `inet cgmon_acct` — traffic accounting, `inet cgmon_route` — connection marks
+  for rerouting, `inet cgmon_gw` — gateway maps, `inet cgmon_v6` — per-protocol
+  refusal). Firewall rules are never edited and the firewall is never reloaded;
+- **kernel routing** — `ip rule` entries keyed on connection marks, its own routing
+  tables, and `ip route replace` to change the main gateway;
+- **tc** — the SQM queue tree and the upload shaper rate;
+- **DNS** — only in the protocol-wide mode of the DNS guard (SmartDNS or dnsmasq).
+  The targeted mode and rerouting leave the DNS server alone.
 
-Смотрит cgmon тоже средствами ядра: conntrack и счётчики nftables через netlink,
-копии SYN/RST и DNS-ответов с сокета AF_PACKET, sysfs и ethtool-ioctl портов,
-собственные пробы и TCP-трассировки. Один поток и epoll, без лишних процессов.
-Остановка или падение демона связь не рвёт: ядро работает по последним правилам,
-а следующий запуск подхватывает свои таблицы и состояние.
+It observes through the kernel as well: conntrack and nftables counters over
+netlink, copies of SYN/RST packets and DNS answers from an AF_PACKET socket, sysfs
+and ethtool ioctls for ports, plus its own probes and TCP traces. One thread with
+epoll, no helper processes. If the daemon stops or crashes, connectivity is not
+affected: the kernel keeps working with the last rules, and the next start picks
+up its tables and state.
 
-## Что умеет
+## Features
 
-**Канал и сайты**
-- **Состояние WAN** — пробы TCP 443 (IPv4/IPv6), фазы NORMAL / WARNING / CRITICAL /
-  RECOVERY, понятный журнал инцидентов.
-- **Down detector** — какие сайты не отвечают клиентам, пока сам интернет в
-  порядке; имя сервиса и владелец сети (Google, Telegram…) по DNS и AS.
-- **Метрики по сайтам** — оценка IPv4/IPv6 баллами по сайтам, которыми реально
-  пользуются клиенты: отличает сбой всего протокола от сбоя отдельных сетей.
-- **Поиск виновника** — при плохом протоколе роутер трассирует TCP до плохих и
-  хороших сайтов и называет узел или стык, через который идут все плохие маршруты.
+**Uplink and sites**
+- **WAN state** — TCP 443 probes over IPv4 and IPv6, NORMAL / WARNING / CRITICAL /
+  RECOVERY phases and a readable incident journal.
+- **Down detector** — which sites stop answering your clients while the internet
+  itself is fine, named by service and network owner (Google, Telegram…) from DNS
+  and AS data.
+- **Per-site metrics** — IPv4 and IPv6 scored against the sites your clients
+  actually use, which tells a protocol-wide failure from trouble with individual
+  networks.
+- **Culprit search** — when a protocol goes bad, the router TCP-traces good and bad
+  sites and names the hop or peering point that all bad paths have in common.
 
-**Порты и кабели (физический уровень)**
-- Обрывы линка (и «мигание» между опросами), смена скорости и дуплекса, ошибки
-  CRC/кадров/FIFO — по каждому порту; на старых свитчах swconfig — по портам
-  свитча с подписью VLAN.
-- Ошибки CRC по уровням: единичные — предупреждение; от 0,01 % кадров, от 1000 за
-  сутки или вместе с обрывами линка — критично (кабель вот-вот откажет).
-- «Порт работает медленнее» — только если за последние 30 дней он реально работал
-  быстрее; видно, что объявляет устройство на другом конце кабеля (ethtool).
-- Порты прямо в карточке WAN: значок обрывов за сутки, имя красным при CRC
-  (критично — мигает), по нажатию — окно с подробностями; строка в «Текущих
-  событиях», проблема на центре сбора.
+**Ports and cables (physical layer)**
+- Link drops (including flaps between polls), speed and duplex changes, CRC, frame
+  and FIFO errors for every port; on older swconfig switches — per switch port,
+  labelled with its VLAN.
+- Graded CRC errors: isolated ones are a warning; 0.01 % of frames, 1000 a day or
+  errors together with link drops are critical — the cable is about to fail.
+- "Port runs slower than it can" is reported only if it really was faster during
+  the last 30 days; the speed advertised by the device at the other end of the
+  cable is shown (ethtool).
+- Ports right in the WAN card: a badge with today's link drops, a red (blinking
+  when critical) name on CRC errors, and a details window on click; plus a line in
+  "Current events" and an issue on the hub.
 
-**Устройства и трафик**
-- **Устройства** — скорости, трафик за час/сутки, имена из DHCP, mDNS, NetBIOS,
-  UPnP, производитель по MAC.
-- **Соединения** — число полезных соединений в интернет (клиенты, службы роутера,
-  Tailscale, ZeroTier) без служебных проб cgmon; общее число — в подсказке и в
-  журнале сбоев: лимит провайдера (CGNAT) считает все.
-- **График** строится из одного согласованного снимка: байты WAN, роутера и всех
-  устройств читаются в один момент, поэтому сумма устройств сходится с WAN, и
-  наведение на пик показывает, кто его дал. История хранится на роутере (час по 2 с,
-  сутки по минуте): открыл страницу — сразу виден график за 10 минут… 24 часа.
-- **cgfinder** (как IP Scan в MikroTik) — устройства с адресом не из вашей сети
-  (старая камера со статическим IP, 169.254.x.x), тихие устройства, «Открыть
-  доступ» — роутер на час берёт адрес в сети устройства. По кнопке на 30 минут.
-- **Учёт трафика** через счётчики nftables, платный трафик — всё, кроме
-  бесплатных сетей (TAS-IX или свой список).
-- **Квартиранты** — выделенные подсети видят на странице только свои устройства.
+**Devices and traffic**
+- **Devices** — live speed, traffic per hour and per day, names from DHCP, mDNS,
+  NetBIOS and UPnP, vendor by MAC.
+- **Connections** — the number of useful internet connections (clients, router
+  services, Tailscale, ZeroTier) without cgmon's own probes; the total is in the
+  tooltip and in the incident journal, because the ISP's CGNAT limit counts them
+  all.
+- **The chart** is built from one consistent snapshot: WAN, router and per-device
+  byte counters are read at the same moment, so the devices add up to the WAN total
+  and hovering over a spike shows who caused it. History is kept on the router (one
+  hour at 2 s, one day at 1 min), so the page shows 10 minutes … 24 hours right
+  away.
+- **cgfinder** (like MikroTik's IP Scan) — devices with an address outside your
+  networks (an old camera with a static IP, 169.254.x.x), quiet devices that never
+  go online, and "Open access": for one hour the router takes an address in the
+  device's network so you can reach it. Runs for 30 minutes on demand.
+- **Traffic accounting** with nftables counters; billed traffic is everything
+  except free networks (TAS-IX or your own list).
+- **Tenants** — isolated subnets see only their own devices on the page.
 
-**Действия**
-- **Карты шлюзов** — кто из LAN каким выходом в интернет ходит: подсеть, VLAN или
-  отдельное устройство → шлюзы по порядку (WAN-каналы, tailscale exit node, свои
-  роутеры в ZeroTier), при сбое — следующий. Так делаются «два провайдера» и
-  «телевизор через другой роутер»; уже открытые соединения не переезжают.
-- **Выбор шлюза** — шлюзы находятся сами (netifd: маршрут по умолчанию, зона wan;
-  PPPoE, DHCP, LTE-модем), основной — с наименьшей метрикой, резервные — по порядку;
-  по умолчанию только наблюдает, при одном шлюзе спит.
-- **DNS-страховка** — плохой протокол у сети одного владельца: новым соединениям
-  по нему сразу отказ (клиент мгновенно уходит на другой протокол) или обход
-  через другой канал. Штраф растёт при повторах и снимается досрочно, как только
-  проверка чистая; оба протокола одного владельца не закрываются никогда.
-- **SQM и шейпер отдачи**, детектор наказаний провайдера за P2P, лимитер новых
-  соединений самого жадного клиента (по умолчанию — только наблюдение).
+**Actions**
+- **Gateway maps** — which LAN clients use which way out: a subnet, VLAN or single
+  device → gateways in order (WAN links, a Tailscale exit node, your own routers
+  over ZeroTier), falling back to the next one on failure. This is how you get
+  "two ISPs" or "the TV goes through another router"; open connections never move.
+- **Gateway selector** — gateways are discovered automatically (netifd: default
+  routes, the wan zone; PPPoE, DHCP, LTE modems); the main one has the lowest
+  metric, backups follow in order. It only observes by default and sleeps when
+  there is a single gateway.
+- **DNS guard** — when one protocol is bad for one network owner, new connections
+  over it are refused at once (clients instantly fall back to the other protocol)
+  or rerouted through another link. Penalties grow on repeat offences and are
+  lifted early as soon as a check comes back clean; both protocols of one owner are
+  never blocked.
+- **SQM and an upload shaper**, a detector of ISP penalties for P2P traffic, and a
+  limiter of new connections for the greediest client (observe-only by default).
 
-**Центр сбора**
-- Роутеры шлют состояние на один или несколько центров по зашифрованному каналу
-  (AES-256-GCM, токен по сети не передаётся). Центр отличает «сломался мой
-  провайдер» от «лёг внешний канал», пишет в Telegram.
-- **Здоровье роутера**: статус на центре — худшее из фазы WAN и проблем роутера
-  (порты, резервный канал, перегрев, массовые сбои…); нажатие на статус — окно с
-  описаниями. Имя роутера — ссылка на его страницу, версия — окно сведений и
-  «Убрать с центра»; молчащих 30 дней центр забывает сам.
+**Collection hub**
+- Routers report their state to one or more hubs over an encrypted channel
+  (AES-256-GCM; the token never travels over the network). The hub tells "my ISP
+  is broken" from "the upstream link is down" and notifies you in Telegram.
+- **Router health**: a router's status on the hub is the worst of its WAN phase and
+  its own issues (ports, backup link, overheating, mass failures…); click it for
+  details. The router name links to its page, the version opens an info window
+  with "Remove from hub"; routers silent for 30 days are forgotten automatically.
 
-**Страница**
-- Текущие события одной строкой, график с подсветкой «кто в пике», порты в
-  карточке WAN, настройки со страницы без перезапуска (с паролем и защитой от
-  перебора), поиск по настройкам, плагины (блок страницы + настройки в файле).
+**The page**
+- One-line current events, a chart that highlights who caused a spike, ports in
+  the WAN card, settings applied live without a restart (password-protected, with
+  brute-force protection), settings search and plugins (a page block plus settings
+  in a file).
+- Interface languages: English and Russian, with partial Uzbek, Kazakh and Chinese;
+  the language is picked from the browser. Journal messages, setting hints and the
+  CLI are currently in Russian.
 
-## Сборки: full, lite, nano
+## Builds: full, lite, nano
 
-Один исходный код, три сборки. Чего нет на роутере во время работы (пакет не
-стоит), не запускается и не мешает остальному: настройка на странице серая с
-пометкой «требуется …» и ссылкой «установить», а в «Текущих событиях» — строка 📦
-с кнопкой **Установить** (apk/opkg на роутере, по паролю, с проверкой места на
-flash). Поставленные так ZeroTier и SmartDNS cgmon настраивает сам, безопасно:
-ZeroTier только запускается (в сеть вступаете вы, публичная сеть Earth не
-подключается), SmartDNS — шифрованный DNS, и dnsmasq переводится на него только
-если он отвечает (иначе всё возвращается как было). Уже настроенное не трогается.
+One code base, three builds. Whatever is missing on the router at run time (a
+package is not installed) simply does not start and does not get in the way of the
+rest: the setting is greyed out on the page with "requires …" and an "install"
+link, and "Current events" shows a 📦 line with an **Install** button (apk/opkg on
+the router, password-protected, with a free-flash check). cgmon configures ZeroTier
+and SmartDNS installed this way on its own, and safely: ZeroTier is only started
+(you join your network yourself; the public Earth network is never joined), and
+SmartDNS is set up with encrypted DNS, with dnsmasq switched over only if SmartDNS
+answers — otherwise everything is put back. Anything already configured is left
+untouched.
 
-| Возможность | full | lite | nano | Пакеты (≈ КБ на mips_24kc) |
+| Feature | full | lite | nano | Packages (≈ KB on mips_24kc) |
 |---|:-:|:-:|:-:|---|
-| Состояние WAN, инциденты, down detector, метрики по сайтам, поиск виновника | ✅ | ✅ | ✅ | — |
-| Устройства, график с историей, учёт и платный трафик, cgfinder | ✅ | ✅ | ✅ | — |
-| Порты и кабели (CRC, обрывы, скорость), swconfig | ✅ | ✅ | ✅ | — |
-| Выбор шлюза с переключением, карты шлюзов | ✅ | ✅ | ✅ | — (хватает `ip` из busybox) |
-| DNS-страховка, общий режим (запрет AAAA, DNS64, снятие IPv6-шлюза) | ✅ | ✅ | ✅ | — (dnsmasq, odhcpd) |
-| Центр сбора, отчёты, Telegram, LuCI-страница | ✅ | ✅ | ✅ | — (uclient-fetch + libustream) |
-| SQM на cake, шейпер отдачи | ✅ | ✅ | ✅ | `tc-tiny`, `kmod-sched-cake`, `kmod-sched-core`, `kmod-ifb` (≈240) |
-| Жёсткие лимиты соединений | ✅ | ✅ | — | `kmod-nft-connlimit` (≈10) |
-| Свои роутеры как шлюзы карт (ZeroTier) | ✅ | ✅ | — | `zerotier` (≈1150 с libstdc++) |
-| curl для HTTPS | ✅ | ✅ | — | `curl` (≈350) |
-| Адресная DNS-страховка, обход маршрутом, отказ IPv6 по сетям | ✅ | — | — | `smartdns` (≈200), `ip-full` (≈400), `curl` |
-| Размер бинарника x86_64 / aarch64 / MIPS (UPX), МБ | 2,5 / 2,0 / 0,95 | 2,5 / 2,0 / 0,95 | 2,5 / 2,0 / 0,95 | |
+| WAN state, incidents, down detector, per-site metrics, culprit search | ✅ | ✅ | ✅ | — |
+| Devices, chart with history, accounting and billed traffic, cgfinder | ✅ | ✅ | ✅ | — |
+| Ports and cables (CRC, link drops, speed), swconfig | ✅ | ✅ | ✅ | — |
+| Gateway selector with switching, gateway maps | ✅ | ✅ | ✅ | — (busybox `ip` is enough) |
+| DNS guard, protocol-wide mode (no AAAA, DNS64, IPv6 gateway withdrawal) | ✅ | ✅ | ✅ | — (dnsmasq, odhcpd) |
+| Collection hub, reports, Telegram, LuCI page | ✅ | ✅ | ✅ | — (uclient-fetch + libustream) |
+| SQM with cake, upload shaper | ✅ | ✅ | ✅ | `tc-tiny`, `kmod-sched-cake`, `kmod-sched-core`, `kmod-ifb` (≈240) |
+| Hard connection limits | ✅ | ✅ | — | `kmod-nft-connlimit` (≈10) |
+| Your own routers as map gateways (ZeroTier) | ✅ | ✅ | — | `zerotier` (≈1150 incl. libstdc++) |
+| curl for HTTPS | ✅ | ✅ | — | `curl` (≈350) |
+| Targeted DNS guard, rerouting, per-network IPv6 refusal | ✅ | — | — | `smartdns` (≈200), `ip-full` (≈400), `curl` |
+| Download size, MB | 2.0–3.1 (plain) | 0.85–0.99 (UPX) | 0.85–0.99 (UPX) | |
 
-Сами бинарники отличаются на единицы КБ — разница сборок в том, какие пакеты им
-нужны на роутере и что они предложат доставить.
+Unpacked, the three builds differ by only a few kilobytes; what sets them apart is
+which packages they need on the router and what they offer to install. lite and
+nano ship UPX-packed to save flash.
 
-- **full** — всё, для x86 и сильных ARM-роутеров.
-- **lite** — без SmartDNS (и всего, что на нём держится: адресный режим, обход
-  маршрутом). Умеренные пакеты — curl, ZeroTier, tc — ставятся кнопкой.
-- **nano** — для слабых роутеров с маленькой flash (например, TP-Link
-  TL-WR1043N/ND v4 на ImmortalWrt 25.12): всё работает на штатном образе
-  (nftables, dnsmasq-full, busybox, swconfig, uclient-fetch); единственное, что
-  можно доставить, — SQM на cake (≈240 КБ): на роутерах от провайдеров часто
-  сильный процессор и мало flash.
+- **full** — everything; for x86 and powerful ARM routers.
+- **lite** — everything except SmartDNS and what depends on it (targeted mode,
+  rerouting). Moderate packages — curl, ZeroTier, tc — are one click away.
+- **nano** — for weak routers with little flash (e.g. TP-Link TL-WR1043N/ND v4 on
+  ImmortalWrt 25.12): everything runs on the stock image (nftables, dnsmasq-full,
+  busybox, swconfig, uclient-fetch). The only optional extra is SQM with cake
+  (≈240 KB) — ISP-supplied routers often pair a strong CPU with tiny flash.
 
-`cgmon --version` показывает сборку («2.4.20 lite»), на странице она рядом с версией.
+`cgmon --version` shows the build ("2.4.21 lite"); the page shows it next to the
+version.
 
-## Ресурсы
+## Resources
 
-| Роутер | CPU cgmon | Память |
+| Router | cgmon CPU | Memory |
 |---|---|---|
-| x86 Celeron J1900, 40+ устройств, центр сбора, DNS-страховка, QoS, страница открыта | ~2,9 % ядра | ~5 МБ |
-| x86 Celeron J1900, шлюз с портами и свитчем, наблюдение за портами всегда включено | ~0,7 % ядра | ~2,6 МБ |
-| TP-Link TL-WR1043ND v3 (MIPS 74Kc 720 МГц, 64 МБ), свитч | ~0,8 % ядра | ~3 МБ |
+| x86 Celeron J1900, 40+ devices, hub, DNS guard, QoS, page open | ~2.9 % of a core | ~5 MB |
+| x86 Celeron J1900, gateway with ports and a switch, port watch always on | ~0.7 % of a core | ~2.6 MB |
+| TP-Link TL-WR1043ND v3 (MIPS 74Kc 720 MHz, 64 MB), switch | ~0.8 % of a core | ~3 MB |
 
-На flash — только бинарник: страница и CGI встроены в него сжатыми и при запуске
-распаковываются в `/tmp/cgmon/www` (в `/www` — ссылки). MIPS со страницей внутри —
-3,0 МБ, сжатый UPX — 0,93 МБ. Все временные файлы — в `/tmp/cgmon`. Где держать
-накопленные данные (учёт, метрики…), выбирается в настройках: память роутера
-(`/etc/cgmon`), оперативная память (`/tmp`) или USB-флешка/диск.
+Only the binary lives on flash: the page and CGI scripts are embedded in it
+compressed and unpacked to `/tmp/cgmon/www` at start (`/www` gets symlinks). The
+MIPS binary with the page inside is 3.0 MB, or 0.93 MB packed with UPX. All
+temporary files live in `/tmp/cgmon`. Where accumulated data (accounting, metrics…)
+is kept is a setting: router flash (`/etc/cgmon`), RAM (`/tmp`) or a USB stick/disk.
 
-Выключенная функция не выделяет память и не тратит процессор; на слабом роутере
-дорогие блоки страницы (порты, TOP CPU/RAM) включаются по кнопке.
+A disabled feature allocates no memory and uses no CPU; on a weak router the
+expensive page blocks (ports, TOP CPU/RAM) are turned on with a button.
 
-## Требования
+## Requirements
 
-OpenWrt / ImmortalWrt с nftables (`nft`; на старом firewall3 достаточно
-поставить пакет `nftables` — firewall он не трогает). Архитектуры: x86_64,
-aarch64, MIPS 24Kc и другие, под которые собирается Rust.
+OpenWrt / ImmortalWrt with nftables (`nft`; on an old firewall3 system installing
+the `nftables` package is enough — the firewall is not touched). Architectures:
+x86_64, aarch64, MIPS 24Kc and anything else Rust can target.
 
-Пакеты по функциям — в таблице сборок выше; на узле, через который ходят карты
-(свой роутер в ZeroTier), нужна пересылка из ZeroTier в его WAN. Чего не хватает —
-покажет страница (кнопка «Установить») или `cgmon deps`; `cgmon deps --install`
-поставит из командной строки.
+Packages per feature are listed in the builds table above; a router used as a map
+gateway over ZeroTier must forward from ZeroTier to its WAN. The page (the
+"Install" button) or `cgmon deps` shows what is missing; `cgmon deps --install`
+installs it from the command line.
 
-## Установка
+## Installation
+
+### Which file to download
+
+Every [release](https://github.com/real4root/cgmon/releases) has three builds for
+seven architectures — as plain binaries and as packages. The lite and nano builds
+are packed with UPX (≈1 MB): routers usually have far more RAM than flash, and the
+binary unpacks itself into memory at start.
+
+| Your router (`DISTRIB_ARCH` in `/etc/openwrt_release`) | Typical targets | File suffix |
+|---|---|---|
+| `x86_64` | x86/64 | `x86_64` |
+| `i386_pentium4` | x86/generic | `i686` |
+| `aarch64_*` | mediatek/filogic, qualcommax, rockchip, bcm27xx | `aarch64` |
+| `arm_cortex-a7/a9/a15…` | ipq40xx, ipq806x, mvebu, sunxi | `armv7` |
+| `arm_arm926ej-s`, `arm_xscale`, `arm_mpcore` | kirkwood, oxnas | `armv5te` |
+| `mips_24kc` | ath79 (TP-Link TL-WR1043ND and friends) | `mips` |
+| `mipsel_24kc` | ramips mt7621, mt76x8 | `mipsel` |
+
+### From a package
+
+OpenWrt / ImmortalWrt 25.x (apk):
 
 ```sh
-scp cgmon root@router:/tmp/cgmon       # бинарник под свою архитектуру (uname -m)
-ssh root@router /tmp/cgmon --install   # мастер: минимальная, обычная или подробная настройка
+apk add --allow-untrusted /tmp/cgmon-lite-<version>-r1-<arch>.apk
 ```
 
-`--install-min` спрашивает только пароль страницы, `--install-basic` — ещё центр
-сбора, Telegram, учёт трафика и шлюзы, `--advanced-install` — все параметры.
-Всё, что меняется на странице, мастер не спрашивает. Он пишет
-`/etc/cgmon/cgmon.yaml` (существующий файл правится на месте, комментарии
-сохраняются), ставит службу и запускает её.
+OpenWrt 24.10 and older (opkg):
 
-Страница ставится сама: она внутри бинарника (`web.embedded`), адрес —
-`http://<роутер>/status.html`. Удаление: `cgmon --uninstall` (служба и ссылки
-страницы; конфиг и данные в `/etc/cgmon` остаются).
+```sh
+opkg install /tmp/cgmon-lite_<version>-1_<arch>.ipk
+```
 
-Пароль страницы, центр сбора и Telegram — в LuCI: **Службы → cgmon** (страницу LuCI
-cgmon ставит сам, если на роутере есть LuCI). Без пароля страница мониторинга
-только показывает.
+The package installs `/opt/cgmon/cgmon` and the `/etc/init.d/cgmon` service,
+creates a minimal config (all defaults — observe only) if there is none, and starts
+the service. A package for the wrong CPU refuses to install. The packages are not
+signed, hence `--allow-untrusted`; checksums are in `SHA256SUMS`. Packages of
+different builds (`cgmon`, `cgmon-lite`, `cgmon-nano`) replace each other only after
+removing the old one.
 
-Проверка: `cgmon status`, `cgmon top`, `cgmon ports`, `cgmon sites`, `logread | grep cgmon`.
+### From a binary
 
-## Безопасность по умолчанию
+```sh
+scp cgmon root@router:/tmp/cgmon       # the binary for your architecture (uname -m)
+ssh root@router /tmp/cgmon --install   # wizard: minimal, basic or detailed setup
+```
 
-Конфиг по умолчанию ничего не блокирует, не шейпит и никуда не отправляет —
-только наблюдает. Изменение настроек со страницы — только по паролю (5 неверных —
-пауза); **пароль не задан — страница только показывает**, менять с неё нельзя
-ничего. Пароль и центр сбора задаются в LuCI («Службы → cgmon»), мастером или в
-`cgmon.yaml` (0600); секреты на страницу не выводятся.
-Всё, что пришло извне (имена устройств, DNS, отчёты), ограничено по размеру и
-экранируется; парсеры внешних данных покрыты тестами на мусор.
+`--install-min` asks only for the page password, `--install-basic` also covers the
+hub, Telegram, traffic accounting and gateways, and `--advanced-install` walks
+through every option. Anything that can be changed on the page is not asked. The
+wizard writes `/etc/cgmon/cgmon.yaml` (an existing file is edited in place, with
+comments preserved), installs the service and starts it.
 
-## Документация
+The page installs itself: it is embedded in the binary (`web.embedded`) and lives
+at `http://<router>/status.html`. To remove cgmon, run `cgmon --uninstall` (removes
+the service and page links; config and data in `/etc/cgmon` stay).
 
-- [docs/users.md](docs/users.md) — что умеет cgmon, простыми словами.
-- `cgmon --help`, `cgmon --help-advanced` — команды, файлы, порты, примеры.
-- [config.reference.yaml](config.reference.yaml) — все параметры с пояснениями.
-- [docs/hub.md](docs/hub.md) — центр сбора, порт TCP 7788, безопасность, Telegram.
+The page password, hub and Telegram are set in LuCI under **Services → cgmon**
+(cgmon installs this LuCI page itself when LuCI is present). Without a password the
+monitoring page is read-only.
 
-## Сборка
+To check: `cgmon status`, `cgmon top`, `cgmon ports`, `cgmon sites`,
+`logread | grep cgmon`.
 
-Нужен Rust (rustup); линкер для musl — `rust-lld` (x86_64, aarch64) или zig (MIPS).
+## Secure by default
+
+The default config blocks nothing, shapes nothing and sends nothing anywhere — it
+only observes. Settings can be changed from the page only with the password (five
+wrong attempts trigger a pause); **with no password set, the page is read-only** and
+nothing can be changed from it. The password and hub are set in LuCI ("Services →
+cgmon"), in the wizard or in `cgmon.yaml` (mode 0600); secrets are never sent to the
+page. Everything that comes from outside (device names, DNS, reports) is size-bound
+and escaped, and the parsers of external data are covered by fuzz-style tests.
+
+## Documentation
+
+- [docs/users.md](docs/users.md) — what cgmon does, in plain language.
+- `cgmon --help`, `cgmon --help-advanced` — commands, files, ports, examples.
+- [config.reference.yaml](config.reference.yaml) — every option with an explanation
+  (comments in Russian).
+- [docs/hub.md](docs/hub.md) — the collection hub, TCP port 7788, security, Telegram.
+
+## Building
+
+You need Rust (rustup); the musl linker is `rust-lld` (x86_64, aarch64) or zig
+(MIPS).
 
 ```sh
 cargo test  --release --target x86_64-unknown-linux-musl
 cargo build --release --target x86_64-unknown-linux-musl
 cargo build --release --target aarch64-unknown-linux-musl
-# MIPS 24Kc (ath79/ramips, OpenWrt mips_24kc): std собирается из исходников
+# MIPS 24Kc (ath79/ramips, OpenWrt mips_24kc): std is built from source
 cargo +nightly build --release -Z build-std=std,panic_abort --target mips-unknown-linux-musl
 ```
 
-Сборка по умолчанию — full; lite и nano: `--no-default-features --features lite`
-(или `nano`). `tools/mkrelease2.sh` собирает все три под три архитектуры.
+The default build is full; for lite and nano use `--no-default-features --features
+lite` (or `nano`). `tools/mkrelease2.sh` builds all three for all three
+architectures.
 
-Зависимости: `libc`, `aes-gcm`, `sha2`. Без tokio, serde и regex: один поток с
-epoll, JSON пишется вручную, счётчики nftables — через netlink. Профиль CPU и
-памяти по компонентам — `cargo build --features prof` и `cgmon prof`.
+Dependencies: `libc`, `aes-gcm`, `sha2`. No tokio, serde or regex: a single thread
+with epoll, hand-written JSON, nftables counters over netlink. A per-component CPU
+and memory profile is available with `cargo build --features prof` and
+`cgmon prof`.
 
-## Лицензия
+## License
 
-GNU General Public License v3.0 или новее — [LICENSE](LICENSE). Можно свободно
-пользоваться, изучать, менять и распространять; изменённые версии распространяются
-под той же лицензией и с исходным кодом.
+GNU General Public License v3.0 or later — see [LICENSE](LICENSE). You are free to
+use, study, modify and share it; modified versions must be distributed under the
+same license, with source code.

@@ -1,0 +1,16 @@
+#!/bin/sh
+# Линкер для MIPS 24Kc little-endian (OpenWrt ramips: mipsel_24kc, без FPU): zig cc с musl
+# soft-float. Цель rustc mipsel-unknown-linux-musl — 3-го уровня: std собирается из
+# исходников (cargo +nightly -Z build-std), crt и libc — из zig.
+ZIG="${ZIG:-$HOME/.local/zig/zig}"
+set -- "$@" _END_
+while [ "$1" != _END_ ]; do
+	case "$1" in
+		--target=*|-Wl,--eh-frame-hdr|-lgcc_s|-lgcc) ;;
+		*/self-contained/*) ;;
+		*) set -- "$@" "$1" ;;
+	esac
+	shift
+done
+shift
+exec "$ZIG" cc -target mipsel-linux-musl -mcpu=mips32r2+soft_float -msoft-float -static "$@"

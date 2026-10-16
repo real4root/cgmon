@@ -1,84 +1,92 @@
-# Центр сбора cgmon (hub) и отправка данных (report)
+# The cgmon collection hub and reporting
 
-Каждый роутер с cgmon может отправлять своё состояние на один или несколько
-**центров сбора**. Центр — это обычный роутер с cgmon, на котором включена
-галочка «Главный центр сбора». Он сопоставляет данные всех роутеров и шлёт
-уведомления в Telegram, когда сбой виден сразу у многих: так отличается
-«сломался мой провайдер/роутер» от «лёг внешний канал страны».
+**English** · [Русский](hub.ru.md)
 
-## Что отправляет роутер
+Every router running cgmon can report its state to one or more **collection
+hubs**. A hub is simply a router running cgmon with "Main collection hub" switched
+on. It correlates the data from all routers and sends Telegram alerts when a
+failure shows up in many places at once — which is how "my provider or router is
+broken" is told apart from "the country's upstream link is down".
 
-Раз в минуту и сразу при любом изменении:
+## What a router sends
 
-- состояние WAN (NORMAL / WARNING / CRITICAL / RECOVERY) и диагноз;
-- пробы IPv4/IPv6 (доля успешных, задержка);
-- открытые и недавние инциденты (за 3 часа, до 20);
-- сервисы, которые не отвечают клиентам или отвечают медленно (down detector), с протоколом (IPv4/IPv6);
-- через какой канал роутер сейчас в интернете (переключатель шлюзов) и не резервный ли он;
-- своего провайдера: внешний IP (DNS OpenDNS, при перехвате DNS — https://api.ipify.org)
-  и его автономную систему (DNS Team Cymru).
+Once a minute and immediately on any change:
 
-Данные об устройствах клиентов, их трафике и именах **не отправляются**.
+- WAN state (NORMAL / WARNING / CRITICAL / RECOVERY) and the diagnosis;
+- IPv4/IPv6 probes (success rate, latency);
+- open and recent incidents (last 3 hours, up to 20);
+- services that are not answering clients or answer slowly (down detector), with
+  the protocol (IPv4/IPv6);
+- which link the router is using right now (gateway selector) and whether it is a
+  backup;
+- its provider: the public IP (OpenDNS over DNS, or https://api.ipify.org if DNS is
+  intercepted) and its autonomous system (Team Cymru over DNS).
 
-## Что делает центр
+Client devices, their traffic and their names are **never sent**.
 
-Каждые 10 секунд сравнивает последние отчёты и пишет в Telegram:
+## What the hub does
 
-| Значок | Событие | Когда |
+Every 10 seconds it compares the latest reports and posts to Telegram:
+
+| Icon | Event | When |
 |---|---|---|
-| 🔴 | Общий сбой внешнего канала | деградация WAN одновременно у роутеров ≥ `min_isps` (2) разных провайдеров |
-| 🟠 | Сбой у провайдера X | ≥ 2 роутера одного провайдера, у остальных провайдеров в порядке |
-| 🟡 | Сервис не отвечает / медленно | один и тот же сайт/сервис плох у ≥ 2 роутеров (любых провайдеров); в тексте — один это провайдер или разные |
-| ⚫ / 🟢 | Роутер не на связи / снова на связи | нет отчётов дольше `stale_sec` (180 с) |
-| 🟢 | Восстановлено | с длительностью сбоя и затронутыми роутерами/провайдерами |
+| 🔴 | Upstream outage | WAN degraded at the same time on routers of ≥ `min_isps` (2) different providers |
+| 🟠 | Outage at provider X | ≥ 2 routers of one provider, while other providers are fine |
+| 🟡 | Service down / slow | the same site or service is bad on ≥ 2 routers (any providers); the text says whether it is one provider or several |
+| ⚫ / 🟢 | Router offline / back online | no reports for longer than `stale_sec` (180 s) |
+| 🟢 | Recovered | with the outage duration and the routers/providers affected |
 
-Сбой одного роутера по умолчанию в Telegram не идёт (`notify_single: true` — идёт).
-На странице центра есть раздел «🌍 Центр сбора»: таблица роутеров (провайдер,
-состояние, пробы, когда был отчёт, версия) и **журнал глобальных инцидентов**;
-в блоке «Текущие события» — роутеры не на связи, роутеры целиком на резервном
-канале, общий сбой у нескольких провайдеров, сервисы с проблемой на ≥ 2 роутерах.
+A failure on a single router is not sent to Telegram by default
+(`notify_single: true` changes that). The hub's page has a "🌍 Collection hub"
+section: a table of routers (provider, state, probes, last report, version) and the
+**global incident journal**; "Current events" lists routers that are offline,
+routers running entirely on a backup link, outages across several providers and
+services failing on ≥ 2 routers.
 
-## Здоровье роутера и окно проблем
+## Router health and the issues window
 
-Кроме состояния WAN роутер (2.4+) присылает список текущих проблем с уровнем
-«внимание» или «критично»:
+Besides its WAN state, a router (2.4+) sends a list of current issues, each marked
+"warning" or "critical":
 
-| Проблема | Уровень |
+| Issue | Level |
 |---|---|
-| WAN: нет связи / CRITICAL | критично |
-| WAN: WARNING | внимание |
-| порт: обрывы линка за последний час | критично |
-| порт: ошибки кадров за час; скорость ниже возможной (кабель, понижение скорости) | внимание |
-| интернет через резервный канал | внимание |
-| массовые сбои соединений к сайтам; общий виновник на маршруте | внимание |
-| DNS-страховка в общем режиме; отказ всему IPv6 | внимание |
-| перегрузка роутера, мало памяти, температура SoC ≥ 75 °C (≥ 85 °C — критично) | внимание |
-| не хватает пакетов для включённых функций | внимание |
+| WAN: no connectivity / CRITICAL | critical |
+| WAN: WARNING | warning |
+| port: link drops within the last hour | critical |
+| port: frame errors within the hour; speed below what it can do (cable, downshift) | warning |
+| internet over a backup link | warning |
+| mass connection failures to sites; a common culprit on the path | warning |
+| DNS guard in protocol-wide mode; all IPv6 refused | warning |
+| router overloaded, low memory, SoC temperature ≥ 75 °C (≥ 85 °C — critical) | warning |
+| packages missing for enabled features | warning |
 
-Статус роутера в таблице центра — худшее из фазы WAN и проблем (NORMAL /
-WARNING / CRITICAL / OFFLINE) с числом проблем. Нажатие на статус открывает
-окно с описаниями. Новая критичная проблема уходит в Telegram, остальные и
-«прошло» — в журнал центра.
+A router's status in the hub table is the worst of its WAN phase and its issues
+(NORMAL / WARNING / CRITICAL / OFFLINE), with the number of issues. Clicking the
+status opens a window with the descriptions. A new critical issue goes to
+Telegram; everything else, and "resolved", goes to the hub journal.
 
-## Убрать роутер с центра
+## Removing a router from the hub
 
-Имя роутера в таблице — ссылка на его страницу: центр запоминает адрес, с которого
-пришёл последний отчёт (обычно адрес в ZeroTier), и открывает `http://<адрес>/status.html`.
-Нажатие на статус — окно проблем роутера. Нажатие на версию — окно сведений
-(версия, провайдер и AS, адрес отчётов, последний отчёт, WAN) с кнопкой «Убрать с
-центра» (пароль страницы центра): роутер,
-его место в открытых сбоях и напоминания удаляются. Если роутер снова пришлёт
-отчёт (например, после переустановки), он появится заново. Роутеры, которые
-не выходили на связь 30 дней, центр убирает сам. Переустановленный роутер с
-тем же `report.name` продолжит историю под тем же именем.
+The router name in the table is a link to its page: the hub remembers the address
+the last report came from (usually a ZeroTier address) and opens
+`http://<address>/status.html`. Clicking the status opens the router's issues
+window. Clicking the version opens an info window (version, provider and AS,
+report address, last report, WAN) with a "Remove from hub" button (requires the
+hub page password): the router, its place in open outages and its reminders are
+deleted. If the router reports again (after a reinstall, for example), it simply
+reappears. Routers that have been silent for 30 days are removed automatically. A
+reinstalled router with the same `report.name` continues its history under the
+same name.
 
-## Порт и firewall
+## Port and firewall
 
-Центр слушает **TCP 7788** (`hub.listen`, можно сменить). Только TCP, только этот порт.
+The hub listens on **TCP 7788** (`hub.listen`, configurable). TCP only, this port
+only.
 
-- Роутеры в одной сети с центром (ZeroTier / tailscale) — ничего открывать не нужно,
-  адрес центра — его адрес в туннеле: `http://10.0.0.1:7788/api/v1/report`.
-- Центр в интернете — открыть входящий TCP 7788 на WAN. На OpenWrt:
+- Routers in the same network as the hub (ZeroTier / Tailscale) need nothing
+  opened; the hub address is its tunnel address:
+  `http://10.0.0.1:7788/api/v1/report`.
+- A hub on the internet needs inbound TCP 7788 open on WAN. On OpenWrt:
 
 ```sh
 uci add firewall rule
@@ -90,64 +98,66 @@ uci set firewall.@rule[-1].target='ACCEPT'
 uci commit firewall && fw4 reload
 ```
 
-Роутер за CGNAT (адрес 100.64.x.x у провайдера) из интернета недоступен — центр
-в интернете должен иметь белый IP (VPS) или проброс порта.
+A router behind CGNAT (a 100.64.x.x address from the provider) cannot be reached
+from the internet, so an internet-facing hub needs a public IP (a VPS) or a port
+forward.
 
-## Безопасность
+## Security
 
-Центр рассчитан на работу открытым в интернет.
+The hub is designed to be exposed to the internet.
 
-- **Шифрование и подпись каждого отчёта**: AES-256-GCM, ключ = SHA-256 от общего
-  секрета. Секрет по сети не передаётся; без него отчёт нельзя ни прочитать, ни
-  подделать, ни изменить (испорченный пакет отвергается). TLS не используется
-  (не нужен сертификат), поэтому адрес — `http://`.
-- **Защита от повтора**: в отчёте метка времени (допуск ±5 минут), одноразовые
-  номера запоминаются — перехваченный пакет повторно не примут.
-  Часы всех роутеров должны идти верно (NTP включён в OpenWrt по умолчанию).
-- **Защита от перегрузки**: не больше 64 одновременных соединений и 8 с одного
-  адреса, 120 запросов в минуту с адреса, 10 секунд на весь запрос, строка запроса и
-  каждый заголовок ≤ 4 КБ (длиннее — соединение закрывается, в память не копится),
-  не больше 64 заголовков, тело ≤ 64 КБ, не больше 500 роутеров. Отвергнутые
-  запросы пишутся в журнал не чаще раза в минуту.
-- **Проверка содержимого отчёта** (даже с верным токеном — на случай сбойного роутера):
-  ≤ 50 инцидентов/сервисов, короткие поля ≤ 128 байт, текст инцидента обрезается до
-  2000 байт, память центра под номера инцидентов и напоминания ограничена.
-- **Ничего лишнего наружу**: на любую ошибку — одинаковый ответ 403 без подробностей;
-  состояние центра по сети не отдаётся (только с самого роутера, 127.0.0.1, и на
-  его странице).
-- **Тексты на странице центра** экранируются: имя роутера из отчёта не может
-  внедрить код в страницу.
+- **Every report is encrypted and authenticated**: AES-256-GCM with a key derived
+  as SHA-256 of a shared secret. The secret never travels over the network; without
+  it a report cannot be read, forged or altered (a tampered packet is rejected). TLS
+  is not used (no certificate needed), hence the `http://` address.
+- **Replay protection**: each report carries a timestamp (±5 minutes tolerance) and
+  nonces are remembered, so a captured packet is never accepted twice. All routers
+  need correct clocks (NTP is on by default in OpenWrt).
+- **Overload protection**: at most 64 concurrent connections and 8 per address, 120
+  requests per minute per address, 10 seconds for a whole request, a request line
+  and each header ≤ 4 KB (longer ones close the connection instead of piling up in
+  memory), at most 64 headers, a body ≤ 64 KB and at most 500 routers. Rejected
+  requests are logged at most once a minute.
+- **Report contents are checked** even with a valid token, in case a router
+  misbehaves: ≤ 50 incidents/services, short fields ≤ 128 bytes, incident text
+  truncated to 2000 bytes, and the hub's memory for incident ids and reminders is
+  bounded.
+- **Nothing extra leaks out**: every error gets the same bare 403 response; the hub
+  state is never served over the network (only on the router itself, from
+  127.0.0.1, and on its page).
+- **Texts on the hub page are escaped**: a router name from a report cannot inject
+  code into the page.
 
-Ограничения:
+Limitations:
 
-- секрет **общий** для центра и всех роутеров: утечка его с любого роутера
-  позволяет отправлять поддельные отчёты (но не читать чужие уведомления).
-  При подозрении — сгенерировать новый и заменить везде;
-- метаданные соединения (какой IP с каким центром общается) видны сети.
+- the secret is **shared** by the hub and all its routers: if it leaks from any
+  router, fake reports can be sent (but nobody else's alerts can be read). If in
+  doubt, generate a new one and replace it everywhere;
+- connection metadata (which IP talks to which hub) is visible to the network.
 
-## Настройка
+## Setup
 
-### Секрет
+### The secret
 
-Один на центр и все его роутеры, не короче 16 символов:
+One per hub and all its routers, at least 16 characters:
 
 ```sh
 head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'
 ```
 
-Мастер (`cgmon --advanced-install`) генерирует его сам, если поле пустое.
+The wizard (`cgmon --advanced-install`) generates one if the field is empty.
 
-### Центр — в `/etc/cgmon/cgmon.yaml`
+### The hub — in `/etc/cgmon/cgmon.yaml`
 
 ```yaml
 hub:
-  enabled: true                 # или галочка на странице «Этот роутер — главный центр сбора»
+  enabled: true                 # or the page switch "This router is the main collection hub"
   listen: ":7788"
-  token: "<секрет>"
-  telegram:                     # несколько ботов, у каждого несколько получателей
-    - bot_token: "<токен бота 1>"
-      chat_ids: ["123456789", "-1001234567890"]   # личка, группа (-100…), канал (@имя)
-    - bot_token: "<токен бота 2>"
+  token: "<secret>"
+  telegram:                     # several bots, each with several recipients
+    - bot_token: "<bot 1 token>"
+      chat_ids: ["123456789", "-1001234567890"]   # direct chat, group (-100…), channel (@name)
+    - bot_token: "<bot 2 token>"
       chat_ids: ["<id>"]
   stale_sec: 180
   min_isps: 2
@@ -155,43 +165,46 @@ hub:
   notify_offline: true
 ```
 
-### Роутеры
+### Routers
 
 ```yaml
 report:
-  enabled: true                 # или галочка «Отправлять данные на центр мониторинга»
-  urls:                         # можно несколько центров — данные уходят во все
+  enabled: true                 # or the page switch "Send data to hubs"
+  urls:                         # several hubs are fine — data goes to all of them
     - http://10.0.0.1:7788/api/v1/report
     - http://203.0.113.10:7788/api/v1/report
-  token: "<секрет>"
+  token: "<secret>"
 ```
 
-Секреты задаются только в `cgmon.yaml` (права 0600); на странице их нет.
-Список центров и галочки меняются со страницы без перезапуска.
+Secrets are set only in `cgmon.yaml` (mode 0600) and never appear on the page. The
+list of hubs and the switches can be changed from the page without a restart. The
+page password, hub and Telegram can also be set in LuCI under **Services → cgmon**.
 
 ### Telegram
 
-1. Написать [@BotFather](https://t.me/BotFather) → `/newbot` → получить токен бота.
-2. Написать боту любое сообщение (или добавить его в группу).
-3. Узнать id чата: `curl -s https://api.telegram.org/bot<токен>/getUpdates` —
-   поле `"chat":{"id": …}` (у групп — отрицательное число).
-4. Вписать бота и чаты в `hub.telegram` и перезапустить cgmon.
-5. Проверка: `cgmon telegram-test` — пробное сообщение каждому получателю.
+1. Message [@BotFather](https://t.me/BotFather) → `/newbot` → get the bot token.
+2. Send the bot any message (or add it to a group).
+3. Find the chat id: `curl -s https://api.telegram.org/bot<token>/getUpdates` —
+   the `"chat":{"id": …}` field (negative for groups).
+4. Put the bot and the chats into `hub.telegram` and restart cgmon.
+5. Test it: `cgmon telegram-test` sends a test message to every recipient.
 
-Каждое уведомление уходит всем парам «бот → чат». У каждого получателя своя
-очередь повторов: недоступный бот или чат не задерживает остальных.
-Старые поля `telegram_bot_token`/`telegram_chat_id` (один бот, один чат) тоже работают.
+Every alert goes to every "bot → chat" pair. Each recipient has its own retry
+queue, so an unreachable bot or chat does not hold up the others. The old fields
+`telegram_bot_token`/`telegram_chat_id` (one bot, one chat) still work.
 
-Пока бот не задан, уведомления пишутся только в журнал центра (`logread | grep hub`)
-и в раздел «Центр сбора» на странице. Сообщения в Telegram отправляются через
-`curl` (токен передаётся ему через stdin и не виден в списке процессов);
-если Telegram недоступен — повтор каждые 10 секунд, очередь до 100 сообщений.
+Until a bot is configured, alerts are written only to the hub log
+(`logread | grep hub`) and to the "Collection hub" section of the page. Telegram
+messages are sent with curl, uclient-fetch or wget, whichever is installed (with
+curl the token is passed over stdin and never shows up in the process list). If
+Telegram is unreachable, sending is retried every 10 seconds with a queue of up to
+100 messages. Alert texts are currently in Russian.
 
-## Проверка
+## Checking
 
-- На роутере, в «Настройках» страницы, под адресами центров — сколько отчётов
-  отправлено каждому и ошибка, если есть.
-- На центре — раздел «🌍 Центр сбора», `logread | grep hub`,
+- On a router, in the page "Settings", under the hub addresses: how many reports
+  were sent to each hub and the last error, if any.
+- On the hub: the "🌍 Collection hub" section, `logread | grep hub`,
   `printf 'GET /api/state HTTP/1.1\r\nContent-Length: 0\r\n\r\n' | nc 127.0.0.1 7788`.
-- Файлы центра: `/etc/cgmon/hub_state.json` (роутеры, открытые сбои, журнал),
-  `/tmp/cgmon-hub.jsonl` (все принятые инциденты всех роутеров).
+- Hub files: `/etc/cgmon/hub_state.json` (routers, open outages, journal) and
+  `/tmp/cgmon/hub.jsonl` (every incident accepted from every router).

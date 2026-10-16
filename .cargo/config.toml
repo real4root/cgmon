@@ -15,3 +15,23 @@ rustflags = ["-C", "link-self-contained=yes", "-C", "target-feature=+crt-static"
 [target.mips-unknown-linux-musl]
 linker = "tools/zcc-mips"
 rustflags = ["-C", "target-feature=+crt-static", "-C", "link-self-contained=no"]
+
+# ARMv7 с VFP (ipq40xx, ipq806x, mvebu, sunxi…: arm_cortex-a7/a9/a15)
+[target.armv7-unknown-linux-musleabihf]
+linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes", "-C", "target-feature=+crt-static"]
+
+# ARMv5TE без FPU (kirkwood и др.: arm_arm926ej-s, arm_xscale)
+[target.armv5te-unknown-linux-musleabi]
+linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes", "-C", "target-feature=+crt-static"]
+
+# x86 32 бит (OpenWrt x86/generic: i386_pentium4)
+[target.i686-unknown-linux-musl]
+linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes", "-C", "target-feature=+crt-static"]
+
+# MIPS 24Kc little-endian (ramips mt7621/mt76x8: mipsel_24kc) — как mips, через zig
+[target.mipsel-unknown-linux-musl]
+linker = "tools/zcc-mipsel"
+rustflags = ["-C", "target-feature=+crt-static", "-C", "link-self-contained=no"]

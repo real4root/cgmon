@@ -1,257 +1,247 @@
-# cgmon простыми словами
+# cgmon in plain language
 
-Это рассказ для тех, кто не настраивает сети каждый день. Если нужны
-технические подробности — они в [README.md](../README.md).
+**English** · [Русский](users.ru.md)
 
-## Что это такое
+This guide is for people who don't configure networks every day. Technical
+details live in the [README](../README.md).
 
-Роутер — это коробочка, через которую все ваши телефоны, ноутбуки и
-телевизоры выходят в интернет. Внутри роутера работает маленький компьютер
-с Linux. Он, как почтовое отделение, сортирует и отправляет «письма» —
-кусочки данных.
+## What it is
 
-**cgmon — это наблюдатель и диспетчер внутри роутера.** Сам письма он не
-носит: это по-прежнему делает Linux. cgmon следит, всё ли в порядке, и,
-когда что-то ломается, даёт Linux новые указания вроде «письма для этого
-сайта отправляй другой дорогой». Поэтому, даже если cgmon выключить,
-интернет не пропадёт — роутер продолжит работать по последним указаниям.
+A router is the little box that connects all your phones, laptops and TVs to the
+internet. Inside it runs a small Linux computer that works like a post office:
+it sorts and dispatches "letters" — small pieces of data.
 
-Всё, что cgmon видит и делает, показано на веб-странице роутера:
-`http://<адрес роутера>/status.html`.
+**cgmon is the watchman and dispatcher inside the router.** It never carries the
+letters itself — Linux still does that. cgmon keeps an eye on whether everything
+is fine and, when something breaks, gives Linux new instructions, such as "send
+letters for this site by another road". That is why the internet keeps working
+even if cgmon is switched off: the router simply follows the last instructions.
 
-## Что он умеет
+Everything cgmon sees and does is shown on the router's web page:
+`http://<router address>/status.html`.
 
-### Следит, жив ли интернет
+## What it does
 
-Каждые несколько секунд роутер «стучится» к нескольким надёжным серверам
-в интернете. Если они отвечают — всё хорошо. Если перестают — значит,
-проблема у провайдера, и cgmon записывает это в журнал понятными словами,
-например: «Новые соединения не проходили 3 минуты — сбой у провайдера».
+### Watches whether the internet is alive
 
-Состояния интернета на странице:
+Every few seconds the router "knocks" on several reliable servers on the
+internet. If they answer, all is well. If they stop answering, the problem is on
+the provider's side, and cgmon records it in the journal in plain words — for
+example, "new connections failed for 3 minutes — provider outage".
 
-- **NORMAL** — всё в порядке;
-- **WARNING** — что-то начинает барахлить;
-- **CRITICAL** — серьёзный сбой;
-- **RECOVERY** — сбой закончился, интернет приходит в себя.
+Internet states on the page:
 
-### Две дороги в интернет: IPv4 и IPv6
+- **NORMAL** — everything is fine;
+- **WARNING** — something is starting to misbehave;
+- **CRITICAL** — a serious outage;
+- **RECOVERY** — the outage is over and the internet is getting back to normal.
 
-У каждого устройства в интернете есть адрес, как у дома. Адреса бывают
-двух видов: старые (**IPv4**, вида `1.2.3.4`) и новые (**IPv6**, длинные,
-с двоеточиями). Можно представить, что это две разные дороги к одним и тем
-же сайтам. Иногда у провайдера ломается одна из дорог, а другая работает.
-cgmon проверяет обе отдельно и сравнивает их.
+### Two roads to the internet: IPv4 and IPv6
 
-### Подсказывает, какой сайт не работает
+Every device on the internet has an address, just like a house. Addresses come
+in two kinds: the old ones (**IPv4**, like `1.2.3.4`) and the new ones (**IPv6**,
+long, with colons). Think of them as two different roads leading to the same
+sites. Sometimes a provider breaks one road while the other keeps working. cgmon
+checks both separately and compares them.
 
-Бывает, что интернет в целом есть, а один сайт или приложение не
-открывается. cgmon замечает, к каким сайтам устройства дома пытаются
-подключиться и не могут, и пишет: «Не отвечает такой-то сервис». Так
-видно, что сломался сайт, а не ваш интернет. Это называется
-**down detector** («детектор падений»).
+### Tells you which site is down
 
-### Показывает устройства и кто сколько качает
+Sometimes the internet as a whole works, but one site or app won't open. cgmon
+notices which sites the devices at home try and fail to reach, and reports:
+"such-and-such service is not answering". That way you can see the site is
+broken, not your internet. This is called a **down detector**.
 
-На странице есть таблица всех устройств дома: телефон, ноутбук,
-телевизор… cgmon сам пытается узнать их имена (например, «iPhone Маши»)
-или хотя бы производителя. Видно, кто сейчас сильнее всего нагружает
-интернет и сколько каждый скачал за час и за сутки. Есть график, где
-линия каждого устройства своя.
+### Shows your devices and who is using the bandwidth
 
-### Находит «потерявшиеся» устройства
+The page has a table of every device at home: phone, laptop, TV… cgmon tries to
+learn their names on its own (say, "Mary's iPhone") or at least the
+manufacturer. You can see who is loading the connection the most right now and
+how much each device downloaded in the last hour and day. There is also a chart
+where every device gets its own line.
 
-Принесли старую IP-камеру, и никто не помнит, какой у неё адрес? Если
-адрес из другой сети (например, `192.168.1.64`, а у вас дома
-`192.168.10.x`), компьютер её просто не видит. Включите галочку «Ловец
-устройств», подключите камеру к роутеру проводом или по Wi-Fi — и через
-минуту-другую под таблицей устройств появится строка: адрес камеры, её
-производитель и кнопка «Открыть доступ». Нажмите её — и на час камера
-откроется в браузере с любого компьютера или телефона дома, ничего на них
-перенастраивать не нужно. Ни адрес, ни пароль камеры знать заранее не
-нужно: роутер слышит, как камера «зовёт» свой старый роутер.
+### Finds "lost" devices
 
-### Считает платный трафик
+Brought home an old IP camera and nobody remembers its address? If the address
+belongs to another network (say, `192.168.1.64` while your home uses
+`192.168.10.x`), your computer simply can't see it. Start **cgfinder**, plug the
+camera into the router by cable or Wi-Fi, and within a minute or two a line
+appears under the device table: the camera's address, its manufacturer and an
+"Open access" button. Press it, and for one hour the camera opens in a browser
+on any computer or phone at home — nothing on them needs reconfiguring. You
+don't even need to know the camera's address or password in advance: the router
+hears the camera "calling" for its old router.
 
-Некоторые провайдеры часть сайтов дают бесплатно, а остальное считают по
-мегабайтам. cgmon может считать, сколько ушло платного трафика за день и
-за месяц, и предупредить, когда подходите к лимиту.
+### Counts billed traffic
 
-Какие сети бесплатные, у каждого провайдера своё. Список можно взять по
-ссылке (для Узбекистана уже указан список TAS-IX) или загрузить свой файл
-прямо со страницы: обычный текстовый файл, где на каждой строке одна сеть.
-Такой список обычно есть на сайте провайдера.
+Some providers give part of the internet for free and bill the rest by the
+megabyte. cgmon can count how much billed traffic went out today and this month
+and warn you when you are close to the limit.
 
-### Умная очередь, чтобы интернет не «тормозил» (SQM)
+Which networks are free depends on the provider. The list can be downloaded from
+a link (for Uzbekistan the TAS-IX list is already set) or uploaded as a file right
+from the page: a plain text file with one network per line. Providers usually
+publish such a list on their website.
 
-Представьте кассу в магазине. Один человек выкладывает на ленту тележку
-из ста покупок, а за ним стоит тот, кому нужна только бутылка воды. Без
-порядка второй будет долго ждать.
+### A smart queue that keeps the internet snappy (SQM)
 
-В интернете так же: если кто-то дома скачивает большой файл или
-выкладывает видео, то игры, видеозвонки и сайты у остальных начинают
-тормозить. **SQM** («умная очередь») — это вежливый кассир: он пропускает
-маленькие и срочные «покупки» вперёд и делит канал поровну. В итоге
-звонки и игры не лагают, даже когда кто-то качает.
+Picture a supermarket checkout. One shopper unloads a cart of a hundred items,
+and behind them stands someone who only needs a bottle of water. Without some
+order, the second person waits a long time.
 
-### Шейпер отдачи и детектор «наказаний»
+The internet works the same way: when someone at home downloads a big file or
+uploads a video, games, video calls and websites slow down for everyone else.
+**SQM** ("smart queue management") is a polite cashier: it lets small, urgent
+purchases go first and shares the line fairly. Calls and games stay smooth even
+while someone is downloading.
 
-Некоторые провайдеры «наказывают» абонента, если он слишком быстро и
-долго что-то отправляет в интернет (например, выкладывает большие файлы):
-скорость надолго падает почти до нуля. **Шейпер отдачи** — это
-ограничитель скорости, который сам немного притормаживает отправку, чтобы
-провайдер не наказывал. А **детектор наказаний** замечает, когда такое
-всё-таки случилось, и записывает это.
+### Upload shaper and penalty detector
 
-### Ограничитель «жадных» устройств
+Some providers "punish" a subscriber who sends data out too fast for too long
+(uploading big files, for instance): the speed then drops to almost nothing for a
+long time. The **upload shaper** is a speed limiter that gently slows uploads down
+so the provider has no reason to punish you. The **penalty detector** notices when
+it happened anyway and records it.
 
-У провайдера бывает ограничение на число одновременных соединений.
-Торрент-программа может открыть тысячи соединений сразу, и тогда у
-остальных дома перестают открываться сайты. cgmon находит самое «жадное»
-устройство и не даёт ему открывать новые соединения, пока не станет легче.
-То, что уже скачивается, он не обрывает. По умолчанию этот режим только
-пишет, что сделал бы, и ничего не ограничивает.
+### A brake for "greedy" devices
 
-### Запасной интернет
+Providers sometimes limit how many connections you may have open at once. A
+torrent client can open thousands at a time, and then sites stop opening for
+everyone else at home. cgmon finds the greediest device and stops it from opening
+new connections until things calm down. Downloads already in progress are never
+cut off. By default this mode only reports what it would do and limits nothing.
 
-Если к роутеру подключён второй интернет (например, мобильный модем),
-cgmon сам его находит и может переключиться на него, когда основной
-сломался, и вернуться обратно, когда основной починят. Сразу после
-установки он только показывает, что сделал бы, — переключение включается
-отдельно.
+### Backup internet
 
-### DNS-страховка
+If a second internet connection is plugged into the router (a mobile modem, for
+example), cgmon finds it by itself and can switch over when the main one breaks,
+then switch back once it is fixed. Right after installation it only shows what
+it would do; switching is turned on separately.
 
-Когда вы набираете `google.com`, устройство сначала спрашивает
-**DNS** — это как телефонная книга интернета: по имени сайта она
-выдаёт его адрес. В «книге» для многих сайтов записаны адреса обоих
-видов — IPv4 и IPv6.
+### DNS guard
 
-Если у провайдера сломалась одна дорога (например, IPv6), устройства всё
-равно пытаются по ней ехать, и сайты грузятся долго или не грузятся
-вообще. cgmon в такой момент «прячет» из телефонной книги адреса сломанной
-дороги, и все устройства сразу едут по рабочей. Когда дорогу починят, всё
-вернётся как было.
+When you type `google.com`, your device first asks **DNS** — the internet's phone
+book, which turns a site's name into its address. For many sites the book lists
+addresses of both kinds, IPv4 and IPv6.
 
-**Адресный режим** делает это аккуратнее: прячет плохую дорогу не для
-всего интернета, а только для тех сайтов, у которых именно сейчас
-проблемы. Например, если у Google плохо работает IPv6, это касается только
-Google, а остальные сайты ничего не замечают.
+If the provider breaks one road (IPv6, say), devices still try to take it, and
+sites load slowly or not at all. At that moment cgmon "hides" the broken road's
+addresses from the phone book, and every device immediately takes the working
+road. Once the road is fixed, everything goes back to how it was.
 
-### Объезд сломанных маршрутов
+**Targeted mode** is more precise: it hides the bad road not for the whole
+internet but only for the sites that are having trouble right now. If Google's
+IPv6 is misbehaving, only Google is affected and every other site notices
+nothing.
 
-Данные до сайта идут через много чужих узлов, как машина по улицам. Иногда
-ломается не весь интернет, а одна «улица» на пути к конкретному сайту.
-cgmon работает как навигатор, который знает про пробку: трафик к этому
-сайту он отправляет в объезд, а всё остальное — как обычно.
+### Detours around broken routes
 
-Объезды могут быть такие:
+Data travels to a site through many other people's nodes, like a car through
+city streets. Sometimes it's not the whole internet that breaks but a single
+"street" on the way to one particular site. cgmon acts like a navigator that knows
+about the traffic jam: it sends traffic for that site on a detour and everything
+else as usual.
 
-- **мобильный интернет**, если он подключён к роутеру (можно поставить
-  дневной лимит мегабайт, чтобы не потратить лишнего);
-- **VPN** (например, tailscale);
-- **другой ваш роутер** в другом месте, у другого провайдера, если роутеры
-  соединены через **ZeroTier** — это программа, которая связывает роутеры
-  в разных городах в одну общую «домашнюю» сеть. Скорость через такой
-  роутер можно ограничить, чтобы не мешать тем, кто живёт там.
+Possible detours:
 
-Порядок объездов задаётся на странице мышкой: какой пробовать первым, какой
-вторым. Перед тем как пустить трафик в объезд, cgmon проверяет, что сайт
-по этой дороге не просто «отвечает», а реально загружается. Если не
-загружается — пробует следующий объезд.
+- **mobile internet**, if a modem is connected to the router (you can set a daily
+  megabyte limit so you don't overspend);
+- **a VPN** (Tailscale, for example);
+- **another router of yours** in another place, with another provider, if the
+  routers are linked with **ZeroTier** — a program that joins routers in different
+  cities into one shared "home" network. The speed through such a router can be
+  capped so it doesn't get in the way of the people who live there.
 
-### Ищет, где именно сломалось
+You set the order of detours on the page with the mouse: which one to try first,
+which one second. Before sending traffic on a detour, cgmon checks that the site
+doesn't merely "answer" along that road but actually loads. If it doesn't, the
+next detour is tried.
 
-Когда одна из дорог работает плохо, cgmon проверяет путь до нескольких
-сайтов, хороших и плохих, узел за узлом. Если все плохие пути проходят
-через одно и то же место, а хорошие его обходят, он пишет: «общий
-виновник — стык такого-то провайдера с такой-то сетью». Так понятно, на
-чьей стороне проблема и кому жаловаться.
+### Finds where exactly things broke
 
-### Оценки по сайтам
+When one of the roads works badly, cgmon checks the path to several sites, good
+and bad, node by node. If all the bad paths go through the same place while the
+good ones avoid it, it reports: "common culprit — the junction between such-and-such
+provider and such-and-such network". Now you know whose side the problem is on and
+whom to complain to.
 
-cgmon ставит обеим дорогам (IPv4 и IPv6) оценку от 0 до 100. Он смотрит
-не на пару тестовых серверов, а на сайты, которыми в доме реально
-пользуются. Так можно отличить «сломалась вся дорога» от «не работает
-пара сайтов».
+### Per-site scores
 
-### «Текущие события»
+cgmon gives both roads (IPv4 and IPv6) a score from 0 to 100. It doesn't look at a
+couple of test servers but at the sites people at home actually use. That is how
+it tells "the whole road is broken" from "a couple of sites don't work".
 
-Над графиком одной строкой показано только то, что важно прямо сейчас:
-какие сайты отправлены в объезд, переключился ли роутер на запасной
-интернет, что сломалось у провайдера. Если всё хорошо, этого блока не
-видно.
+### "Current events"
 
-### Квартиранты
+Above the chart, one line each, you see only what matters right now: which sites
+were sent on a detour, whether the router switched to backup internet, what broke
+on the provider's side. When everything is fine, this block is hidden.
 
-Если часть дома или квартиры сдаётся и у жильцов отдельная сеть, они могут
-открыть ту же страницу, но увидят только свои устройства — без ваших и без
-настроек.
+### Tenants
 
-### Несколько роутеров и уведомления в Telegram
+If you rent out part of your home and the tenants have a separate network, they
+can open the same page but will see only their own devices — not yours, and not
+the settings.
 
-Если роутеров несколько (дома, у родителей, на даче), они могут
-отправлять сведения на один главный роутер — **центр сбора**. Центр
-понимает, сломался ли интернет только у одного провайдера или сразу у
-всех, и пишет об этом в Telegram. Данные между роутерами шифруются.
+### Several routers and Telegram alerts
 
-### Напоминание об оплате
+If you have several routers (at home, at your relatives', at the cottage), they can
+send their reports to one main router — the **collection hub**. The hub works out
+whether the internet broke at one provider only or everywhere at once, and tells
+you in Telegram. Data between the routers is encrypted.
 
-Центр сбора может заранее напомнить в Telegram, что пора заплатить за
-интернет.
+### Payment reminders
 
-### Настройки прямо со страницы
+The hub can remind you in Telegram that it's time to pay for the internet.
 
-Почти всё меняется на странице роутера без перезагрузки — нужен только
-пароль. После пяти неверных паролей страница делает паузу, чтобы пароль
-нельзя было подобрать. Пока пароль не задан, страница только показывает —
-поменять с неё ничего нельзя. Пароль задаётся в веб-интерфейсе роутера
-(LuCI): **Службы → cgmon**. Там же — адрес центра сбора и Telegram.
+### Settings right on the page
 
-Где хранить накопленные данные (учёт трафика и прочее), выбирается в
-настройках: в памяти роутера (ничего не пропадает, но память изнашивается),
-в оперативной памяти (без износа, но после перезагрузки всё с нуля) или на
-USB-флешке.
+Almost everything can be changed on the router's page without a reboot — all it
+takes is the password. After five wrong passwords the page pauses so the password
+can't be guessed. Until a password is set, the page is view-only — nothing can be
+changed from it. The password is set in the router's web interface (LuCI):
+**Services → cgmon**, together with the hub address and Telegram.
 
-Если для какой-то функции на роутере не хватает программы, её настройка
-будет серой, а рядом будет написано, что нужно установить (например,
-«требуется curl»).
+Where accumulated data (traffic accounting and the like) is kept is a setting:
+in the router's flash (nothing is lost, but the flash wears out), in RAM (no wear,
+but everything starts from zero after a reboot) or on a USB stick.
 
-## Какую сборку выбрать
+## Which build to choose
 
-- **full** — всё. Для роутера на x86 или мощного ARM.
-- **lite** — всё, кроме SmartDNS и того, что на нём держится (адресная
-  DNS-страховка, объезд сломанных маршрутов). Для обычных домашних роутеров.
-- **nano** — для слабых роутеров с маленькой памятью под прошивку (например,
-  TP-Link TL-WR1043N/ND): работает на том, что уже есть в прошивке. Умную очередь
-  (SQM) можно доставить — это около 240 КБ.
+- **full** — everything. For an x86 router or a powerful ARM one.
+- **lite** — everything except SmartDNS and what depends on it (targeted DNS guard,
+  detours around broken routes). For ordinary home routers.
+- **nano** — for weak routers with little firmware memory (for example, the TP-Link
+  TL-WR1043N/ND): it runs on what already comes with the firmware. The smart queue
+  (SQM) can be added later — about 240 KB.
 
-Если для какой-то функции не хватает программы, страница пишет «требуется …»,
-а в «Текущих событиях» появляется кнопка **Установить** — роутер поставит пакет
-сам (нужен пароль страницы и интернет).
+If a feature is missing a program, the page says "requires …", and "Current
+events" shows an **Install** button — the router installs the package by itself
+(you need the page password and an internet connection).
 
-## Это безопасно?
+## Is it safe?
 
-- Сразу после установки cgmon **только смотрит**: ничего не блокирует, не
-  ограничивает и никуда не отправляет. Каждое действие включается отдельно.
-- Если cgmon выключить или он сломается, интернет продолжит работать.
-- Пароли и ключи хранятся только в файле настроек на самом роутере и на
-  страницу не выводятся.
+- Right after installation cgmon **only watches**: it blocks nothing, limits
+  nothing and sends nothing anywhere. Every action is turned on separately.
+- If cgmon is switched off or breaks, the internet keeps working.
+- Passwords and keys are stored only in the settings file on the router itself
+  and are never shown on the page.
+- Router journal messages are currently written in Russian; the page itself is
+  available in English.
 
-## Маленький словарик
+## A small glossary
 
-| Слово | Что значит |
+| Word | Meaning |
 |---|---|
-| Провайдер | компания, которая даёт вам интернет |
-| Роутер | коробочка, раздающая интернет дома (по Wi-Fi и проводам) |
-| IPv4, IPv6 | два вида адресов в интернете, как две дороги к сайтам |
-| DNS | «телефонная книга» интернета: имя сайта → его адрес |
-| Соединение | один «разговор» устройства с сайтом; у страницы их может быть десятки |
-| Трафик | сколько данных скачано или отправлено |
-| Отдача, загрузка | отправка данных из дома в интернет и скачивание из интернета |
-| SQM | «умная очередь»: делит канал честно, чтобы звонки и игры не тормозили |
-| Шейпер | ограничитель скорости |
-| VPN | защищённый «туннель» до другого места в интернете |
-| ZeroTier, tailscale | программы, которые соединяют ваши роутеры и устройства в одну сеть через интернет |
-| Журнал инцидентов | список всех сбоев: когда началось, когда закончилось, что было |
-| Telegram-бот | программа, которая присылает сообщения в Telegram |
+| Provider (ISP) | the company that gives you internet access |
+| Router | the box that shares the internet at home (over Wi-Fi and cables) |
+| IPv4, IPv6 | two kinds of internet addresses — like two roads to the same sites |
+| DNS | the internet's "phone book": a site's name → its address |
+| Connection | one "conversation" between a device and a site; a single page may open dozens |
+| Traffic | how much data was downloaded or sent |
+| Upload, download | sending data from home to the internet, and receiving it from the internet |
+| SQM | "smart queue": shares the line fairly so calls and games don't lag |
+| Shaper | a speed limiter |
+| VPN | a protected "tunnel" to another place on the internet |
+| ZeroTier, Tailscale | programs that join your routers and devices into one network over the internet |
+| Incident journal | a list of every outage: when it started, when it ended, what happened |
+| Telegram bot | a program that sends you messages in Telegram |
