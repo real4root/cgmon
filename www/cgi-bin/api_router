@@ -1,0 +1,70 @@
+#!/bin/sh
+touch /tmp/cgmon/web_hb 2>/dev/null
+echo "Content-type: application/json"
+echo "Access-Control-Allow-Origin: *"
+echo ""
+
+CLIENT_IP=${REMOTE_ADDR:-"127.0.0.1"}
+
+# ---- system ----
+eval $(awk '/MemAvailable/{f=$2} END{print "ram_f="f}' /proc/meminfo)
+read -r load1 load5 load15 _ < /proc/loadavg
+SYS_UP=$(cut -d' ' -f1 /proc/uptime | cut -d'.' -f1)
+
+# ---- wan device + bytes ----
+WAN_IF=""
+if [ -s /tmp/cgmon/wan_stats_dev ]; then
+	WAN_IF=$(cat /tmp/cgmon/wan_stats_dev | tr -d ' \n')
+fi
+
+wan_rx=0
+wan_tx=0
+# время ядра в момент снятия счётчиков: браузер делит Δбайт на Δwan_ts,
+# а не на время прихода ответа (не зависит от задержки сети и CGI)
+read -r wan_ts _ < /proc/uptime
+if [ -n "$WAN_IF" ] && [ -e "/sys/class/net/$WAN_IF/statistics/rx_bytes" ]; then
+	read -r wan_rx < "/sys/class/net/$WAN_IF/statistics/rx_bytes"
+	read -r wan_tx < "/sys/class/net/$WAN_IF/statistics/tx_bytes"
+else
+	WAN_IF="N/A"
+fi
+
+# ---- names: dhcp v4 + odhcpd v6 ----
+NAMES=$(awk '
+FNR==NR {
+	if (NF>=4 && $4!="*" && $4!="") printf "%s\"%s\":\"%s\"", (n++?",":""), $3, $4
+	next
+}
+{
+	ip=""; name=""
+	for (i=1;i<=NF;i++) {
+		t=$i
+		if (ip=="" && t ~ /^[0-9a-fA-F:]+$/ && index(t,":")>0 && t!="::1" && t!="fe80::1") { ip=t; continue }
+		if (name=="" && t ~ /[A-Za-z]/ && t !~ /^#/ && t !~ /^br-/ && t !~ /^eth/ && t !~ /^vlan/ && t !~ /^pppoe/) name=t
+	}
+	if (ip!="" && name!="") { sub(/\..*/,"",name); printf "%s\"%s\":\"%s\"", (n++?",":""), ip, name }
+}' /tmp/dhcp.leases /tmp/hosts/odhcpd 2>/dev/null)
+
+# ---- macs: для группировки v4+v6 одного клиента ----
+MACS=$( { ip -4 neigh show 2>/dev/null; ip -6 neigh show 2>/dev/null; } | awk '
+	$4=="lladdr" && $5 ~ /:/ { printf "%s\"%s\":\"%s\"", (n++?",":""), $1, $5 }
+' )
+
+# выделенные подсети: чужие имена/MAC вырезает cgmon
+FILTER=cat
+[ -s /tmp/cgmon/isolated.json ] && FILTER="/opt/cgmon/cgmon cgi-filter"
+
+$FILTER << JSON
+{
+  "client_ip": "$CLIENT_IP",
+  "sys_uptime_sec": ${SYS_UP:-0},
+  "ram_free_kb": ${ram_f:-0},
+  "load": "$load1 $load5 $load15",
+  "wan_if": "$WAN_IF",
+  "wan_rx_bytes": $wan_rx,
+  "wan_tx_bytes": $wan_tx,
+  "wan_ts": ${wan_ts:-0},
+  "names": {$NAMES},
+  "macs": {$MACS}
+}
+JSON

@@ -1,0 +1,3 @@
+#!/bin/sh
+# Настройки cgmon со страницы: разбор и проверку делает сам cgmon (без shell).
+exec /opt/cgmon/cgmon cgi-set

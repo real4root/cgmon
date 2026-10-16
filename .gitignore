@@ -1,0 +1,5 @@
+# сборка
+/target/
+/dist/
+/tmp/
+*.pprof

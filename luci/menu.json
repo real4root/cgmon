@@ -1,0 +1,13 @@
+{
+	"admin/services/cgmon": {
+		"title": "cgmon",
+		"order": 60,
+		"action": {
+			"type": "view",
+			"path": "cgmon"
+		},
+		"depends": {
+			"acl": [ "luci-app-cgmon" ]
+		}
+	}
+}

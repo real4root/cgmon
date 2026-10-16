@@ -1,0 +1,8 @@
+#!/bin/sh
+# выделенные подсети (квартиранты) — ответ урезает cgmon по REMOTE_ADDR
+[ -s /tmp/cgmon/isolated.json ] && exec /opt/cgmon/cgmon cgi-status /var/run/cgmon.status.json
+touch /tmp/cgmon/web_hb 2>/dev/null
+echo "Content-type: application/json"
+echo "Access-Control-Allow-Origin: *"
+echo ""
+cat /var/run/cgmon.status.json 2>/dev/null || echo "{}"

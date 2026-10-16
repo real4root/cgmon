@@ -1,0 +1,17 @@
+# Кросс-сборка без системного gcc: цели musl линкует rust-lld с crt из
+# rust-std (self-contained), хост (build-скрипты) — zig cc (tools/zcc-host).
+[target.x86_64-unknown-linux-gnu]
+linker = "tools/zcc-host"
+
+[target.x86_64-unknown-linux-musl]
+linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes", "-C", "target-feature=+crt-static"]
+
+[target.aarch64-unknown-linux-musl]
+linker = "rust-lld"
+rustflags = ["-C", "link-self-contained=yes", "-C", "target-feature=+crt-static"]
+
+# MIPS 24Kc (TL-WR1043ND и др. ath79): cargo +nightly build -Z build-std=std,panic_abort
+[target.mips-unknown-linux-musl]
+linker = "tools/zcc-mips"
+rustflags = ["-C", "target-feature=+crt-static", "-C", "link-self-contained=no"]

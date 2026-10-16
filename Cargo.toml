@@ -1,0 +1,42 @@
+[package]
+name = "cgmon"
+version = "2.4.20"
+edition = "2021"
+publish = false
+description = "Монитор CGNAT/WAN для OpenWrt (2.x, Rust)"
+license = "GPL-3.0-or-later"
+repository = "https://github.com/real4root/cgmon"
+
+[[bin]]
+name = "cgmon"
+path = "src/main.rs"
+
+[features]
+# Варианты сборки (src/variant.rs):
+#   full (по умолчанию)                       — всё;
+#   --no-default-features --features lite    — без SmartDNS (адресный режим, обход);
+#   --no-default-features --features nano    — штатный образ OpenWrt + SQM (без
+#                                              жёстких лимитов, curl, ZeroTier).
+default = ["full"]
+full = ["smartdns", "ext", "tc", "connlimit"]
+lite = ["ext", "tc", "connlimit"]
+nano = ["tc"]
+smartdns = []
+ext = []
+tc = []
+connlimit = []
+# профиль CPU и памяти по компонентам (cgmon prof) — только для замеров
+prof = []
+
+[dependencies]
+libc = "0.2"
+aes-gcm = { version = "0.10", default-features = false, features = ["aes", "alloc"] }
+sha2 = { version = "0.10", default-features = false }
+
+[profile.release]
+opt-level = "z"
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+strip = true
+debug = false

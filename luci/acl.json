@@ -1,0 +1,15 @@
+{
+	"luci-app-cgmon": {
+		"description": "cgmon: пароль страницы мониторинга и центр сбора",
+		"read": {
+			"file": {
+				"__CGMON_BIN__ luci-get": [ "exec" ]
+			}
+		},
+		"write": {
+			"file": {
+				"__CGMON_BIN__ luci-set *": [ "exec" ]
+			}
+		}
+	}
+}

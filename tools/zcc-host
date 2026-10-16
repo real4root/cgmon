@@ -1,0 +1,15 @@
+#!/bin/sh
+# Линкер хоста для cargo (build-скрипты крейтов) без системного gcc: zig cc.
+# Флаги, которых zig не знает, отбрасываем; libgcc_s → встроенный unwind zig.
+ZIG="${ZIG:-$HOME/.local/zig/zig}"
+set -- "$@" _END_
+while [ "$1" != _END_ ]; do
+	case "$1" in
+		--target=*|-Wl,--eh-frame-hdr) ;;
+		-lgcc_s) set -- "$@" -lunwind ;;
+		*) set -- "$@" "$1" ;;
+	esac
+	shift
+done
+shift
+exec "$ZIG" cc -target x86_64-linux-gnu "$@"
