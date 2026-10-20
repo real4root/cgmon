@@ -1,4 +1,6 @@
 #!/bin/sh
+# бинарник: пакет OpenWrt — /usr/sbin, установка мастером — /opt/cgmon
+B=/usr/sbin/cgmon; [ -x "$B" ] || B=/opt/cgmon/cgmon
 # история графика с роутера (GET ?sec=N): до часа — точки по 2 с, дольше — по минуте.
 # Разбор и проверка (квартирантам — 403) — в cgmon.
-exec /opt/cgmon/cgmon cgi-hist
+exec "$B" cgi-hist

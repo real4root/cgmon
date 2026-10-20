@@ -1,4 +1,6 @@
 #!/bin/sh
+# бинарник: пакет OpenWrt — /usr/sbin, установка мастером — /opt/cgmon
+B=/usr/sbin/cgmon; [ -x "$B" ] || B=/opt/cgmon/cgmon
 touch /tmp/cgmon/web_hb 2>/dev/null
 echo "Content-type: application/json"
 echo "Access-Control-Allow-Origin: *"
@@ -52,7 +54,7 @@ MACS=$( { ip -4 neigh show 2>/dev/null; ip -6 neigh show 2>/dev/null; } | awk '
 
 # выделенные подсети: чужие имена/MAC вырезает cgmon
 FILTER=cat
-[ -s /tmp/cgmon/isolated.json ] && FILTER="/opt/cgmon/cgmon cgi-filter"
+[ -s /tmp/cgmon/isolated.json ] && FILTER="$B cgi-filter"
 
 $FILTER << JSON
 {

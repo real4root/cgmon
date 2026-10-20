@@ -1,6 +1,8 @@
 #!/bin/sh
+# бинарник: пакет OpenWrt — /usr/sbin, установка мастером — /opt/cgmon
+B=/usr/sbin/cgmon; [ -x "$B" ] || B=/opt/cgmon/cgmon
 # выделенные подсети (квартиранты) — ответ урезает cgmon по REMOTE_ADDR
-[ -s /tmp/cgmon/isolated.json ] && exec /opt/cgmon/cgmon cgi-status /var/run/cgmon.status.json
+[ -s /tmp/cgmon/isolated.json ] && exec "$B" cgi-status /var/run/cgmon.status.json
 touch /tmp/cgmon/web_hb 2>/dev/null
 echo "Content-type: application/json"
 echo "Access-Control-Allow-Origin: *"

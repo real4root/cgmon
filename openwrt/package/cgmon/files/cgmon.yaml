@@ -1,0 +1,6 @@
+# cgmon configuration. Everything not listed here uses the built-in defaults:
+# observe only — nothing is blocked, shaped or sent anywhere.
+#
+# Set the web page password in LuCI (Services -> cgmon) or here (web.password).
+# Every option with an explanation: config.reference.yaml in the source tree,
+# or run `cgmon --advanced-install` for an interactive wizard.

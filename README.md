@@ -166,7 +166,7 @@ nano ship UPX-packed to save flash.
   busybox, swconfig, uclient-fetch). The only optional extra is SQM with cake
   (≈240 KB) — ISP-supplied routers often pair a strong CPU with tiny flash.
 
-`cgmon --version` shows the build ("2.4.21 lite"); the page shows it next to the
+`cgmon --version` shows the build ("2.4.22 lite"); the page shows it next to the
 version.
 
 ## Resources
@@ -300,6 +300,23 @@ Dependencies: `libc`, `aes-gcm`, `sha2`. No tokio, serde or regex: a single thre
 with epoll, hand-written JSON, nftables counters over netlink. A per-component CPU
 and memory profile is available with `cargo build --features prof` and
 `cgmon prof`.
+
+## Building an OpenWrt package
+
+The OpenWrt package (`cgmon`, `cgmon-lite`, `cgmon-nano` variants) lives in
+[openwrt/package/cgmon](openwrt/package/cgmon) and follows the layout of the
+`packages` feed (it uses `lang/rust/rust-package.mk`). In an OpenWrt buildroot or
+SDK with the `packages` feed:
+
+```sh
+cp -r openwrt/package/cgmon feeds/packages/net/cgmon
+./scripts/feeds update -i packages && ./scripts/feeds install cgmon
+make menuconfig                  # Network → Network monitoring → cgmon / cgmon-lite / cgmon-nano
+make package/cgmon/compile V=s
+```
+
+The package installs `/usr/sbin/cgmon`, the procd service and a minimal
+`/etc/cgmon/cgmon.yaml` (a conffile, kept on upgrade).
 
 ## License
 

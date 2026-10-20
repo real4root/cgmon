@@ -150,7 +150,7 @@ ZeroTier только запускается (в сеть вступаете в�
   можно доставить, — SQM на cake (≈240 КБ): на роутерах от провайдеров часто
   сильный процессор и мало flash.
 
-`cgmon --version` показывает сборку («2.4.21 lite»), на странице она рядом с версией.
+`cgmon --version` показывает сборку («2.4.22 lite»), на странице она рядом с версией.
 
 ## Ресурсы
 
@@ -278,6 +278,23 @@ cargo +nightly build --release -Z build-std=std,panic_abort --target mips-unknow
 Зависимости: `libc`, `aes-gcm`, `sha2`. Без tokio, serde и regex: один поток с
 epoll, JSON пишется вручную, счётчики nftables — через netlink. Профиль CPU и
 памяти по компонентам — `cargo build --features prof` и `cgmon prof`.
+
+## Сборка пакета OpenWrt
+
+Пакет OpenWrt (варианты `cgmon`, `cgmon-lite`, `cgmon-nano`) лежит в
+[openwrt/package/cgmon](openwrt/package/cgmon) и устроен как в фиде `packages`
+(использует `lang/rust/rust-package.mk`). В buildroot или SDK OpenWrt с фидом
+`packages`:
+
+```sh
+cp -r openwrt/package/cgmon feeds/packages/net/cgmon
+./scripts/feeds update -i packages && ./scripts/feeds install cgmon
+make menuconfig                  # Network → Network monitoring → cgmon / cgmon-lite / cgmon-nano
+make package/cgmon/compile V=s
+```
+
+Пакет ставит `/usr/sbin/cgmon`, службу procd и минимальный `/etc/cgmon/cgmon.yaml`
+(conffile — при обновлении сохраняется).
 
 ## Лицензия
 

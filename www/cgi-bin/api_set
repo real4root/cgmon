@@ -1,3 +1,5 @@
 #!/bin/sh
+# бинарник: пакет OpenWrt — /usr/sbin, установка мастером — /opt/cgmon
+B=/usr/sbin/cgmon; [ -x "$B" ] || B=/opt/cgmon/cgmon
 # Настройки cgmon со страницы: разбор и проверку делает сам cgmon (без shell).
-exec /opt/cgmon/cgmon cgi-set
+exec "$B" cgi-set
