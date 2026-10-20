@@ -11,7 +11,7 @@ PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/real4root/cgmon/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=@PKG_HASH@
+PKG_HASH:=d04672e514ef5a85eab130f598fcdab81e00cdac19d71f8dfba96816239c7d2f
 
 PKG_MAINTAINER:=real4root <real4root@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
