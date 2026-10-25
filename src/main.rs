@@ -18,6 +18,7 @@ mod daemon;
 mod devid;
 mod deps;
 mod pkgsetup;
+mod unblock;
 mod dgroute;
 mod dgsys;
 mod dgtarget;
@@ -273,6 +274,33 @@ fn main() {
             0
         }
         "trace" => trace_cli(&rest[1..]),
+        "blockcheck" => {
+            // ручная проверка: заблокирован ли сайт по имени и каким путём открывается
+            let dom = arg1.as_deref().filter(|d| unblock::domain_ok(d));
+            let Some(dom) = dom else {
+                eprintln!("укажите домен: cgmon blockcheck ozodlik.org");
+                std::process::exit(2);
+            };
+            let v = unblock::check(dom, unblock::VPN_MARK_U); // проба через per-site VPN (таблица 53)
+            let pr = |p: unblock::Probe| match p {
+                unblock::Probe::Ok => "открывается",
+                unblock::Probe::SniReset => "TCP есть, TLS рвётся (блок по имени)",
+                unblock::Probe::NoTcp => "нет TCP",
+                unblock::Probe::Skip => "—",
+            };
+            println!("{dom}: адресов IPv4 {}", v.v4.len());
+            println!("  напрямую IPv4: {}", pr(v.direct4));
+            println!("  напрямую IPv6: {}", pr(v.direct6));
+            println!("  через VPN:     {}", pr(v.vpn4));
+            match v.scheme() {
+                "" if v.blocked_v4() => println!("ИТОГ: заблокирован, рабочего пути не нашлось"),
+                "" => println!("ИТОГ: не заблокирован"),
+                "ipv6" => println!("ИТОГ: заблокирован по IPv4, открывается по IPv6 — обход не нужен"),
+                "vpn" => println!("ИТОГ: заблокирован по имени — открывается через VPN (dns_guard.unblock: active уведёт туда)"),
+                _ => {}
+            }
+            0
+        }
         "incidents-dump" => {
             // журнал для статуса (сверка с Go)
             let j = incidents::Journal::new(arg1.as_deref().unwrap_or(""));

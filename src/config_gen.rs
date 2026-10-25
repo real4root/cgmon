@@ -1621,6 +1621,10 @@ pub struct DNSGuardConfig {
     pub check_domains: Vec<String>,
     /// через что их пускать: "" — первый рабочий путь обхода, direct — напрямую, proto — только IPv6 (без A), устройство
     pub check_via: String,
+    /// шлюз «весь трафик»: id пути (туннель), через который идёт весь LAN-интернет (overlay-пометка); "" — выкл
+    pub overlay: String,
+    /// overlay: через сколько секунд плохих проб (или падения туннеля) перевести трафик на следующий шлюз (физику)
+    pub overlay_fail_sec: i64,
     /// ретрансляторы «имя@адрес» (узел ZeroTier/LAN): путь обхода @имя через этот узел
     pub relays: Vec<String>,
     /// ограничение скорости пути через ретранслятор в каждую сторону, Мбит/с (0 — нет)
@@ -1631,6 +1635,8 @@ pub struct DNSGuardConfig {
     pub reject_all_v6_score: i64,
     /// ...дольше, с
     pub reject_all_v6_sec: i64,
+    /// обход блокировок по имени (TLS-reset): off | observe | active — cgmon сам ловит заблокированные провайдером сайты и уводит в VPN (метка 0x100)
+    pub unblock: String,
 }
 
 impl DNSGuardConfig {
@@ -1663,11 +1669,14 @@ impl DNSGuardConfig {
                 "metered_day_mb" => self.metered_day_mb = dec_int(x, &q)?,
                 "check_domains" => self.check_domains = dec_str_list(x, &q)?,
                 "check_via" => self.check_via = dec_str(x, &q)?,
+                "overlay" => self.overlay = dec_str(x, &q)?,
+                "overlay_fail_sec" => self.overlay_fail_sec = dec_int(x, &q)?,
                 "relays" => self.relays = dec_str_list(x, &q)?,
                 "relay_mbit" => self.relay_mbit = dec_int(x, &q)?,
                 "reject_v6" => self.reject_v6 = dec_bool(x, &q)?,
                 "reject_all_v6_score" => self.reject_all_v6_score = dec_int(x, &q)?,
                 "reject_all_v6_sec" => self.reject_all_v6_sec = dec_int(x, &q)?,
+                "unblock" => self.unblock = dec_str(x, &q)?,
                 _ => {}
             }
         }
@@ -1695,11 +1704,14 @@ impl DNSGuardConfig {
         f(&join(p, "metered_day_mb"), Field::Int(&self.metered_day_mb));
         f(&join(p, "check_domains"), Field::StrList(&self.check_domains));
         f(&join(p, "check_via"), Field::Str(&self.check_via));
+        f(&join(p, "overlay"), Field::Str(&self.overlay));
+        f(&join(p, "overlay_fail_sec"), Field::Int(&self.overlay_fail_sec));
         f(&join(p, "relays"), Field::StrList(&self.relays));
         f(&join(p, "relay_mbit"), Field::Int(&self.relay_mbit));
         f(&join(p, "reject_v6"), Field::Bool(&self.reject_v6));
         f(&join(p, "reject_all_v6_score"), Field::Int(&self.reject_all_v6_score));
         f(&join(p, "reject_all_v6_sec"), Field::Int(&self.reject_all_v6_sec));
+        f(&join(p, "unblock"), Field::Str(&self.unblock));
     }
 
     /// Поле на запись по пути относительно этой структуры.
@@ -1725,11 +1737,14 @@ impl DNSGuardConfig {
             ("metered_day_mb", None) => Some(FieldMut::Int(&mut self.metered_day_mb)),
             ("check_domains", None) => Some(FieldMut::StrList(&mut self.check_domains)),
             ("check_via", None) => Some(FieldMut::Str(&mut self.check_via)),
+            ("overlay", None) => Some(FieldMut::Str(&mut self.overlay)),
+            ("overlay_fail_sec", None) => Some(FieldMut::Int(&mut self.overlay_fail_sec)),
             ("relays", None) => Some(FieldMut::StrList(&mut self.relays)),
             ("relay_mbit", None) => Some(FieldMut::Int(&mut self.relay_mbit)),
             ("reject_v6", None) => Some(FieldMut::Bool(&mut self.reject_v6)),
             ("reject_all_v6_score", None) => Some(FieldMut::Int(&mut self.reject_all_v6_score)),
             ("reject_all_v6_sec", None) => Some(FieldMut::Int(&mut self.reject_all_v6_sec)),
+            ("unblock", None) => Some(FieldMut::Str(&mut self.unblock)),
             _ => None,
         }
     }

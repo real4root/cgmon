@@ -55,6 +55,45 @@ pub const SCAN_NETS: [&str; 25] = [
     "10.1.1.0/24", "10.10.10.0/24", "10.10.100.0/24", "172.16.0.0/24", "172.16.1.0/24",
 ];
 
+/// Порты регистраторов и камер, которые «Открыть доступ» пробрасывает на адреса
+/// роутера в туннелях (ZeroTier, tailscale): (порт устройства, что это).
+/// Нужно, когда сеть устройства у смотрящего своя (дома тоже 192.168.1.x):
+/// напрямую адрес не достать, а через порт роутера — да. Со стороны WAN не видно.
+// веб/управление и порты камер/регистраторов; ≤10 (шаг pub_base — октет×10)
+pub const PUB_PORTS: &[(u16, &str)] = &[
+    (80, "http"), (8080, "http"), (443, "https"), (88, "http"),
+    (554, "rtsp"), (8000, "sdk"), (37777, "dahua"), (34567, "xmeye"), (8899, "dvr"), (9000, "nvr"),
+];
+/// «Большие» порты приложений (RTSP/SDK камер): их нельзя удлинить префиксом — апп XMeye/клиент
+/// RTSP ждёт их на своём номере. Если порт свободен на роутере, пробрасываем ещё и напрямую.
+const DIRECT_PORTS: &[u16] = &[554, 8000, 8080, 8899, 9000, 34567, 37777];
+
+/// Порты, которые слушает сам роутер (чтобы не занять их прямым пробросом).
+pub fn router_listen_ports() -> std::collections::BTreeSet<u16> {
+    let mut s = std::collections::BTreeSet::new();
+    for f in ["/proc/net/tcp", "/proc/net/tcp6"] {
+        let Ok(t) = std::fs::read_to_string(f) else { continue };
+        for ln in t.lines().skip(1) {
+            let c: Vec<&str> = ln.split_whitespace().collect();
+            if c.len() > 3 && c[3] == "0A" {
+                // LISTEN; локальный адрес c[1] = «IPhex:PORThex»
+                if let Some(hp) = c.get(1).and_then(|a| a.rsplit(':').next()) {
+                    if let Ok(p) = u16::from_str_radix(hp, 16) {
+                        s.insert(p);
+                    }
+                }
+            }
+        }
+    }
+    s
+}
+
+/// Первый порт роутера для устройства: 20000 + последний октет × 10 (+ номер порта в PUB_PORTS).
+pub fn pub_base(ip: &str) -> u16 {
+    let o: u16 = ip.rsplit('.').next().and_then(|x| x.parse().ok()).unwrap_or(0);
+    20000 + o * 10
+}
+
 #[derive(Clone, Debug, Default)]
 pub struct Access {
     pub ip: String,
@@ -179,14 +218,29 @@ pub fn route_dev(routes: &str, ip: &str) -> String {
 }
 
 /// Таблица inet cgmon_l2 под открытые доступы (пусто — удалить).
-pub fn nft_script(acc: &[Access]) -> String {
+pub fn nft_script(acc: &[Access], router_ports: &std::collections::BTreeSet<u16>) -> String {
     let mut b = String::from("table inet cgmon_l2\ndelete table inet cgmon_l2\n");
     if acc.is_empty() {
         return b;
     }
     let mut post: Vec<String> = Vec::new();
     let mut out: Vec<String> = Vec::new();
+    let mut pre: Vec<String> = Vec::new();
+    let mut claimed: std::collections::BTreeSet<u16> = router_ports.clone(); // прямой порт — первому устройству
     for a in acc {
+        let base = pub_base(&a.ip);
+        for (i, (port, _)) in PUB_PORTS.iter().enumerate() {
+            for tun in ["zt*", "tailscale*"] {
+                pre.push(format!("\t\tiifname \"{tun}\" fib daddr type local tcp dport {} dnat ip to {}:{port}\n", base + i as u16, a.ip));
+            }
+            // «большой» порт приложения свободен на роутере — пробросить ещё и напрямую (на том же номере)
+            if DIRECT_PORTS.contains(port) && !claimed.contains(port) {
+                claimed.insert(*port);
+                for tun in ["zt*", "tailscale*"] {
+                    pre.push(format!("\t\tiifname \"{tun}\" fib daddr type local tcp dport {port} dnat ip to {}:{port}\n", a.ip));
+                }
+            }
+        }
         let p = format!("\t\toifname \"{}\" ip daddr {} masquerade\n", a.dev, a.net);
         if !post.contains(&p) {
             post.push(p);
@@ -198,7 +252,9 @@ pub fn nft_script(acc: &[Access]) -> String {
     }
     post.sort();
     out.sort();
-    b.push_str("table inet cgmon_l2 {\n\tchain post {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n");
+    b.push_str("table inet cgmon_l2 {\n\tchain pre {\n\t\ttype nat hook prerouting priority dstnat; policy accept;\n");
+    b.push_str(&pre.concat());
+    b.push_str("\t}\n\tchain post {\n\t\ttype nat hook postrouting priority srcnat; policy accept;\n");
     b.push_str(&post.concat());
     b.push_str("\t}\n\tchain out {\n\t\ttype filter hook output priority filter; policy accept;\n");
     b.push_str(&out.concat());
@@ -588,7 +644,7 @@ impl L2Watch {
             run(&["ip", "addr", "add", &a.addr, "dev", &a.dev]).map_err(|e| format!("ip addr add: {e}"))?;
         }
         self.access.insert(ip.into(), a.clone());
-        if let Err(e) = crate::acct::nft_script(&nft_script(&self.access_list())) {
+        if let Err(e) = crate::acct::nft_script(&nft_script(&self.access_list(), &router_listen_ports())) {
             self.access.remove(ip);
             if !shared {
                 let _ = run(&["ip", "addr", "del", &a.addr, "dev", &a.dev]);
@@ -602,7 +658,7 @@ impl L2Watch {
 
     pub fn close(&mut self, ip: &str) -> Result<(), String> {
         let Some(a) = self.access.remove(ip) else { return Err(format!("доступ к {ip} не открыт")) };
-        if let Err(e) = crate::acct::nft_script(&nft_script(&self.access_list())) {
+        if let Err(e) = crate::acct::nft_script(&nft_script(&self.access_list(), &router_listen_ports())) {
             crate::log_err!("l2watch: nft on close: {}", e);
         }
         if !self.access.values().any(|x| x.addr == a.addr && x.dev == a.dev) {
@@ -632,7 +688,7 @@ impl L2Watch {
                 }
             }
         }
-        let _ = crate::acct::nft_script(&nft_script(&[]));
+        let _ = crate::acct::nft_script(&nft_script(&[], &Default::default()));
         if !crate::util::readonly() {
             let _ = std::fs::remove_file(ACCESS_FILE);
         }
@@ -734,7 +790,7 @@ impl L2Watch {
         if !acc.is_empty() {
             j.key("access").arr();
             for a in acc {
-                j.obj().key("ip").str(&a.ip).key("dev").str(&a.dev).key("addr").str(&a.addr).key("net").str(&a.net).key("until").int(a.until).end_obj();
+                j.obj().key("ip").str(&a.ip).key("dev").str(&a.dev).key("addr").str(&a.addr).key("net").str(&a.net).key("until").int(a.until).key("pub_base").int(pub_base(&a.ip) as i64).end_obj();
             }
             j.end_arr();
         }
@@ -750,7 +806,7 @@ impl L2Watch {
 
     pub fn access_json(a: &Access) -> String {
         let mut j = J::new();
-        j.obj().key("ip").str(&a.ip).key("dev").str(&a.dev).key("addr").str(&a.addr).key("net").str(&a.net).key("until").int(a.until).end_obj();
+        j.obj().key("ip").str(&a.ip).key("dev").str(&a.dev).key("addr").str(&a.addr).key("net").str(&a.net).key("until").int(a.until).key("pub_base").int(pub_base(&a.ip) as i64).end_obj();
         j.b
     }
 }
@@ -780,7 +836,13 @@ mod tests {
         assert!(route_busy("default via 10.0.0.1 dev eth0\n192.168.0.0/16 dev tailscale0 table 52\n", &n).contains("tailscale0"));
         assert_eq!(route_dev("throw 192.168.1.0/24 table 52\n", "192.168.1.5"), "");
         assert_eq!(arps([2, 0, 0, 0, 0, 1], Ipv4Addr::UNSPECIFIED, &n).len(), 254);
-        assert!(nft_script(&[Access { ip: "192.168.1.64".into(), dev: "lan1".into(), addr: "192.168.1.250/24".into(), net: "192.168.1.0/24".into(), until: 0 }]).contains("oifname \"lan1\" ip daddr 192.168.1.0/24 masquerade"));
+        assert!(nft_script(&[Access { ip: "192.168.1.64".into(), dev: "lan1".into(), addr: "192.168.1.250/24".into(), net: "192.168.1.0/24".into(), until: 0 }], &Default::default()).contains("oifname \"lan1\" ip daddr 192.168.1.0/24 masquerade"));
+        let s = nft_script(&[Access { ip: "192.168.1.64".into(), dev: "lan1".into(), addr: "192.168.1.250/24".into(), net: "192.168.1.0/24".into(), until: 0 }], &Default::default());
+        // веб устройства — на порту 20640 адресов роутера в туннелях, не со стороны WAN
+        // 80 — индекс 0 (порт base+0=20640); 554 — индекс 4 (base+4=20644); «большой» 554 — ещё и напрямую
+        assert!(s.contains("iifname \"zt*\" fib daddr type local tcp dport 20640 dnat ip to 192.168.1.64:80") && s.contains("iifname \"tailscale*\" fib daddr type local tcp dport 20644 dnat ip to 192.168.1.64:554"), "{s}");
+        assert!(s.contains("iifname \"zt*\" fib daddr type local tcp dport 554 dnat ip to 192.168.1.64:554"), "прямой проброс 554: {s}");
+        assert!(!s.contains("iifname \"pppoe") && !s.contains("iifname \"wan"));
     }
 
     #[test]

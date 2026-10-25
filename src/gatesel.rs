@@ -202,22 +202,38 @@ pub fn detect(cfg: &Config) -> Vec<GateIfaceConfig> {
     out
 }
 
-/// Шлюзы из конструктора путей: основной (приоритет 1) и отмеченные устройства;
-/// туннели и ретрансляторы не берутся.
+/// Шлюзы из конструктора путей: `backups` задаёт порядок целиком — первый = основной
+/// (приоритет 1), дальше резервы. Туннели и ретрансляторы не берутся. Пустой список —
+/// авто (основной с наименьшим приоритетом). Физический авто-основной всегда присутствует
+/// как фолбэк связности, даже если его не перетащили в список.
 pub fn apply_backups(list: Vec<GateIfaceConfig>, backups: &[String], labels: &HashMap<String, String>) -> Vec<GateIfaceConfig> {
-    let Some(mut main) = list.iter().min_by_key(|c| c.priority).cloned() else { return list };
-    main.priority = 1;
-    let mut out = vec![main.clone()];
-    for dev in backups {
-        if *dev == main.device || crate::netx::is_tunnel_dev(dev) || dev.starts_with('@') || !crate::livecfg::path_id_ok(dev) {
+    let Some(auto_main) = list.iter().min_by_key(|c| c.priority).cloned() else { return list };
+    let base = auto_main.metric.max(10);
+    let want: Vec<&String> = backups.iter().filter(|d| !crate::netx::is_tunnel_dev(d) && !d.starts_with('@') && crate::livecfg::path_id_ok(d)).collect();
+    if want.is_empty() {
+        let mut m = auto_main;
+        m.priority = 1;
+        return vec![m];
+    }
+    let mut out: Vec<GateIfaceConfig> = Vec::new();
+    for dev in want {
+        if out.iter().any(|g| &g.device == dev) {
             continue;
         }
-        let mut ic = list.iter().find(|c| c.device == *dev).cloned().unwrap_or_else(|| GateIfaceConfig { name: labels.get(dev).cloned().unwrap_or_default(), device: dev.clone(), priority: 0, metric: main.metric + 5 * out.len() as i64 });
+        let mut ic = list.iter().find(|c| &c.device == dev).cloned().unwrap_or_else(|| GateIfaceConfig { name: labels.get(dev).cloned().unwrap_or_default(), device: dev.clone(), priority: 0, metric: 0 });
         if ic.name.is_empty() {
             ic.name = dev.clone();
         }
         ic.priority = out.len() as i64 + 1;
+        ic.metric = if out.is_empty() { base } else { base + 5 * out.len() as i64 };
         out.push(ic);
+    }
+    // авто-основной (физический uplink) обязан присутствовать — иначе можно остаться без связи
+    if !out.iter().any(|g| g.device == auto_main.device) {
+        let mut m = auto_main;
+        m.priority = out.len() as i64 + 1;
+        m.metric = base + 5 * out.len() as i64;
+        out.push(m);
     }
     out
 }
@@ -800,8 +816,14 @@ mod tests {
         let list = vec![GateIfaceConfig { name: "wan".into(), device: "pppoe-wan".into(), priority: 1, metric: 10 }];
         let mut labels = HashMap::new();
         labels.insert("eth3".to_string(), "mobile".to_string());
-        let out = apply_backups(list, &["eth3".into(), "tailscale0".into(), "@node".into()], &labels);
+        // порядок задаёт backups: eth3 первым → он основной (приоритет 1); туннели/реле отброшены;
+        // физический авто-основной pppoe-wan добавлен фолбэком в конец
+        let out = apply_backups(list.clone(), &["eth3".into(), "tailscale0".into(), "@node".into()], &labels);
         assert_eq!(out.len(), 2);
-        assert!(out[1].name == "mobile" && out[1].device == "eth3" && out[1].priority == 2 && out[1].metric == 15, "{:?}", out[1]);
+        assert!(out[0].name == "mobile" && out[0].device == "eth3" && out[0].priority == 1 && out[0].metric == 10, "{:?}", out[0]);
+        assert!(out[1].device == "pppoe-wan" && out[1].priority == 2 && out[1].metric == 15, "{:?}", out[1]);
+        // пустой список — авто-основной
+        let auto = apply_backups(list, &[], &labels);
+        assert!(auto.len() == 1 && auto[0].device == "pppoe-wan" && auto[0].priority == 1, "{:?}", auto);
     }
 }

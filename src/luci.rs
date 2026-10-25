@@ -53,7 +53,7 @@ pub fn install() {
             }
         }
         let _ = std::fs::remove_dir_all("/tmp/luci-modulecache");
-        crate::log_info!("luci: «Службы → cgmon» установлена");
+        crate::log_info!("luci: \"Services \u{2192} cgmon\" installed");
     }
 }
 
@@ -113,20 +113,20 @@ fn plain(s: &str, min: usize, max: usize) -> bool {
 
 /// Проверка одного значения из формы → текст для yamledit::set.
 fn yaml_value(key: &str, v: &Value) -> Result<String, String> {
-    let s = |v: &Value| v.as_str().map(String::from).ok_or_else(|| format!("{key}: нужна строка"));
+    let s = |v: &Value| v.as_str().map(String::from).ok_or_else(|| format!("{key}: expected a string"));
     match key {
         "report.enabled" | "hub.enabled" => match v {
             Value::Bool(b) => Ok(b.to_string()),
-            _ => Err(format!("{key}: нужно да/нет")),
+            _ => Err(format!("{key}: expected yes/no")),
         },
         "report.urls" => {
-            let Value::List(l) = v else { return Err(format!("{key}: нужен список адресов")) };
+            let Value::List(l) = v else { return Err(format!("{key}: expected a list of addresses")) };
             let mut out = Vec::new();
             for x in l.iter().take(8) {
                 let u = x.as_str().unwrap_or("").trim().to_string();
                 if !u.is_empty() {
                     if !plain(&u, 8, 200) || !u.starts_with("http://") {
-                        return Err(format!("адрес центра {u:?}: нужно http://адрес:7788/api/v1/report"));
+                        return Err(format!("hub address {u:?}: expected http://address:7788/api/v1/report"));
                     }
                     out.push(qs(&u));
                 }
@@ -136,58 +136,58 @@ fn yaml_value(key: &str, v: &Value) -> Result<String, String> {
         "web.password" => {
             let p = s(v)?;
             if !plain(&p, 6, 64) {
-                return Err("пароль: от 6 до 64 символов, без кавычек и обратной косой черты".into());
+                return Err("password: 6 to 64 characters, no quotes or backslashes".into());
             }
             Ok(qs(&p))
         }
         "report.token" | "hub.token" => {
             let t = s(v)?;
             if !plain(&t, 16, 200) {
-                return Err(format!("{key}: токен — не короче 16 символов, без кавычек"));
+                return Err(format!("{key}: token must be at least 16 characters, no quotes"));
             }
             Ok(qs(&t))
         }
         "report.name" => {
             let n = s(v)?;
             if !n.is_empty() && !n.chars().all(|c| c.is_ascii_alphanumeric() || "-_.".contains(c)) || n.len() > 64 {
-                return Err("имя роутера: латиница, цифры, - _ . (до 64)".into());
+                return Err("router name: letters, digits, - _ . (up to 64)".into());
             }
             Ok(qs(&n))
         }
         "hub.telegram_bot_token" => {
             let t = s(v)?;
             if !t.is_empty() && (!plain(&t, 20, 100) || !t.contains(':')) {
-                return Err("токен бота Telegram: вида 123456:ABC… (от @BotFather)".into());
+                return Err("Telegram bot token: like 123456:ABC… (from @BotFather)".into());
             }
             Ok(qs(&t))
         }
         "hub.telegram_chat_id" => {
             let t = s(v)?;
             if !t.is_empty() && !t.chars().all(|c| c.is_ascii_digit() || c == '-') {
-                return Err("чат Telegram: число (id чата или пользователя)".into());
+                return Err("Telegram chat: a number (chat or user id)".into());
             }
             Ok(qs(&t))
         }
-        _ => Err(format!("{key}: меняется не здесь")),
+        _ => Err(format!("{key}: not changed here")),
     }
 }
 
 /// cgmon luci-set '{"web.password":"…", …}': проверить, вписать, перезапустить.
 pub fn set(path: &str, arg: &str) -> i32 {
-    let Ok(Value::Map(m)) = parse_json(arg) else { return fail("нужен JSON-объект") };
+    let Ok(Value::Map(m)) = parse_json(arg) else { return fail("expected a JSON object") };
     if m.is_empty() {
-        return fail("нечего менять");
+        return fail("nothing to change");
     }
-    let Ok(old) = std::fs::read_to_string(path) else { return fail(&format!("{path}: не читается")) };
+    let Ok(old) = std::fs::read_to_string(path) else { return fail(&format!("{path}: cannot read")) };
     let mut text = old.clone();
     let cur = config::load(path).unwrap_or_else(|_| config::defaults());
     for (k, v) in &m {
         if !KEYS.contains(&k.as_str()) {
-            return fail(&format!("{k}: меняется не здесь"));
+            return fail(&format!("{k}: not changed here"));
         }
         // список ботов уже в cgmon.yaml — одиночный бот не добавлять поверх
         if k.starts_with("hub.telegram_") && cur.hub.telegram.iter().any(|t| !t.bot_token.is_empty()) {
-            return fail("Telegram уже настроен списком hub.telegram в cgmon.yaml — меняйте там");
+            return fail("Telegram is already configured as the hub.telegram list in cgmon.yaml — change it there");
         }
         match yaml_value(k, v) {
             Ok(y) => text = crate::yamledit::set(&text, k, &y),
@@ -197,7 +197,7 @@ pub fn set(path: &str, arg: &str) -> i32 {
     // проверить собранное целиком, до записи
     let probe = format!("{path}.luci-check");
     if crate::util::write_atomic(&probe, text.as_bytes(), 0o600).is_err() {
-        return fail(&format!("{path}: запись не удалась"));
+        return fail(&format!("{path}: write failed"));
     }
     let checked = config::load(&probe).and_then(|c| crate::livecfg::validate(&c).map(|_| c));
     let _ = std::fs::remove_file(&probe);

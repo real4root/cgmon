@@ -1,6 +1,6 @@
 {
 	"luci-app-cgmon": {
-		"description": "cgmon: пароль страницы мониторинга и центр сбора",
+		"description": "cgmon: monitoring-page password and collection hub",
 		"read": {
 			"file": {
 				"__CGMON_BIN__ luci-get": [ "exec" ]

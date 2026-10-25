@@ -111,6 +111,8 @@ pub struct Daemon {
     tunnel_nets: Vec<IpNet>,
     probe_eps: Vec<(IpAddr, u16)>,
     exclude_nets: Vec<IpNet>,
+    /// «не-интернет» сети для overlay-шлюза (routed + exclude), чтобы напитать dgroute при создании
+    ov_excl: Vec<IpNet>,
     pub protected: Vec<IpNet>,
     last_topo: u64,
     netifd: Netifd,
@@ -167,6 +169,8 @@ pub struct Daemon {
     pub gmaps: crate::gatemap::GateMaps,
     /// физический уровень портов (линк, скорость, ошибки кадров)
     pub phy: crate::phywatch::PhyWatch,
+    /// обход блокировок по имени: заблокированные сайты в VPN
+    pub unblock: crate::unblock::Unblock,
     pub plugins: crate::plugins::Plugins,
 }
 
@@ -283,6 +287,7 @@ impl Daemon {
             journal: Journal::new(&cfg.wan_monitor.incidents_file),
             protected: protected_nets(&cfg),
             exclude_nets: crate::netx::parse_nets(&cfg.exclude_networks).unwrap_or_default(),
+            ov_excl: Vec::new(),
             cfg,
             rt,
             started: now,
@@ -349,6 +354,7 @@ impl Daemon {
             l2_until: 0,
             gmaps: Default::default(),
             phy: Default::default(),
+            unblock: Default::default(),
             plugins: Default::default(),
         };
         d.prober.mode = d.rt.cur.wan_check.clone();
@@ -411,6 +417,7 @@ impl Daemon {
         let (extra_nets, extra_ips) = topo::extra_zone_info(&self.cfg, &mut self.netifd, now);
         // не-WAN сети: tunnel_networks + всё, что маршрутизируется мимо WAN
         let mut tunnel = crate::netx::parse_nets(&self.cfg.tunnel_networks).unwrap_or_default();
+        self.phy.set_wan(&topo.wan_devs); // порты LAN: по ним только CRC
         let (routed, routed_tun) = topo::routed_local_nets(&topo.wan_devs);
         let mut acct_nets = tunnel.clone();
         acct_nets.extend(routed.iter().copied());
@@ -450,6 +457,12 @@ impl Daemon {
         }
         let excl = self.exclude_nets.clone();
         self.acct.set_subnets(&self.lan_nets, &acct_nets, &excl);
+        // overlay-шлюз «весь трафик»: dgroute нужны LAN (источник) и «не-интернет» сети (исключение)
+        self.ov_excl = acct_nets.clone();
+        self.ov_excl.extend(excl.iter().copied());
+        if let Some(dg) = self.dg.as_mut() {
+            dg.set_subnets(&self.lan_nets, &self.ov_excl);
+        }
         crate::log_debug!("topology refreshed: tracked={} ignored_ips={} wan_ips={} local_ips={} lan_nets={}", topo.tracked.len(), topo.ignored_ips.len(), self.router_wan_ips.len(), self.router_local_ips.len(), self.lan_nets.len());
         self.topo = topo;
     }
@@ -787,6 +800,11 @@ impl Daemon {
                 return; // выключенная ничего не стоит
             }
             self.dg = Some(DnsGuard::new(self.dg_cfg(&self.cfg.dns_guard), std::sync::Arc::new(crate::dgsys::RealSys)));
+        }
+        // overlay-шлюз: кормим dgroute LAN/исключениями каждый tick (дёшево — set_subnets выходит, если не менялось);
+        // dg мог создаться до первого обновления топологии, а оно раз в 5 мин
+        if let Some(dg) = self.dg.as_mut() {
+            dg.set_subnets(&self.lan_nets, &self.ov_excl);
         }
         let th = &self.cfg.thresholds;
         let h = dg::Health {
@@ -1172,6 +1190,75 @@ impl Daemon {
             for m in self.phy.tick(wall.0 * 1000 + (wall.1 / 1_000_000) as i64, up) {
                 crate::log_info!("phy: {}", m);
                 self.journal.record("phy", &m, wall);
+            }
+        }
+        {
+            let _p = crate::prof::scope("unblock");
+            self.unblock.mode = self.cfg.dns_guard.unblock.clone();
+            // метка выбранного гейта: off/observe → 0; vpn/active → per-site VPN (0x100);
+            // иначе это id reroute-пути → его метка (idx<<12), если путь поднят и проверен
+            let gate_str = self.cfg.dns_guard.unblock.clone();
+            let gate_mark: u32 = if gate_str == "off" || gate_str == "observe" {
+                0
+            } else if gate_str == "active" || gate_str == "vpn" {
+                crate::unblock::VPN_MARK_U
+            } else {
+                self.dg.as_ref().and_then(|g| g.path_mark(&gate_str)).unwrap_or(0)
+            };
+            let since = wall.0 as u64 * 1000 - 1_800_000; // домены за последние 30 мин
+            let cands = if self.unblock.on() { self.dnsw.recent_names(since.max(0), 30) } else { Vec::new() };
+            // активно используемые адреса (клиент перезагружает/ретраит) → внеочередная
+            // проверка: «тихий» дроп TLS не даёт ни RST, ни неотвеченных SYN, и в плановой
+            // алфавитной очереди такой сайт ждал бы минуты. confirm отсечёт рабочие CDN.
+            let active: Vec<String> = if self.unblock.on() {
+                let mut by_name: std::collections::HashMap<String, u32> = std::collections::HashMap::new();
+                for (ip, c) in self.syn.succ_counts(evloop::now_ms(), 120_000) {
+                    if !crate::witness::public(&ip) {
+                        continue;
+                    }
+                    if let Some(name) = self.dnsw.name_of(&ip) {
+                        if !name.is_empty() {
+                            *by_name.entry(name.to_string()).or_insert(0) += c;
+                        }
+                    }
+                }
+                // ≥5 успешных рукопожатий к имени за 2 мин = клиент упорно долбится;
+                // верх по активности, не больше 12 за тик (confirm отсеет рабочие)
+                let mut v: Vec<(String, u32)> = by_name.into_iter().filter(|(_, c)| *c >= 5).collect();
+                v.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+                v.truncate(12);
+                v.into_iter().map(|(n, _)| n).collect()
+            } else {
+                Vec::new()
+            };
+            // адреса со сбросом в реальном трафике → уводим сам адрес (имя из DNS может быть
+            // неизвестно при браузерном DoH; DPI рвёт по SNI, а не по IP). Имя — для показа.
+            let mut resets: Vec<(IpAddr, String)> = Vec::new();
+            let mut known: Vec<(String, IpAddr)> = Vec::new();
+            if self.unblock.on() {
+                for ip in self.syn.drain_resets(evloop::now_ms()) {
+                    let name = self.dnsw.name_of(&ip).unwrap_or("").to_string();
+                    resets.push((ip, name));
+                }
+                // для принудительных (сайты проверки) — реальные адреса клиента из DNSWatch
+                for d in self.unblock.routed_domains() {
+                    for ip in self.dnsw.ips_for(&d) {
+                        known.push((d.clone(), ip));
+                    }
+                }
+            }
+            // сайты проверки «мой IP» уводим в VPN, кроме check_via direct/proto (там они идут иначе)
+            let cv = &self.cfg.dns_guard.check_via;
+            let force: Vec<String> = if self.unblock.on() && cv != "direct" && cv != crate::livecfg::DGR_PROTO {
+                self.cfg.dns_guard.check_domains.clone()
+            } else {
+                Vec::new()
+            };
+            for m in self.unblock.tick(wall.0 * 1000 + (wall.1 / 1_000_000) as i64, evloop::now_ms(), gate_mark, &cands, &active, &force, &resets, &known) {
+                crate::log_info!("{}", m);
+                // только в лог/поток событий — НЕ в журнал инцидентов и не в отчёты хаба.
+                // На странице свой блок «Per-Site VPN» строится из текущего списка st.unblock
+                self.add_event(wall, "unblock", &m);
             }
         }
         {

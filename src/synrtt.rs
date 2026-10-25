@@ -10,7 +10,8 @@ use std::net::IpAddr;
 const FAIL_AFTER_MS: u64 = 3000;
 const KEEP_MS: u64 = 10 * 60 * 1000;
 const MIN_COUNT: usize = 5;
-pub const MAX_PEND: usize = 20000;
+pub const RESET_WIN_MS: u64 = 4000; // RST в пределах 4 с после SYN-ACK — похоже на сброс DPI
+const MAX_PEND: usize = 20000;
 pub const MAX_OUT: usize = 20000;
 pub const ETH_P_ALL: u16 = 0x0003;
 
@@ -124,6 +125,10 @@ pub struct SynRtt {
     skip: Vec<IpAddr>,
     skip_w: Vec<IpAddr>,
     last_sweep: u64,
+    /// соединения с полученным SYN-ACK (установились) — чтобы заметить RST сразу после
+    est: HashMap<(IpAddr, u16), u64>,
+    /// адреса, которым RST пришёл вскоре после рукопожатия (сигнатура сброса DPI по имени)
+    resets: Vec<(IpAddr, u64)>,
 }
 
 fn round1(v: f64) -> f64 {
@@ -224,11 +229,52 @@ impl SynRtt {
                 let o = Outcome { at: now, ok: true, rtt: (now - pd.t0) as f32, retrans: pd.retrans, ip: src };
                 if pd.v6 { self.out6.push(o) } else { self.out4.push(o) }
             }
+            if syn && ack {
+                if self.est.len() < MAX_PEND {
+                    self.est.insert((src, dport), now);
+                }
+            } else if rst {
+                // RST вскоре после установки соединения — вероятный сброс DPI по имени сайта
+                if let Some(t) = self.est.remove(&(src, dport)) {
+                    if now - t <= RESET_WIN_MS && self.resets.len() < 256 {
+                        self.resets.push((src, now));
+                    }
+                }
+            }
         }
+    }
+
+    /// Адреса со сбросом после рукопожатия (кандидаты на блокировку по имени), один раз.
+    pub fn drain_resets(&mut self, now: u64) -> Vec<IpAddr> {
+        self.resets.retain(|(_, t)| now - *t <= 60_000);
+        let mut v: Vec<IpAddr> = std::mem::take(&mut self.resets).into_iter().map(|(ip, _)| ip).collect();
+        v.sort();
+        v.dedup();
+        v
+    }
+
+    /// Счётчики успешных рукопожатий по адресам за окно `window_ms` (клиент активно
+    /// долбится — перезагрузки, ретраи приложения). Демон складывает их ПО ИМЕНИ сайта
+    /// (CDN размазан по многим адресам) → кандидаты на «тихую» блокировку: провайдер
+    /// пропускает TCP (SYN-ACK есть), а ClientHello молча глотает без RST — ни drain_resets
+    /// (нет RST), ни неотвеченные SYN (SYN отвечен) такое не ловят. Отсев рабочих сайтов —
+    /// на подтверждающей пробе (unblock::check).
+    pub fn succ_counts(&self, now: u64, window_ms: u64) -> Vec<(IpAddr, u32)> {
+        let mut cnt: HashMap<IpAddr, u32> = HashMap::new();
+        for o in self.out4.iter().chain(self.out6.iter()) {
+            if o.ok && now.saturating_sub(o.at) <= window_ms {
+                *cnt.entry(o.ip).or_insert(0) += 1;
+            }
+        }
+        let mut v: Vec<(IpAddr, u32)> = cnt.into_iter().collect();
+        v.sort_by(|a, b| b.1.cmp(&a.1).then(a.0.cmp(&b.0)));
+        v.truncate(256);
+        v
     }
 
     pub fn sweep(&mut self, now: u64) {
         self.last_sweep = now;
+        self.est.retain(|_, t| now - *t <= RESET_WIN_MS * 2);
         let mut failed = Vec::new();
         self.pending.retain(|(ip, _), pd| {
             if now - pd.t0 >= FAIL_AFTER_MS {
@@ -303,6 +349,25 @@ mod tests {
         p[22..24].copy_from_slice(&dport.to_be_bytes());
         p[33] = flags;
         p
+    }
+
+    #[test]
+    fn succ_counts_tracks_retries() {
+        // клиент долбится в srv (6 успешных рукопожатий), в dead — одно.
+        let mut s = SynRtt::default();
+        let (me, srv, dead) = ([192, 0, 2, 2], [198, 51, 100, 1], [198, 51, 100, 9]);
+        for i in 0..6u16 {
+            s.on_packet(1000 + i as u64, &v4syn(me, srv, 40000 + i, 443, 0x02), true);
+            s.on_packet(1040 + i as u64, &v4syn(srv, me, 443, 40000 + i, 0x12), false);
+        }
+        s.on_packet(1000, &v4syn(me, dead, 50000, 443, 0x02), true);
+        s.on_packet(1040, &v4syn(dead, me, 443, 50000, 0x12), false);
+        let c = s.succ_counts(1100, 120_000);
+        assert_eq!(c.iter().find(|(ip, _)| *ip == IpAddr::from(srv)).map(|(_, n)| *n), Some(6));
+        assert_eq!(c.iter().find(|(ip, _)| *ip == IpAddr::from(dead)).map(|(_, n)| *n), Some(1));
+        assert_eq!(c.first().map(|(ip, _)| *ip), Some(IpAddr::from(srv))); // по убыванию
+        // вне окна — ничего
+        assert!(s.succ_counts(1100 + 200_000, 120_000).is_empty());
     }
 
     #[test]

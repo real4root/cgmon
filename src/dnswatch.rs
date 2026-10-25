@@ -261,6 +261,13 @@ impl DnsWatch {
         self.ips.iter().map(|(ip, e)| (ip, &*e.name))
     }
 
+    /// Адреса, которые роутер отдавал клиентам для имени (или его поддоменов) — те же,
+    /// что реально использует клиент (увод по ним совпадёт с трафиком).
+    pub fn ips_for(&self, name: &str) -> Vec<IpAddr> {
+        let n = name.trim_end_matches('.').to_ascii_lowercase();
+        self.ips.iter().filter(|(_, e)| { let m = e.name.trim_end_matches('.').to_ascii_lowercase(); m == n || m.ends_with(&format!(".{n}")) }).map(|(ip, _)| *ip).collect()
+    }
+
     /// Самые частые имена с момента since (по числу адресов × спросивших).
     pub fn recent_names(&self, since: u64, n: usize) -> Vec<String> {
         let mut hits: HashMap<&str, usize> = HashMap::new();

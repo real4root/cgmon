@@ -4,9 +4,10 @@
 'require fs';
 'require ui';
 
-// cgmon — LuCI «Службы → cgmon»: пароль страницы мониторинга и центр сбора.
-// Данные и запись — через сам cgmon (luci-get / luci-set); остальные настройки —
-// на странице мониторинга /status.html. Ставит cgmon при запуске (src/luci.rs).
+// cgmon — LuCI "Services → cgmon": monitoring-page password and the collection hub.
+// Data and writes go through cgmon itself (luci-get / luci-set); every other
+// setting lives on the monitoring page /status.html. Installed by cgmon at
+// startup (src/luci.rs).
 
 var BIN = '__CGMON_BIN__';
 
@@ -21,7 +22,7 @@ return view.extend({
 
 	render: function(st) {
 		if (!st || st.error)
-			return E('div', { 'class': 'alert-message warning' }, _('cgmon не отвечает: ') + ((st && st.error) || ''));
+			return E('div', { 'class': 'alert-message warning' }, _('cgmon is not responding: ') + ((st && st.error) || ''));
 
 		this.st = st;
 		var r = st.report || {}, h = st.hub || {}, w = st.web || {};
@@ -31,59 +32,59 @@ return view.extend({
 			hub_enabled: h.enabled ? '1' : '0', hub_token: '', tg_bot: '', tg_chat: h.tg_chat || ''
 		} };
 		var m = new form.JSONMap(data, 'cgmon',
-			_('Монитор канала, устройств и портов. Здесь — пароль страницы мониторинга и центр сбора: их нельзя менять со страницы. Всё остальное настраивается на ней самой.'));
+			_('Link, device and port monitor. Only the monitoring-page password and the collection hub are set here — they cannot be changed from the page. Everything else is configured on the page itself.'));
 		var s = m.section(form.NamedSection, 'main', 'main');
-		s.tab('page', _('Страница мониторинга'));
-		s.tab('report', _('Отправка на центр сбора'));
-		s.tab('hub', _('Этот роутер — центр сбора'));
+		s.tab('page', _('Monitoring page'));
+		s.tab('report', _('Send to a hub'));
+		s.tab('hub', _('This router is a hub'));
 
-		var o = s.taboption('page', form.DummyValue, '_state', _('Состояние'));
+		var o = s.taboption('page', form.DummyValue, '_state', _('Status'));
 		o.rawhtml = true;
 		o.cfgvalue = function() {
-			return '<b>cgmon ' + st.version + '</b> · ' + (st.running ? _('работает') : '<span style="color:#c00">' + _('не запущен') + '</span>')
-				+ ' · <a href="/status.html" target="_blank">' + _('открыть страницу мониторинга') + ' →</a>';
+			return '<b>cgmon ' + st.version + '</b> · ' + (st.running ? _('running') : '<span style="color:#c00">' + _('not running') + '</span>')
+				+ ' · <a href="/status.html" target="_blank">' + _('open the monitoring page') + ' →</a>';
 		};
-		o = s.taboption('page', form.Value, 'password', _('Новый пароль'),
+		o = s.taboption('page', form.Value, 'password', _('New password'),
 			w.password_set
-				? _('Пароль задан. Оставьте поле пустым, чтобы не менять.')
-				: '<b style="color:#c60">' + _('Пароль не задан: страница мониторинга только показывает — менять настройки с неё нельзя.') + '</b>');
+				? _('Password is set. Leave empty to keep it.')
+				: '<b style="color:#c60">' + _('No password set: the monitoring page is view-only — settings cannot be changed from it.') + '</b>');
 		o.password = true;
 		o.rmempty = true;
-		o = s.taboption('page', form.Value, 'password2', _('Ещё раз'), _('От 6 символов. Нужен, чтобы менять настройки на странице мониторинга.'));
+		o = s.taboption('page', form.Value, 'password2', _('Repeat'), _('At least 6 characters. Needed to change settings on the monitoring page.'));
 		o.password = true;
 		o.rmempty = true;
 
-		o = s.taboption('report', form.Flag, 'report_enabled', _('Отправлять отчёты'),
-			_('Состояние канала, проблемы и инциденты уходят на центр сбора (зашифровано, токен по сети не передаётся). Центр сообщает о сбоях в Telegram.'));
-		o = s.taboption('report', form.DynamicList, 'report_urls', _('Адреса центров'),
-			_('Пример: http://10.147.17.5:7788/api/v1/report — адрес центра в ZeroTier/Tailscale или в интернете. Можно несколько.'));
+		o = s.taboption('report', form.Flag, 'report_enabled', _('Send reports'),
+			_('Link state, problems and incidents are sent to a collection hub (encrypted; the token never travels over the network). The hub reports failures to Telegram.'));
+		o = s.taboption('report', form.DynamicList, 'report_urls', _('Hub addresses'),
+			_('Example: http://10.147.17.5:7788/api/v1/report — a hub address in ZeroTier/Tailscale or on the internet. Several are allowed.'));
 		o.depends('report_enabled', '1');
 		o.placeholder = 'http://10.147.17.5:7788/api/v1/report';
-		o = s.taboption('report', form.Value, 'report_token', _('Токен'),
-			r.token_set ? _('Задан. Пусто — не менять. Должен совпадать с токеном центра.') : _('Общий секрет с центром, от 16 символов. Должен совпадать с токеном центра.'));
+		o = s.taboption('report', form.Value, 'report_token', _('Token'),
+			r.token_set ? _('Set. Empty — keep it. Must match the hub token.') : _('Shared secret with the hub, at least 16 characters. Must match the hub token.'));
 		o.password = true;
 		o.depends('report_enabled', '1');
-		o = s.taboption('report', form.Value, 'report_name', _('Имя роутера'),
-			_('Как роутер будет называться на центре. Пусто — имя системы: ') + (r.hostname || ''));
+		o = s.taboption('report', form.Value, 'report_name', _('Router name'),
+			_('How this router appears on the hub. Empty — the system hostname: ') + (r.hostname || ''));
 		o.placeholder = r.hostname || '';
 		o.depends('report_enabled', '1');
 
-		o = s.taboption('hub', form.Flag, 'hub_enabled', _('Принимать отчёты (центр сбора)'),
-			_('Этот роутер собирает отчёты других роутеров на порту ') + (h.listen || ':7788') + _(' (TCP) и показывает их на своей странице мониторинга.'));
-		o = s.taboption('hub', form.Value, 'hub_token', _('Токен центра'),
-			h.token_set ? _('Задан. Пусто — не менять.') : _('От 16 символов; такой же токен — у роутеров, которые шлют отчёты.'));
+		o = s.taboption('hub', form.Flag, 'hub_enabled', _('Accept reports (be a hub)'),
+			_('This router collects reports from other routers on port ') + (h.listen || ':7788') + _(' (TCP) and shows them on its own monitoring page.'));
+		o = s.taboption('hub', form.Value, 'hub_token', _('Hub token'),
+			h.token_set ? _('Set. Empty — keep it.') : _('At least 16 characters; the same token is used by the routers that send reports.'));
 		o.password = true;
 		o.depends('hub_enabled', '1');
 		if (h.tg_list > 0) {
 			o = s.taboption('hub', form.DummyValue, '_tg', _('Telegram'));
-			o.cfgvalue = function() { return _('настроен списком в cgmon.yaml (hub.telegram), ботов: ') + h.tg_list; };
+			o.cfgvalue = function() { return _('configured as a list in cgmon.yaml (hub.telegram), bots: ') + h.tg_list; };
 			o.depends('hub_enabled', '1');
 		} else {
-			o = s.taboption('hub', form.Value, 'tg_bot', _('Telegram: токен бота'),
-				h.tg_bot_set ? _('Задан. Пусто — не менять.') : _('От @BotFather, вида 123456789:AA…'));
+			o = s.taboption('hub', form.Value, 'tg_bot', _('Telegram: bot token'),
+				h.tg_bot_set ? _('Set. Empty — keep it.') : _('From @BotFather, like 123456789:AA…'));
 			o.password = true;
 			o.depends('hub_enabled', '1');
-			o = s.taboption('hub', form.Value, 'tg_chat', _('Telegram: чат'), _('id чата или пользователя, куда слать сбои (узнать — у @userinfobot).'));
+			o = s.taboption('hub', form.Value, 'tg_chat', _('Telegram: chat'), _('Chat or user id to send failures to (find it via @userinfobot).'));
 			o.depends('hub_enabled', '1');
 		}
 		this.map = m;
@@ -97,7 +98,7 @@ return view.extend({
 			var r = st.report || {}, h = st.hub || {};
 			if (d.password || d.password2) {
 				if (d.password !== d.password2)
-					throw new Error(_('Пароли не совпадают'));
+					throw new Error(_('Passwords do not match'));
 				p['web.password'] = d.password;
 			}
 			if (okFlag(d.report_enabled) !== !!r.enabled) p['report.enabled'] = okFlag(d.report_enabled);
@@ -110,19 +111,19 @@ return view.extend({
 			if (d.tg_bot) p['hub.telegram_bot_token'] = d.tg_bot;
 			if (d.tg_chat !== undefined && (d.tg_chat || '') !== (h.tg_chat || '')) p['hub.telegram_chat_id'] = d.tg_chat || '';
 			if (!Object.keys(p).length) {
-				ui.addNotification(null, E('p', _('Изменений нет')), 'info');
+				ui.addNotification(null, E('p', _('No changes')), 'info');
 				return;
 			}
 			return fs.exec(BIN, [ 'luci-set', JSON.stringify(p) ]).then(function(res) {
 				var out = {};
 				try { out = JSON.parse(res.stdout || '{}'); } catch (e) {}
 				if (res.code !== 0 || out.error)
-					throw new Error(out.error || res.stderr || ('код ' + res.code));
-				ui.addNotification(null, E('p', _('Сохранено, cgmon перезапущен')), 'info');
+					throw new Error(out.error || res.stderr || ('code ' + res.code));
+				ui.addNotification(null, E('p', _('Saved, cgmon restarted')), 'info');
 				window.setTimeout(function() { location.reload(); }, 2500);
 			});
 		}).catch(function(e) {
-			ui.addNotification(null, E('p', _('Не сохранено: ') + (e.message || e)), 'error');
+			ui.addNotification(null, E('p', _('Not saved: ') + (e.message || e)), 'error');
 		});
 	},
 

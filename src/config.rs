@@ -477,6 +477,7 @@ impl Config {
             dg.target_max_hours = 168;
         }
         pos_i(&mut dg.metered_day_mb, 5000);
+        pos_i(&mut dg.overlay_fail_sec, 12); // overlay: быстрый перевод на физику при падении туннеля
         if dg.reject_all_v6_score < 0 || dg.reject_all_v6_score > 100 {
             dg.reject_all_v6_score = 0;
         }

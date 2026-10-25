@@ -62,6 +62,23 @@ const MIB_ERR: &[(&str, &str)] = &[
     ("TxExcDefer", "отсрочки"), ("TxAbortCol", "сброс по коллизиям"), ("TxUnderRun", "недогрузка"),
 ];
 
+/// счётчик ошибок CRC (sysfs или MIB свитча)
+fn is_crc(k: &str) -> bool {
+    k == "rx_crc_errors" || k == "RxFcsErr"
+}
+
+/// порт LAN: список WAN известен, а устройства порта (или его VLAN на свитче) в нём нет
+pub fn port_is_lan(wan: &[String], dev: Option<&str>, vlans: &str) -> bool {
+    if wan.is_empty() {
+        return false; // не знаем — сообщаем обо всём
+    }
+    if let Some(d) = dev {
+        return !wan.iter().any(|w| w == d);
+    }
+    let vids: Vec<&str> = vlans.split(|c: char| !c.is_ascii_digit()).filter(|x| !x.is_empty()).collect();
+    !vids.iter().any(|v| wan.iter().any(|w| w.rsplit('.').next() == Some(v) && w.contains('.')))
+}
+
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Link {
     pub up: bool,
@@ -111,6 +128,9 @@ struct Port {
     boot_at: i64,
     /// обрывы линка с загрузки до первого опроса (CRC вместе с обрывами — кабель умирает)
     boot_downs: u64,
+    /// порт LAN: компьютер уснул (10 Мбит/с), телевизор выключил порт — это не авария;
+    /// в журнал, события и на центр — только ошибки CRC
+    lan: bool,
 }
 
 impl Port {
@@ -126,7 +146,8 @@ impl Port {
     /// (уровень, CRC за сутки, обрывов за сутки)
     fn crc_state(&self, now: i64) -> (&'static str, u64, u64) {
         let (c, d) = (ev_sum(&self.ev_crc, now, DAY), ev_sum(&self.ev_drop, now, DAY));
-        (crc_level(c, self.frames_day(), d), c, d)
+        // LAN: обрывы — сон компьютера, выключенный телевизор; уровень CRC не повышают
+        (crc_level(c, self.frames_day(), if self.lan { 0 } else { d }), c, d)
     }
 
     /// Уровень CRC, накопленных с загрузки роутера (неделю с первого опроса).
@@ -134,7 +155,7 @@ impl Port {
         if self.boot_crc == 0 || now - self.boot_at > BOOT_KEEP {
             return "";
         }
-        crc_level(self.boot_crc, self.boot_frames, self.boot_downs)
+        crc_level(self.boot_crc, self.boot_frames, if self.lan { 0 } else { self.boot_downs })
     }
 }
 
@@ -152,6 +173,8 @@ pub struct PhyWatch {
     link_at: i64,
     mib_at: i64,
     started: bool,
+    /// устройства WAN (topo.wan_devs): остальные порты — LAN, по ним только CRC
+    wan: Vec<String>,
 }
 
 fn sysf(dev: &str, f: &str) -> String {
@@ -276,6 +299,11 @@ fn dur(ms: i64) -> String {
 
 impl PhyWatch {
     /// Такт (лёгкий блок): события для журнала.
+    /// Устройства WAN из топологии (обновляется вместе с ней).
+    pub fn set_wan(&mut self, devs: &[String]) {
+        self.wan = devs.to_vec();
+    }
+
     pub fn tick(&mut self, now: i64, uptime_s: i64) -> Vec<String> {
         let mut msgs = Vec::new();
         if now - self.link_at < LINK_EVERY {
@@ -290,7 +318,9 @@ impl PhyWatch {
         self.boot_ms = now - uptime_s * 1000;
         // ---- порты sysfs ----
         for dev in sys_ports() {
+            let lan = port_is_lan(&self.wan, Some(&dev), "");
             let p = self.ports.entry(dev.clone()).or_insert_with(|| Port::new(dev.clone()));
+            p.lan = lan;
             let carrier = sysf(&dev, "carrier");
             if carrier.is_empty() {
                 continue; // интерфейс выключен — не следим
@@ -323,8 +353,10 @@ impl PhyWatch {
                 let id = format!("{sw}:{n}");
                 let label = format!("{sw} порт {n}{}", vlans.get(&n).map(|v| format!(" (VLAN {v})")).unwrap_or_default());
                 let Some(link) = parse_sw_link(&run(&["swconfig", "dev", &sw, "port", &n.to_string(), "get", "link"])) else { continue };
+                let lan = port_is_lan(&self.wan, None, vlans.get(&n).map(|v| v.as_str()).unwrap_or(""));
                 let p = self.ports.entry(id).or_insert_with(|| Port::new(label.clone()));
                 p.label = label;
+                p.lan = lan;
                 let (errs, pk) = if mib_now || first {
                     let t = run(&["swconfig", "dev", &sw, "port", &n.to_string(), "get", "mib"]);
                     (parse_mib(&t), mib_packets(&t))
@@ -497,31 +529,37 @@ impl PhyWatch {
         if first {
             // сводка с загрузки роутера: ошибки уже накоплены — сразу видно больной кабель
             // (перезапуск cgmon в ту же загрузку её не повторяет)
-            let t = err_text(&errs, names);
+            let shown: BTreeMap<String, u64> = errs.iter().filter(|(k, _)| !p.lan || is_crc(k)).map(|(k, v)| (k.clone(), *v)).collect();
+            let t = err_text(&shown, names);
             if !t.is_empty() && p.base_crc.is_none() {
                 msgs.push(format!("Порт {label}: с загрузки роутера ({}) ошибок: {t}; сейчас {}", dur(uptime_s * 1000), speed_text(&link)));
             }
         } else if let Some(old) = &p.link {
+            let lan = p.lan;
             if old.up && !link.up {
                 p.down_at = now;
-                msgs.push(format!("Порт {label}: линк пропал (был {})", speed_text(old)));
+                if !lan {
+                    msgs.push(format!("Порт {label}: линк пропал (был {})", speed_text(old)));
+                }
             } else if !old.up && link.up {
                 let d = if p.down_at > 0 { format!(" через {}", dur(now - p.down_at)) } else { String::new() };
-                msgs.push(format!("Порт {label}: линк появился{d} — {}", speed_text(&link)));
-            } else if old.up && link.up && (old.speed != link.speed || old.full != link.full) {
+                if !lan {
+                    msgs.push(format!("Порт {label}: линк появился{d} — {}", speed_text(&link)));
+                }
+            } else if !lan && old.up && link.up && (old.speed != link.speed || old.full != link.full) {
                 let worse = link.speed < old.speed || (old.full && !link.full);
                 msgs.push(format!("Порт {label}: {} → {}{}", speed_text(old), speed_text(&link), if worse { " — так бывает при плохом кабеле или разъёме" } else { "" }));
             }
             // мигал между опросами: carrier_changes вырос больше, чем видно по состоянию
             if let Some(c) = changes {
                 let seen = if old.up != link.up { 1 } else { 0 };
-                if p.changes > 0 && c > p.changes + seen {
+                if !lan && p.changes > 0 && c > p.changes + seen {
                     msgs.push(format!("Порт {label}: линк мигал {} раз за {} с", (c - p.changes - seen + 1) / 2 + ((c - p.changes - seen) % 2), LINK_EVERY / 1000));
                 }
             }
             for (k, v) in &errs {
                 let was = p.errs.get(k).copied().unwrap_or(*v);
-                if *v > was {
+                if *v > was && (!lan || is_crc(k)) {
                     *p.pend.entry(k.clone()).or_insert(0) += v - was;
                 }
             }
@@ -566,7 +604,7 @@ impl PhyWatch {
             }
             let note = slow_note(&link, p.best, p.best_at, p.cap, p.partner);
             if note != p.slow_note {
-                if !note.is_empty() {
+                if !note.is_empty() && !p.lan {
                     msgs.push(format!("Порт {label}: {note}"));
                 }
                 p.slow_note = note;
@@ -609,6 +647,9 @@ impl PhyWatch {
                     out.push((bl, format!("phy_crc:{id}"), format!("Порт {}: {} ошибок CRC{sh}{dr} с загрузки роутера, новых пока нет — {what}", p.label, p.boot_crc)));
                 }
             }
+            if p.lan {
+                continue; // LAN: на центр — только CRC
+            }
             if b.2 > f.2 {
                 out.push(("crit", format!("phy_drop:{id}"), format!("Порт {}: {} обрыв(ов) линка за час", p.label, b.2 - f.2)));
             } else if drop_day >= 2 {
@@ -641,8 +682,12 @@ impl PhyWatch {
                 }
                 j.end_obj();
             }
+            if p.lan {
+                j.key("lan").bool(true);
+            }
             // за последний час — для «Текущих событий»: ошибки и обрывы растут сейчас
-            if let (Some(f), Some(b)) = (p.hist.front(), p.hist.back()) {
+            // (LAN: только CRC — обрывы и прочие ошибки там не тревога)
+            if let (false, Some(f), Some(b)) = (p.lan, p.hist.front(), p.hist.back()) {
                 if b.1 > f.1 {
                     j.key("err_hour").uint(b.1 - f.1);
                 }
@@ -698,7 +743,7 @@ impl PhyWatch {
             if p.partner > 0 {
                 j.key("partner").int(p.partner);
             }
-            if !p.slow_note.is_empty() {
+            if !p.slow_note.is_empty() && !p.lan {
                 j.key("slow").str(&p.slow_note);
             }
             if l.up && p.up_since > 0 {
@@ -869,5 +914,26 @@ mod tests {
         assert!(m.is_empty(), "{m:?}");
         assert_eq!(ev_sum(&p.ev_crc, 0, DAY), 3);
         assert_eq!(ev_sum(&p.ev_drop, 0, DAY), 1);
+    }
+
+    #[test]
+    fn lan_ports_only_crc() {
+        let wan = vec!["eth1".to_string(), "pppoe-wan".to_string(), "eth0.101".to_string()];
+        assert!(!port_is_lan(&wan, Some("eth1"), "") && port_is_lan(&wan, Some("lan1"), ""));
+        assert!(!port_is_lan(&[], Some("lan1"), ""), "WAN не известен — всё как WAN");
+        assert!(!port_is_lan(&wan, None, "101") && port_is_lan(&wan, None, "1, 103t"));
+        // LAN-порт: компьютер уснул (1000 -> 10), линк пропадал — сообщений нет; CRC — есть
+        let mut p = Port::new("lan1".into());
+        p.lan = true;
+        let mut d = false;
+        let e0: BTreeMap<String, u64> = [("rx_crc_errors".to_string(), 0u64), ("rx_frame_errors".to_string(), 0)].into();
+        let fast = Link { up: true, speed: 1000, full: true };
+        let _ = PhyWatch::observe(&mut p, 1_000, fast.clone(), Some(1), e0.clone(), 100, SYS_ERR, 0, &mut d);
+        let m = PhyWatch::observe(&mut p, 46_000, Link { up: true, speed: 10, full: true }, Some(1), e0.clone(), 200, SYS_ERR, 0, &mut d);
+        let m2 = PhyWatch::observe(&mut p, 91_000, Link { up: false, speed: 0, full: false }, Some(2), e0, 200, SYS_ERR, 0, &mut d);
+        assert!(m.is_empty() && m2.is_empty(), "{m:?} {m2:?}");
+        let e1: BTreeMap<String, u64> = [("rx_crc_errors".to_string(), 5u64), ("rx_frame_errors".to_string(), 7)].into();
+        let m3 = PhyWatch::observe(&mut p, 20 * 60_000, fast, Some(3), e1, 300, SYS_ERR, 0, &mut d);
+        assert!(m3.iter().any(|x| x.contains("CRC 5")) && !m3.iter().any(|x| x.contains("кадр 7")), "{m3:?}");
     }
 }

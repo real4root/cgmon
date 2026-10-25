@@ -29,10 +29,10 @@ pub const MAIN: &[&str] = &[
     "lan_zones", "lan_interfaces", "isolated_zones",
     "billing.tasix_url",
     "report.enabled", "report.urls", "hub.enabled",
-    "dns_guard.mode", "dns_guard.withdraw_ra", "dns_guard.v6_enter_sec",
+    "dns_guard.mode", "dns_guard.unblock", "dns_guard.withdraw_ra", "dns_guard.v6_enter_sec",
     "dns_guard.v4_enter_sec", "dns_guard.recover_sec", "dns_guard.dns64_servers",
     "dns_guard.target_base_min", "dns_guard.target_max_hours",
-    "dns_guard.alternatives", "dns_guard.metered", "dns_guard.metered_day_mb", "dns_guard.relays", "dns_guard.relay_mbit",
+    "dns_guard.alternatives", "dns_guard.metered", "dns_guard.metered_day_mb", "dns_guard.relays", "dns_guard.relay_mbit", "dns_guard.overlay", "dns_guard.overlay_fail_sec",
     "gate_selector.from_alternatives", "gate_selector.backups", "dns_guard.check_domains",
     "dns_guard.check_via", "dns_guard.reject_all_v6_score", "dns_guard.reject_all_v6_sec",
     "witness.mode", "witness.per_family", "witness.interval_sec",
@@ -291,9 +291,13 @@ pub fn validate(c: &Config) -> Result<(), String> {
         }
     }
     for id in dg.alternatives.iter().chain(&dg.metered).chain(&c.gate_selector.backups) {
+        let id = id.split('=').next().unwrap_or(id); // metered может быть «id=МБ»
         if !path_id_ok(id) {
             return Err(format!("dns_guard: путь {id:?} — нужно имя устройства (eth3, tailscale0) или proto"));
         }
+    }
+    if !dg.overlay.is_empty() && !path_id_ok(&dg.overlay) {
+        return Err(format!("dns_guard.overlay: путь {:?} — нужно имя устройства или @реле", dg.overlay));
     }
     for d in &dg.check_domains {
         if !domain_ok(&d.to_lowercase()) {
@@ -472,8 +476,8 @@ pub fn hints(text: &str) -> Vec<(String, String)> {
         }
         if !parts.is_empty() {
             let mut h = parts.join(" ");
-            if h.len() > 400 {
-                let mut n = 400;
+            if h.len() > 1400 {
+                let mut n = 1400;
                 while !h.is_char_boundary(n) {
                     n -= 1;
                 }

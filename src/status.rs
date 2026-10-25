@@ -184,6 +184,24 @@ pub fn build(d: &mut Daemon, unix: i64) {
     }
     let mut ptj = crate::json::J::new();
     let has_pt = d.pathc.open_json(&mut ptj);
+    let mut ublj = crate::json::J::new();
+    d.unblock.status_json(&mut ublj);
+    // имя активного шлюза Per-Site Routing и шлюза сайтов проверки (до d.out())
+    let unblock_gate: String = {
+        let g = &d.cfg.dns_guard.unblock;
+        if g == "off" || g == "observe" || g.is_empty() {
+            String::new()
+        } else if g == "active" || g == "vpn" {
+            "per-site VPN".into()
+        } else {
+            d.dg.as_ref().and_then(|dg| dg.gate_display(g)).unwrap_or_else(|| g.clone())
+        }
+    };
+    let check_gate: String = if d.cfg.dns_guard.check_domains.is_empty() {
+        String::new()
+    } else {
+        d.dg.as_ref().and_then(|dg| dg.check_gate_display()).unwrap_or_default()
+    };
     drop(_sp);
     let _sp = crate::prof::scope("st: down_detector");
     let mut ddj = crate::json::J::new();
@@ -422,6 +440,15 @@ pub fn build(d: &mut Daemon, unix: i64) {
     }
     if !witj.b.is_empty() {
         j.key("witness").raw(&witj.b);
+    }
+    if !ublj.b.is_empty() {
+        j.key("unblock").raw(&ublj.b);
+    }
+    if !unblock_gate.is_empty() {
+        j.key("unblock_gate").str(&unblock_gate);
+    }
+    if !check_gate.is_empty() {
+        j.key("check_gate").str(&check_gate);
     }
     if has_pt {
         j.key("path_culprit").raw(&ptj.b);

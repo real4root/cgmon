@@ -488,6 +488,13 @@ pub struct DnsGuard {
     pub r_last: Option<HashMap<String, u64>>,
     pub r_ips: HashMap<String, i64>,
     pub r_ips_at: i64,
+    /// LAN-сети и «не-интернет» сети для overlay-шлюза (catch-all весь трафик через туннель)
+    pub r_lan: Vec<crate::netx::IpNet>,
+    pub r_excl: Vec<crate::netx::IpNet>,
+    /// последняя быстрая проба overlay-пути
+    pub r_ov_at: i64,
+    /// начало непрерывного молчания overlay-туннеля (0 — отвечает)
+    pub r_ov_fail: i64,
 
     // отказ в IPv6 (dgv6.rs)
     pub v6_all: i64,
@@ -550,6 +557,10 @@ impl DnsGuard {
             r_last: None,
             r_ips: HashMap::new(),
             r_ips_at: 0,
+            r_lan: Vec::new(),
+            r_excl: Vec::new(),
+            r_ov_at: 0,
+            r_ov_fail: 0,
             v6_all: 0,
             v6_bad_from: 0,
             v6_good_from: 0,
@@ -566,6 +577,12 @@ impl DnsGuard {
     pub fn set_config(&mut self, c: DNSGuardConfig) {
         if self.cfg.mode == "off" || self.cfg.backend != c.backend {
             self.started = false;
+        }
+        // смена маршрутных настроек (overlay «весь трафик», обход, реле, лимиты) — пересобрать
+        // маршруты на следующем тике, не ждать периодической переоценки (CHECK_EVERY = 60 с)
+        if self.cfg.overlay != c.overlay || self.cfg.alternatives != c.alternatives || self.cfg.relays != c.relays || self.cfg.metered != c.metered {
+            self.r_at = 0;
+            self.r_table.clear();
         }
         self.cfg = c;
     }

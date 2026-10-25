@@ -38,6 +38,8 @@ pub struct Path {
     pub relay: bool,
     /// интерфейс netifd
     pub label: String,
+    /// тип шлюза (ядро обнаружения): zerotier|tailscale|wireguard|amnezia|l2tp|ipsec|openvpn|ppp|relay|net
+    pub kind: String,
     pub gw: String,
     /// через него основной маршрут — не обход
     pub primary: bool,
@@ -116,6 +118,67 @@ pub fn nets_add(mut nets: Vec<String>, ips: &[String]) -> Vec<String> {
     nets
 }
 
+/// Ядро обнаружения шлюзов: тип по имени устройства (туннель/резерв/сеть).
+/// relay=true — ретранслятор (узел в ZeroTier как следующий хоп).
+pub fn gate_kind(dev: &str, relay: bool) -> &'static str {
+    if relay {
+        return "relay";
+    }
+    let d = dev.to_ascii_lowercase();
+    if d.starts_with("zt") {
+        "zerotier"
+    } else if d.starts_with("tailscale") || d.starts_with("ts-") {
+        "tailscale"
+    } else if d.starts_with("awg") || d.starts_with("amnezia") {
+        "amnezia"
+    } else if d.starts_with("wg") {
+        "wireguard"
+    } else if d.starts_with("l2tp") {
+        "l2tp"
+    } else if d.starts_with("xfrm") || d.starts_with("ipsec") || d.contains("ikev") {
+        "ipsec"
+    } else if d.starts_with("tun") || d.starts_with("tap") || d.starts_with("ovpn") {
+        "openvpn"
+    } else if d.starts_with("ppp") && !d.starts_with("pppoe") {
+        "ppp"
+    } else {
+        "net" // eth/vlan/br/pppoe и прочее — проводной резерв или маршрутизируемая сеть
+    }
+}
+
+/// Понятное имя шлюза для заголовков/событий: реле → «имя@адрес (ZeroTier)»,
+/// устройство → «метка · Тип» или «метка (id)».
+pub fn path_display(p: &Path) -> String {
+    let kind = gate_kind_name(gate_kind(&p.dev, false));
+    if p.relay {
+        let base = if p.label.is_empty() { p.id.trim_start_matches('@').to_string() } else { p.label.clone() };
+        let addr = if p.gw.is_empty() { base } else { format!("{base}@{}", p.gw) };
+        if kind.is_empty() { addr } else { format!("{addr} ({kind})") }
+    } else if !kind.is_empty() {
+        let base = if p.label.is_empty() { p.id.clone() } else { p.label.clone() };
+        format!("{base} · {kind}")
+    } else if !p.label.is_empty() && p.label != p.id {
+        format!("{} ({})", p.label, p.id)
+    } else {
+        p.id.clone()
+    }
+}
+
+/// Понятное имя типа шлюза (для заголовков/списка); "" — обычная сеть/реле (имя и так есть).
+pub fn gate_kind_name(kind: &str) -> &'static str {
+    match kind {
+        "zerotier" => "ZeroTier",
+        "tailscale" => "Tailscale",
+        "wireguard" => "WireGuard",
+        "amnezia" => "AmneziaWG",
+        "l2tp" => "L2TP",
+        "ipsec" => "IPsec/IKEv2",
+        "openvpn" => "OpenVPN",
+        "ppp" => "PPP",
+        _ => "",
+    }
+}
+
 /// Маршруты по умолчанию из «ip -4 route show table all»: устройство, шлюз, основной.
 pub fn parse_routes(out: &str) -> BTreeMap<String, Path> {
     let mut m: BTreeMap<String, Path> = BTreeMap::new();
@@ -148,7 +211,7 @@ pub fn parse_routes(out: &str) -> BTreeMap<String, Path> {
             Some(p) => table == "main" && p.gw.is_empty(),
         };
         if replace {
-            m.insert(dev.into(), Path { id: dev.into(), dev: dev.into(), gw: gw.into(), ..Default::default() });
+            m.insert(dev.into(), Path { id: dev.into(), dev: dev.into(), gw: gw.into(), kind: gate_kind(dev, false).into(), ..Default::default() });
         }
         if table == "main" && (best_metric < 0 || metric < best_metric) {
             best = dev.into();
@@ -194,13 +257,36 @@ pub fn parse_labels(out: &str) -> HashMap<String, String> {
 }
 
 /// Таблица inet cgmon_route целиком (без delete table: pN_ip наполняет SmartDNS).
-pub fn table_script(act: &[&Path], relay_mbit: i64) -> String {
+pub fn table_script(act: &[&Path], relay_mbit: i64, overlay_idx: u32, lan: &[crate::netx::IpNet], excl: &[crate::netx::IpNet]) -> String {
     let t = format!("inet {TABLE}");
     let mut b = format!("add table {t}\n");
     for p in act {
         b.push_str(&format!("add set {t} p{}_net {{ type ipv4_addr; flags interval; }}\n", p.idx));
         b.push_str(&format!("add set {t} p{}_ip {{ type ipv4_addr; flags timeout; timeout 1h; size 65535; }}\n", p.idx));
         b.push_str(&format!("add counter {t} p{}\n", p.idx));
+    }
+    // overlay-шлюз «весь трафик»: наборы LAN-источника и «не-интернет» назначений (private/reserved + routed)
+    if overlay_idx > 0 {
+        for set in ["lan_v4", "ex_v4"] {
+            b.push_str(&format!("add set {t} {set} {{ type ipv4_addr; flags interval; }}\nflush set {t} {set}\n"));
+        }
+        let v4 = |nets: &[crate::netx::IpNet]| nets.iter().filter(|n| n.is_v4()).cloned().collect::<Vec<_>>();
+        let fmt = |nets: &[crate::netx::IpNet]| crate::acct::collapse(nets).iter().map(|n| n.to_string()).collect::<Vec<_>>().join(", ");
+        let lan4 = v4(lan);
+        if !lan4.is_empty() {
+            b.push_str(&format!("add element {t} lan_v4 {{ {} }}\n", fmt(&lan4)));
+        }
+        // не в туннель: LAN, routed/exclude и стандартные локальные/зарезервированные диапазоны (collapse — нет пересечений)
+        let mut ex4 = v4(excl);
+        ex4.extend(lan4);
+        for r in ["0.0.0.0/8", "10.0.0.0/8", "100.64.0.0/10", "127.0.0.0/8", "169.254.0.0/16", "172.16.0.0/12", "192.168.0.0/16", "224.0.0.0/4", "240.0.0.0/4"] {
+            if let Some((ip, bits)) = r.split_once('/') {
+                if let (Ok(a), Ok(b)) = (ip.parse(), bits.parse()) {
+                    ex4.push(crate::netx::IpNet::new(a, b));
+                }
+            }
+        }
+        b.push_str(&format!("add element {t} ex_v4 {{ {} }}\n", fmt(&ex4)));
     }
     for c in [
         "rt_pre { type filter hook prerouting priority mangle - 2; policy accept; }",
@@ -217,7 +303,13 @@ pub fn table_script(act: &[&Path], relay_mbit: i64) -> String {
         for s in ["net", "ip"] {
             b.push_str(&format!("\t\tct state new ct direction original ct mark & 0x{MASK:x} == 0 ip daddr @p{}_{s} ct mark set ct mark & 0x{:x} | 0x{m:x}\n", p.idx, !MASK));
         }
-        b.push_str(&format!("\t\tct mark & 0x{MASK:x} == 0x{m:x} counter name \"p{}\"\n", p.idx));
+    }
+    // overlay-шлюз: весь прочий LAN-интернет (NEW, не локальный/не-интернет) — в туннель (после адресных правил)
+    if overlay_idx > 0 {
+        b.push_str(&format!("\t\tip saddr @lan_v4 ct state new ct direction original ct mark & 0x{MASK:x} == 0 ip daddr != @ex_v4 ct mark set ct mark & 0x{:x} | 0x{:x}\n", !MASK, mark(overlay_idx)));
+    }
+    for p in act {
+        b.push_str(&format!("\t\tct mark & 0x{MASK:x} == 0x{:x} counter name \"p{}\"\n", mark(p.idx), p.idx));
     }
     b.push_str(&format!("\t\tct direction original ct mark & 0x{MASK:x} != 0 meta mark set ct mark & 0x{MASK:x}\n\t}}\n"));
     b.push_str(&format!("\tchain rt_mss {{\n\t\tct mark & 0x{MASK:x} != 0 tcp flags syn tcp option maxseg size set rt mtu\n\t}}\n"));
@@ -263,11 +355,36 @@ fn rule_keys(out: &str, key: &str) -> Vec<(String, String)> {
 impl DnsGuard {
     /// В настройках есть хотя бы один путь обхода.
     pub fn route_on(&self) -> bool {
-        self.cfg.mode == "targeted" && self.cfg.alternatives.iter().any(|a| a != DGR_PROTO)
+        (self.cfg.mode == "targeted" && self.cfg.alternatives.iter().any(|a| a != DGR_PROTO)) || !self.cfg.overlay.is_empty()
     }
 
     fn alt_used(&self, id: &str) -> bool {
         self.cfg.alternatives.iter().any(|a| a == id)
+    }
+
+    /// путь задействован: в alternatives (адресный обход) или это overlay-шлюз «весь трафик»
+    fn used(&self, id: &str) -> bool {
+        self.alt_used(id) || (!self.cfg.overlay.is_empty() && self.cfg.overlay == id)
+    }
+
+    /// LAN-сети (источник) и «не-интернет» сети (исключение) для overlay-шлюза
+    pub fn set_subnets(&mut self, lan: &[crate::netx::IpNet], excl: &[crate::netx::IpNet]) {
+        if self.r_lan != lan || self.r_excl != excl {
+            self.r_lan = lan.to_vec();
+            self.r_excl = excl.to_vec();
+            self.r_table.clear(); // перестроить таблицу с новыми наборами
+        }
+    }
+
+    /// idx overlay-пути, если он годен вести весь трафик (поднят, проверен, лимит не исчерпан); иначе 0
+    fn overlay_idx(&self) -> u32 {
+        if self.cfg.overlay.is_empty() {
+            return 0;
+        }
+        self.r_paths
+            .get(&self.cfg.overlay)
+            .filter(|p| p.idx > 0 && p.up && p.checked && !self.over_limit(&self.cfg.overlay))
+            .map_or(0, |p| p.idx)
     }
 
     pub fn path_label(&self, id: &str) -> String {
@@ -278,11 +395,21 @@ impl DnsGuard {
         }
     }
 
-    fn over_limit(&self, id: &str) -> bool {
-        if !self.cfg.metered.iter().any(|m| m == id) || self.cfg.metered_day_mb <= 0 {
-            return false;
+    /// Суточный лимit пути, МБ. Запись `metered` вида «id» — общий `metered_day_mb`,
+    /// «id=МБ» — свой лимit для этого соединения (учёт общий для шлюзов и обходов).
+    fn limit_mb(&self, id: &str) -> i64 {
+        for m in &self.cfg.metered {
+            let (mid, lim) = m.split_once('=').map_or((m.as_str(), None), |(a, b)| (a, b.trim().parse::<i64>().ok()));
+            if mid == id {
+                return lim.filter(|v| *v > 0).unwrap_or(self.cfg.metered_day_mb);
+            }
         }
-        self.r_usage.bytes.get(id).copied().unwrap_or(0) >= (self.cfg.metered_day_mb as u64) << 20
+        0
+    }
+
+    fn over_limit(&self, id: &str) -> bool {
+        let lim = self.limit_mb(id);
+        lim > 0 && self.r_usage.bytes.get(id).copied().unwrap_or(0) >= (lim as u64) << 20
     }
 
     /// Через путь сейчас можно уводить.
@@ -338,6 +465,22 @@ impl DnsGuard {
     /// Итоги проверок путей, раз в минуту поиск путей, таблица, учёт, проверки; наборы адресов.
     pub fn route_tick(&mut self, now: i64, feed: &mut dyn Feed) -> Vec<String> {
         let mut msgs = self.route_health_all(now);
+        // быстрая проба overlay-пути: падение туннеля ловится за overlay_fail_sec, а не ~2 мин (CHECK_EVERY×DOWN_AFTER)
+        if self.route_on() && self.cfg.overlay_fail_sec > 0 && !self.cfg.overlay.is_empty() {
+            let iv = 5000; // быстрая проба overlay каждые 5 с
+            if now - self.r_ov_at >= iv {
+                self.r_ov_at = now;
+                self.route_check_overlay();
+                msgs.extend(self.route_health_all(now));
+            }
+            // туннель молчит дольше порога — перевести весь трафик на физику (catch-all уберётся в этом тике)
+            if self.r_ov_fail > 0 && now - self.r_ov_fail >= self.cfg.overlay_fail_sec * 1000 {
+                if let Some(p) = self.r_paths.get_mut(&self.cfg.overlay) {
+                    if p.up { p.up = false; self.r_at = 0; }
+                }
+                self.r_ov_fail = 0;
+            }
+        }
         if now - self.r_at >= CHECK_EVERY {
             self.r_at = now;
             msgs.extend(self.route_find(now));
@@ -372,10 +515,12 @@ impl DnsGuard {
         for r in &self.cfg.relays {
             let Some((name, ip)) = crate::livecfg::parse_relay(r) else { continue };
             // узел должен быть в соседней сети (ZeroTier, LAN) — не через шлюз
+            // маршрут по умолчанию через то же устройство (например, своя таблица per-site
+            // VPN через ZeroTier) — не помеха: узел — отдельный путь со своей таблицей
             let dev = route_get_dev(&self.sys.query(&["ip", "-4", "route", "get", &ip]).unwrap_or_default());
-            if !dev.is_empty() && !found.contains_key(&dev) {
-                let id = format!("@{name}");
-                found.insert(id.clone(), Path { id, dev, gw: ip, relay: true, ..Default::default() });
+            let id = format!("@{name}");
+            if !dev.is_empty() && !found.contains_key(&id) {
+                found.insert(id.clone(), Path { id, dev, gw: ip, relay: true, kind: "relay".into(), ..Default::default() });
             }
         }
         if now - self.r_label_at >= 5 * CHECK_EVERY || self.r_label_map.is_none() {
@@ -393,17 +538,18 @@ impl DnsGuard {
             old.gw = p.gw;
             old.dev = p.dev;
             old.relay = p.relay;
+            old.kind = p.kind;
             old.label = lbl;
             let became = !old.primary && p.primary;
             old.primary = p.primary;
-            if became && on && self.alt_used(&id) {
+            if became && on && self.used(&id) {
                 self.route_lost(now, &id);
                 msgs.push(format!("Обход: {} стал основным каналом — для обхода не используется", self.path_label(&id)));
             }
         }
         let gone: Vec<String> = self.r_paths.keys().filter(|id| !found.contains_key(*id)).cloned().collect();
         for id in gone {
-            if self.r_paths[&id].up && on && self.alt_used(&id) {
+            if self.r_paths[&id].up && on && self.used(&id) {
                 self.route_lost(now, &id);
                 msgs.push(format!("Обход: путь {} пропал (нет маршрута) — его сети перепроверяются", self.path_label(&id)));
             }
@@ -414,9 +560,13 @@ impl DnsGuard {
 
     /// Номера путей (стабильны, пока путь в настройках), таблица nft, ip rule/route.
     fn route_discover(&mut self) -> Vec<String> {
-        let keep: Vec<String> = self.r_idx.keys().filter(|id| self.alt_used(id) && self.r_paths.contains_key(*id)).cloned().collect();
+        let keep: Vec<String> = self.r_idx.keys().filter(|id| self.used(id) && self.r_paths.contains_key(*id)).cloned().collect();
         self.r_idx.retain(|id, _| keep.contains(id));
-        for id in self.cfg.alternatives.clone() {
+        let mut want_idx = self.cfg.alternatives.clone();
+        if !self.cfg.overlay.is_empty() {
+            want_idx.push(self.cfg.overlay.clone()); // overlay-шлюз тоже получает таблицу
+        }
+        for id in want_idx {
             if id == DGR_PROTO || !self.r_paths.contains_key(&id) || self.r_idx.contains_key(&id) {
                 continue;
             }
@@ -450,13 +600,41 @@ impl DnsGuard {
         l
     }
 
+    /// Устройство пути по id (для имени шлюза: тип интерфейса реле).
+    pub fn path_dev(&self, id: &str) -> Option<String> {
+        self.r_paths.get(id).map(|p| p.dev.clone())
+    }
+
+    /// Понятное имя шлюза по id пути (реле → «имя@адрес (ZeroTier)»).
+    pub fn gate_display(&self, id: &str) -> Option<String> {
+        self.r_paths.get(id).map(path_display)
+    }
+
+    /// Понятное имя шлюза сайтов проверки «мой IP» (check_via или первый рабочий путь).
+    pub fn check_gate_display(&self) -> Option<String> {
+        self.check_path().map(path_display)
+    }
+
+    /// Метка netifd пути по id (не пустая).
+    pub fn path_label_opt(&self, id: &str) -> Option<String> {
+        self.r_paths.get(id).map(|p| p.label.clone()).filter(|l| !l.is_empty())
+    }
+
+    /// Метка активного пути по его id (для Per-Site VPN: уводить через выбранный гейт).
+    /// Путь должен быть поднят и проверен — иначе уводить некуда.
+    pub fn path_mark(&self, id: &str) -> Option<u32> {
+        self.r_paths.get(id).filter(|p| p.idx > 0 && p.up && p.checked).map(|p| mark(p.idx))
+    }
+
+
     /// Таблица nft (при смене путей), правила и маршруты.
     fn route_setup(&mut self) -> Result<(), String> {
         let act: Vec<Path> = self.route_active().into_iter().cloned().collect();
         let refs: Vec<&Path> = act.iter().collect();
-        let desc = act.iter().map(|p| format!("{}:{}:{}", p.idx, p.id, p.dev)).collect::<Vec<_>>().join(",") + &format!("|{}", self.cfg.relay_mbit);
+        let ov = self.overlay_idx();
+        let desc = act.iter().map(|p| format!("{}:{}:{}", p.idx, p.id, p.dev)).collect::<Vec<_>>().join(",") + &format!("|{}|ov{}:{}", self.cfg.relay_mbit, ov, self.r_lan.len() + self.r_excl.len());
         if desc != self.r_table {
-            if let Err(e) = self.sys.nft(&table_script(&refs, self.cfg.relay_mbit)) {
+            if let Err(e) = self.sys.nft(&table_script(&refs, self.cfg.relay_mbit, ov, &self.r_lan, &self.r_excl)) {
                 self.r_table.clear();
                 return Err(e);
             }
@@ -571,6 +749,26 @@ impl DnsGuard {
         }
     }
 
+    /// Отдельная быстрая проба overlay-пути (тот же сквозной тест TCP 443 с SO_MARK),
+    /// чтобы падение туннеля ловилось за overlay_fail_sec. Результат идёт в тот же route_health.
+    fn route_check_overlay(&mut self) {
+        if self.r_table.is_empty() {
+            return;
+        }
+        let id = self.cfg.overlay.clone();
+        let Some(p) = self.r_paths.get(&id) else { return };
+        if p.primary || p.checking || p.idx == 0 || self.over_limit(&id) {
+            return;
+        }
+        let m = mark(p.idx);
+        self.r_paths.get_mut(&id).unwrap().checking = true;
+        self.spawn(move |sys| {
+            let targets: Vec<IpAddr> = HEALTH_TARGETS.iter().map(|a| IpAddr::from(*a)).collect();
+            let (ok, ms) = sys.probe(&targets, targets.len(), m, None);
+            Done::Health(PathHealth { id, ok: ok > 0, ms })
+        });
+    }
+
     /// Итог проверки пути: переходы жив/мёртв.
     fn route_health(&mut self, now: i64, h: PathHealth) -> Vec<String> {
         let Some(p) = self.r_paths.get_mut(&h.id) else { return Vec::new() };
@@ -582,13 +780,22 @@ impl DnsGuard {
             p.ms = h.ms;
         } else {
             p.fails += 1;
-            if p.fails >= DOWN_AFTER || !p.checked {
+            // overlay с настроенным порогом — не по счётчику, а по длительности молчания (см. route_tick)
+            let ov = h.id == self.cfg.overlay && self.cfg.overlay_fail_sec > 0 && p.checked;
+            if !ov && (p.fails >= DOWN_AFTER || !p.checked) {
                 p.up = false;
             }
         }
         let first = !p.checked;
         p.checked = true;
         let up = p.up;
+        // overlay: засечь начало непрерывного молчания (route_tick переведёт на физику за overlay_fail_sec)
+        if h.id == self.cfg.overlay {
+            if h.ok { self.r_ov_fail = 0; } else if self.r_ov_fail == 0 { self.r_ov_fail = now; }
+        }
+        if h.id == self.cfg.overlay && was != up {
+            self.r_at = 0; // сменил состояние — пересобрать таблицу сразу
+        }
         if was && !up {
             self.route_lost(now, &h.id);
             return vec![format!("Обход: путь {} не работает (проверка через него без ответа) — его сети перепроверяются", self.path_label(&h.id))];
@@ -637,7 +844,7 @@ impl DnsGuard {
             if !over && self.over_limit(&id) {
                 self.route_lost(now, &id);
                 self.persist();
-                msgs.push(format!("Обход: {} — лимит трафика на сегодня исчерпан ({} МБ), путь не используется до полуночи", self.path_label(&id), self.cfg.metered_day_mb));
+                msgs.push(format!("Обход: {} — лимит трафика на сегодня исчерпан ({} МБ), путь не используется до полуночи", self.path_label(&id), self.limit_mb(&id)));
             }
         }
         self.r_last = Some(last);
@@ -789,7 +996,7 @@ impl DnsGuard {
         ids.extend(rest);
         j.key("paths").arr();
         for id in &ids {
-            let metered = self.cfg.metered.iter().any(|m| m == id);
+            let metered = self.limit_mb(id) > 0;
             j.obj().key("id").str(id);
             let (mut up, mut checked) = (false, false);
             if id == DGR_PROTO {
@@ -798,6 +1005,15 @@ impl DnsGuard {
             } else if let Some(p) = self.r_paths.get(id) {
                 if !p.label.is_empty() {
                     j.key("label").str(&p.label);
+                }
+                if !p.kind.is_empty() {
+                    j.key("kind").str(&p.kind); // тип шлюза для понятного имени на странице
+                }
+                if p.relay && !p.gw.is_empty() {
+                    j.key("gw").str(&p.gw); // узел реле: страница покажет «имя@адрес» (node1@10.147.17.5)
+                }
+                if p.relay && !p.dev.is_empty() {
+                    j.key("dev").str(&p.dev); // родительский интерфейс узла (ZeroTier/LAN) — для карточки
                 }
                 if p.primary {
                     j.key("primary").bool(true);
@@ -815,8 +1031,8 @@ impl DnsGuard {
                 if used != 0.0 {
                     j.key("used_mb").raw(&crate::config::go_float(used));
                 }
-                if self.cfg.metered_day_mb != 0 {
-                    j.key("limit_mb").int(self.cfg.metered_day_mb);
+                if self.limit_mb(id) != 0 {
+                    j.key("limit_mb").int(self.limit_mb(id));
                 }
                 if self.over_limit(id) {
                     j.key("over").bool(true);
@@ -844,8 +1060,23 @@ mod tests {
         assert_eq!(route_get_dev("10.2.2.2 via 10.0.0.1 dev eth0 src 10.0.0.2"), "");
         assert_eq!(net4("142.250.1.7"), "142.250.1.0/24");
         assert_eq!(net4("10.0.0.1"), "");
-        let s = table_script(&[&Path { id: "@n1".into(), dev: "zt0".into(), relay: true, idx: 1, ..Default::default() }], 50);
+        let s = table_script(&[&Path { id: "@n1".into(), dev: "zt0".into(), relay: true, idx: 1, ..Default::default() }], 50, 0, &[], &[]);
         assert!(s.contains("ct mark set ct mark & 0xffff0fff | 0x1000") && s.contains("limit rate over 6250 kbytes/second burst 3189 kbytes drop") && s.contains("oifname \"zt0\" masquerade"), "{s}");
+    }
+
+    /// Узел в ZeroTier — путь, даже если через тот же интерфейс уже есть маршрут
+    /// по умолчанию (своя таблица per-site VPN).
+    #[test]
+    fn relay_next_to_default_route() {
+        let f = fake("smartdns");
+        let (mut g, sys) = guard("targeted", f, &tmp("r-relay"));
+        g.cfg.alternatives = vec![DGR_PROTO.into(), "@node1".into()];
+        g.cfg.relays = vec!["node1@10.147.17.1".into()];
+        sys.queries.lock().unwrap().insert("ip -4 route show table all".into(), "default via 10.0.0.1 dev pppoe-wan metric 10\ndefault via 10.147.17.1 dev zt0 table 53\n".into());
+        sys.queries.lock().unwrap().insert("ip -4 route get 10.147.17.1".into(), "10.147.17.1 dev zt0 src 10.147.17.18 uid 0\n    cache".into());
+        g.route_find(1_700_000_000_000);
+        let p = g.r_paths.get("@node1").expect("узел @node1 не найден");
+        assert!(p.relay && p.dev == "zt0" && p.gw == "10.147.17.1", "{p:?}");
     }
 
     /// Плохой IPv4 у владельца, путь eth3 жив и быстр — обход через него.

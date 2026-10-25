@@ -6,12 +6,14 @@
 include $(TOPDIR)/rules.mk
 
 PKG_NAME:=cgmon
-PKG_VERSION:=2.4.22
+PKG_VERSION:=2.6.0
 PKG_RELEASE:=1
 
 PKG_SOURCE:=$(PKG_NAME)-$(PKG_VERSION).tar.gz
 PKG_SOURCE_URL:=https://codeload.github.com/real4root/cgmon/tar.gz/v$(PKG_VERSION)?
-PKG_HASH:=d04672e514ef5a85eab130f598fcdab81e00cdac19d71f8dfba96816239c7d2f
+# После публикации тега v$(PKG_VERSION) заменить skip на sha256 тарболла GitHub
+# (make package/cgmon/download покажет ожидаемый хеш, либо curl ...| sha256sum).
+PKG_HASH:=skip
 
 PKG_MAINTAINER:=real4root <real4root@gmail.com>
 PKG_LICENSE:=GPL-3.0-or-later
