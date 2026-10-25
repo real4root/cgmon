@@ -12,8 +12,8 @@
 
 | | | |
 |---|---|---|
-| [![Устройства](docs/screenshots/ru/2-devices.png)](docs/screenshots/ru/2-devices.png) Устройства и cgfinder | [![Порт](docs/screenshots/ru/3-ports.png)](docs/screenshots/ru/3-ports.png) Порт: обрывы, CRC, скорость | [![Инциденты](docs/screenshots/ru/4-incidents.png)](docs/screenshots/ru/4-incidents.png) Инциденты и down detector |
-| [![Центр сбора](docs/screenshots/ru/5-hub.png)](docs/screenshots/ru/5-hub.png) Центр сбора | [![Маршрутизация](docs/screenshots/ru/6-routing.png)](docs/screenshots/ru/6-routing.png) Шлюзы и адресная маршрутизация | [![Настройки](docs/screenshots/ru/7-settings.png)](docs/screenshots/ru/7-settings.png) Настройки: две сети через два шлюза |
+| [![Устройства](docs/screenshots/ru/2-devices.png)](docs/screenshots/ru/2-devices.png) Устройства и cgfinder | [![Порт](docs/screenshots/ru/3-ports.png)](docs/screenshots/ru/3-ports.png) Порт: обрывы, CRC, скорость | [![Инциденты](docs/screenshots/ru/incidents.png)](docs/screenshots/ru/incidents.png) Инциденты и down detector |
+| [![Центр сбора](docs/screenshots/ru/hub.png)](docs/screenshots/ru/hub.png) Центр сбора | [![Маршрутизация](docs/screenshots/ru/6-routing.png)](docs/screenshots/ru/6-routing.png) Шлюзы и адресная маршрутизация | [![Настройки](docs/screenshots/ru/settings.png)](docs/screenshots/ru/settings.png) Настройки: все опции карточками |
 | [![Телефон](docs/screenshots/ru/8-phone.png)](docs/screenshots/ru/8-phone.png) На телефоне | | |
 
 > Версия 2.x написана на Rust и заменяет 1.x на Go. Конфиг, страница, CGI, сокет

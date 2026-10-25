@@ -13,8 +13,8 @@ even on an old MIPS router with 64 MB of memory. For a plain-language tour, see
 
 | | | |
 |---|---|---|
-| [![Devices](docs/screenshots/2-devices.png)](docs/screenshots/2-devices.png) Devices and cgfinder | [![Port](docs/screenshots/3-ports.png)](docs/screenshots/3-ports.png) Port details: link drops, CRC, speed | [![Settings](docs/screenshots/7-settings.png)](docs/screenshots/7-settings.png) Settings: two networks over two gateways |
-| [![Hub](docs/screenshots/5-hub.png)](docs/screenshots/5-hub.png) Collection hub | [![Routing](docs/screenshots/6-routing.png)](docs/screenshots/6-routing.png) Gateways and per-network routing | [![Phone](docs/screenshots/8-phone.png)](docs/screenshots/8-phone.png) On a phone |
+| [![Devices](docs/screenshots/2-devices.png)](docs/screenshots/2-devices.png) Devices and cgfinder | [![Port](docs/screenshots/3-ports.png)](docs/screenshots/3-ports.png) Port details: link drops, CRC, speed | [![Settings](docs/screenshots/settings.png)](docs/screenshots/settings.png) Settings: every option in cards |
+| [![Hub](docs/screenshots/hub.png)](docs/screenshots/hub.png) Collection hub | [![Routing](docs/screenshots/6-routing.png)](docs/screenshots/6-routing.png) Gateways and per-network routing | [![Phone](docs/screenshots/8-phone.png)](docs/screenshots/8-phone.png) On a phone |
 
 > Version 2.x is written in Rust and replaces the 1.x Go version. The config file,
 > web page, CGI, socket and hub report format are compatible: a 2.x hub accepts
