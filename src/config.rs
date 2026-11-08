@@ -53,9 +53,9 @@ pub fn dec_bool(v: &Value, p: &str) -> Result<bool, String> {
         Value::Str(s) => match s.to_ascii_lowercase().as_str() {
             "yes" | "on" | "y" => Ok(true),
             "no" | "off" | "n" => Ok(false),
-            _ => Err(format!("{p}: ожидается true/false, а не {s:?}")),
+            _ => Err(tr!("{}: ожидается true/false, а не {}", p, format!("{:?}", s))),
         },
-        _ => Err(format!("{p}: ожидается true/false")),
+        _ => Err(tr!("{}: ожидается true/false", p)),
     }
 }
 
@@ -63,20 +63,20 @@ pub fn dec_int(v: &Value, p: &str) -> Result<i64, String> {
     match v {
         Value::Num(n) => n.parse::<i64>().or_else(|_| {
             // 1e3, 10.0 — целое по значению
-            n.parse::<f64>().ok().filter(|f| f.fract() == 0.0 && f.abs() < 9e15).map(|f| f as i64).ok_or(format!("{p}: ожидается целое, а не {n}"))
+            n.parse::<f64>().ok().filter(|f| f.fract() == 0.0 && f.abs() < 9e15).map(|f| f as i64).ok_or(tr!("{}: ожидается целое, а не {}", p, n))
         }),
         Value::Null => Ok(0),
-        Value::Str(s) => Err(format!("{p}: ожидается число, а не {s:?}")),
-        _ => Err(format!("{p}: ожидается число")),
+        Value::Str(s) => Err(tr!("{}: ожидается число, а не {}", p, format!("{:?}", s))),
+        _ => Err(tr!("{}: ожидается число", p)),
     }
 }
 
 pub fn dec_float(v: &Value, p: &str) -> Result<f64, String> {
     match v {
-        Value::Num(n) => n.parse::<f64>().map_err(|_| format!("{p}: ожидается число, а не {n}")),
+        Value::Num(n) => n.parse::<f64>().map_err(|_| tr!("{}: ожидается число, а не {}", p, n)),
         Value::Null => Ok(0.0),
-        Value::Str(s) => Err(format!("{p}: ожидается число, а не {s:?}")),
-        _ => Err(format!("{p}: ожидается число")),
+        Value::Str(s) => Err(tr!("{}: ожидается число, а не {}", p, format!("{:?}", s))),
+        _ => Err(tr!("{}: ожидается число", p)),
     }
 }
 
@@ -86,7 +86,7 @@ pub fn dec_str(v: &Value, p: &str) -> Result<String, String> {
         Value::Num(n) => Ok(n.clone()),
         Value::Bool(b) => Ok(b.to_string()),
         Value::Null => Ok(String::new()),
-        _ => Err(format!("{p}: ожидается строка")),
+        _ => Err(tr!("{}: ожидается строка", p)),
     }
 }
 
@@ -94,7 +94,7 @@ pub fn dec_str_list(v: &Value, p: &str) -> Result<Vec<String>, String> {
     match v {
         Value::List(l) => l.iter().enumerate().map(|(i, x)| dec_str(x, &format!("{p}[{i}]"))).collect(),
         Value::Null => Ok(Vec::new()),
-        _ => Err(format!("{p}: ожидается список")),
+        _ => Err(tr!("{}: ожидается список", p)),
     }
 }
 
@@ -102,7 +102,7 @@ pub fn dec_int_list(v: &Value, p: &str) -> Result<Vec<i64>, String> {
     match v {
         Value::List(l) => l.iter().enumerate().map(|(i, x)| dec_int(x, &format!("{p}[{i}]"))).collect(),
         Value::Null => Ok(Vec::new()),
-        _ => Err(format!("{p}: ожидается список")),
+        _ => Err(tr!("{}: ожидается список", p)),
     }
 }
 
@@ -123,15 +123,15 @@ pub fn dec_str_map(m: &mut Vec<(String, String)>, v: &Value, p: &str) -> Result<
             m.clear();
             Ok(())
         }
-        _ => Err(format!("{p}: ожидается словарь")),
+        _ => Err(tr!("{}: ожидается словарь", p)),
     }
 }
 
 /// Значения по умолчанию — из встроенного справочника.
 pub fn defaults() -> Config {
     let mut c = Config::default();
-    let v = parse_yaml(REFERENCE).expect("config.reference.yaml: встроенный справочник не разбирается");
-    c.apply(&v, "").expect("config.reference.yaml: встроенный справочник не применяется");
+    let v = parse_yaml(REFERENCE).expect(tr!("config.reference.yaml: встроенный справочник не разбирается"));
+    c.apply(&v, "").expect(tr!("config.reference.yaml: встроенный справочник не применяется"));
     c
 }
 
@@ -142,7 +142,9 @@ pub fn load(path: &str) -> Result<Config, String> {
         c.normalize();
         return Ok(c);
     }
-    match std::fs::read_to_string(path) {
+    // любая понятная кодировка (UTF-8/BOM, UTF-16, ANSI cp1251/cp1252, CRLF); не UTF-8 —
+    // файл переписывается в UTF-8 на месте (оригинал рядом)
+    match crate::textenc::read_normalized(path) {
         Ok(text) => {
             let v = parse_yaml(&text).map_err(|e| format!("parse {path}: {e}"))?;
             c.apply(&v, "").map_err(|e| format!("parse {path}: {e}"))?;
@@ -277,6 +279,15 @@ impl Config {
         or_s(&mut h.state_file, "/etc/cgmon/hub_state.json");
         or_s(&mut h.journal_file, "/tmp/cgmon/hub.jsonl");
         or_s(&mut self.log_level, "info");
+        or_s(&mut self.lang, "auto");
+        or_s(&mut self.vuln_scan.mode, "weekly");
+        or_s(&mut self.integration.home, "luci");
+        if self.integration.home != "cgmon" {
+            self.integration.home = "luci".into();
+        }
+        or_s(&mut self.vuln_scan.state_file, "/etc/cgmon/vulnscan.json");
+        or_s(&mut self.dns_guard.persite, "off");
+        or_s(&mut self.dns_guard.persite_file, "/etc/cgmon/persite.list");
 
         pos_i(&mut self.interval_sec, 5);
         pos_i(&mut self.probe_interval_sec, 5);

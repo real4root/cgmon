@@ -61,12 +61,12 @@ pub fn deps_for(c: &Config) -> Vec<Dep> {
             d.push(Dep { kind, name: name.into(), pkg, feature: feature.into(), tag });
         }
     };
-    add("file", "/proc/net/nf_conntrack", "", "соединения (conntrack)", "conntrack");
-    add("bin", "nft", "nftables-json", "правила nftables", "nft");
+    add("file", "/proc/net/nf_conntrack", "", tr!("соединения (conntrack)"), "conntrack");
+    add("bin", "nft", "nftables-json", tr!("правила nftables"), "nft");
     if c.hard_limit.enabled {
-        add("kmod", "nft_connlimit", "kmod-nft-connlimit", "жёсткие лимиты соединений (hard_limit)", "hard");
+        add("kmod", "nft_connlimit", "kmod-nft-connlimit", tr!("жёсткие лимиты соединений (hard_limit)"), "hard");
     }
-    for (on, tag, f) in [(c.qos.enabled, "qos", "SQM (qos)"), (c.upload_shaper.enabled, "shaper", "шейпер отдачи (upload_shaper)")] {
+    for (on, tag, f) in [(c.qos.enabled, "qos", "SQM (qos)"), (c.upload_shaper.enabled, "shaper", tr!("шейпер отдачи (upload_shaper)"))] {
         if !on {
             continue;
         }
@@ -75,24 +75,24 @@ pub fn deps_for(c: &Config) -> Vec<Dep> {
             if tag == "shaper" && rx {
                 continue; // шейперу приём не нужен
             }
-            let fr = if rx { format!("{f}: приём") } else { f.to_string() };
+            let fr = if rx { tr!("{}: приём", f) } else { f.to_string() };
             add("kmod", k, pkg, &fr, tag);
         }
     }
     if c.gate_selector.enabled && !c.gate_selector.dry_run {
         // основная таблица: хватает и ip из busybox
-        add("bin", "ip", "ip-full", "выбор шлюза (gate_selector)", "gate");
+        add("bin", "ip", "ip-full", tr!("выбор шлюза (gate_selector)"), "gate");
     }
     if c.dns_guard.mode == "targeted" {
         if crate::variant::SMARTDNS {
-            add("bin", "smartdns", "smartdns", "адресная DNS-страховка (dns_guard.mode: targeted)", "smartdns");
+            add("bin", "smartdns", "smartdns", tr!("адресная DNS-страховка (dns_guard.mode: targeted)"), "smartdns");
         }
         if dg_uses_route(c) {
-            add("ipfull", "ip", "ip-full", "обход маршрутом (dns_guard.alternatives)", "route");
-            add("bin", "curl", "curl", "проверка загрузки через путь обхода", "bulk");
+            add("ipfull", "ip", "ip-full", tr!("обход маршрутом (dns_guard.alternatives)"), "route");
+            add("bin", "curl", "curl", tr!("проверка загрузки через путь обхода"), "bulk");
         }
         if !c.dns_guard.relays.is_empty() {
-            add("bin", "zerotier-one", "zerotier", "обход через свои роутеры (dns_guard.relays)", "relay");
+            add("bin", "zerotier-one", "zerotier", tr!("обход через свои роутеры (dns_guard.relays)"), "relay");
         }
     }
     let mut https = Vec::new();
@@ -100,13 +100,13 @@ pub fn deps_for(c: &Config) -> Vec<Dep> {
         https.push("Telegram");
     }
     if c.report.enabled {
-        https.push("провайдер для отчётов");
+        https.push(tr!("провайдер для отчётов"));
     }
     if c.billing.enabled && c.billing.tasix_url.starts_with("https://") {
-        https.push("список TAS-IX");
+        https.push(tr!("список TAS-IX"));
     }
     if c.devices.vendor_lookup && c.devices.vendor_url.starts_with("https://") {
-        https.push("производители по MAC");
+        https.push(tr!("производители по MAC"));
     }
     if !https.is_empty() {
         add("https", "curl", "curl", &format!("HTTPS: {}", https.join(", ")), "https");
@@ -184,9 +184,9 @@ pub fn check(c: &Config) -> Vec<Missing> {
         let (ok, hint) = match d.kind {
             "kmod" => (kmod_available(&d.name), ""),
             "bin" => (crate::util::have_bin(&d.name), ""),
-            "ipfull" => (ip_full(), "ip из busybox не умеет таблицы > 255 и fwmark с маской"),
-            "https" => (https_client(), "или wget, или uclient-fetch + libustream-*ssl"),
-            _ => (std::path::Path::new(&d.name).exists(), "ядро без conntrack/procfs: нужна другая сборка прошивки (kmod-nf-conntrack, CONFIG_NF_CONNTRACK_PROCFS)"),
+            "ipfull" => (ip_full(), tr!("ip из busybox не умеет таблицы > 255 и fwmark с маской")),
+            "https" => (https_client(), tr!("или wget, или uclient-fetch + libustream-*ssl")),
+            _ => (std::path::Path::new(&d.name).exists(), tr!("ядро без conntrack/procfs: нужна другая сборка прошивки (kmod-nf-conntrack, CONFIG_NF_CONNTRACK_PROCFS)")),
         };
         if !ok {
             miss.push(Missing { dep: d, hint });
@@ -219,13 +219,13 @@ pub fn print(w: &mut dyn Write, c: &Config) -> bool {
     let need = deps_for(c);
     let miss = check(c);
     if miss.is_empty() {
-        let _ = writeln!(w, "Зависимости: всё на месте ({} проверено для включённых функций).", need.len());
+        let _ = writeln!(w, "{}", tr!("Зависимости: всё на месте ({} проверено для включённых функций).", need.len()));
         return true;
     }
-    let _ = writeln!(w, "Не хватает ({} из {}):", miss.len(), need.len());
+    let _ = writeln!(w, "{}", tr!("Не хватает ({} из {}):", miss.len(), need.len()));
     for m in &miss {
         let pkg = if m.dep.pkg.is_empty() { "—" } else { m.dep.pkg };
-        let _ = writeln!(w, "  {:<5} {:<24} пакет {:<20} → {}", m.dep.kind, m.dep.name, pkg, m.dep.feature);
+        let _ = writeln!(w, "{}", tr!("  {} {} пакет {} → {}", format!("{:<5}", m.dep.kind), format!("{:<24}", m.dep.name), format!("{:<20}", pkg), m.dep.feature));
         if !m.hint.is_empty() {
             let _ = writeln!(w, "        {}", m.hint);
         }
@@ -234,10 +234,10 @@ pub fn print(w: &mut dyn Write, c: &Config) -> bool {
     if !p.is_empty() {
         match pkg_manager() {
             Some((pm, _, inst)) => {
-                let _ = writeln!(w, "Установить: {pm} update && {} {}   (или: cgmon deps --install)", inst.join(" "), p.join(" "));
+                let _ = writeln!(w, "{}", tr!("Установить: {2} update && {0} {1}   (или: cgmon deps --install)", inst.join(" "), p.join(" "), pm));
             }
             None => {
-                let _ = writeln!(w, "Пакеты: {} (менеджер пакетов не найден)", p.join(" "));
+                let _ = writeln!(w, "{}", tr!("Пакеты: {} (менеджер пакетов не найден)", p.join(" ")));
             }
         }
     }
@@ -248,7 +248,7 @@ pub fn print(w: &mut dyn Write, c: &Config) -> bool {
 pub fn install(w: &mut dyn Write, c: &Config) -> Result<(), String> {
     let p = missing_pkgs(&check(c));
     if p.is_empty() {
-        let _ = writeln!(w, "Устанавливать нечего.");
+        let _ = writeln!(w, "{}", tr!("Устанавливать нечего."));
         return Ok(());
     }
     let list: Vec<String> = p.iter().map(|x| x.to_string()).collect();
@@ -256,9 +256,9 @@ pub fn install(w: &mut dyn Write, c: &Config) -> Result<(), String> {
     let miss = check(c);
     if !miss.is_empty() {
         print(w, c);
-        return Err(format!("после установки всё ещё не хватает {}", miss.len()));
+        return Err(tr!("после установки всё ещё не хватает {}", miss.len()));
     }
-    let _ = writeln!(w, "Готово: все зависимости на месте.");
+    let _ = writeln!(w, "{}", tr!("Готово: все зависимости на месте."));
     Ok(())
 }
 
@@ -374,7 +374,7 @@ impl Installer {
     pub fn start(&self, want: &[String], c: &Config) -> Result<Vec<String>, String> {
         let ok = installable();
         if ok.is_empty() {
-            return Err(format!("в сборке cgmon {} пакеты не ставятся: только то, что есть в прошивке", crate::variant::name()));
+            return Err(tr!("в сборке cgmon {} пакеты не ставятся: только то, что есть в прошивке", crate::variant::name()));
         }
         let mut pkgs: Vec<String> = if want.is_empty() {
             missing_pkgs(&check(c)).into_iter().map(String::from).collect()
@@ -384,23 +384,23 @@ impl Installer {
         pkgs.sort();
         pkgs.dedup();
         if let Some(bad) = pkgs.iter().find(|p| !ok.contains(&p.as_str())) {
-            return Err(format!("пакет {bad} не ставится со страницы"));
+            return Err(tr!("пакет {} не ставится со страницы", bad));
         }
         if pkgs.is_empty() {
-            return Err("устанавливать нечего".into());
+            return Err(tr!("устанавливать нечего").into());
         }
         if pkg_manager().is_none() {
-            return Err("нет ни apk, ни opkg".into());
+            return Err(tr!("нет ни apk, ни opkg").into());
         }
         let need: u64 = pkgs.iter().map(|p| PKGS.iter().find(|x| x.0 == p).map_or(100, |x| x.1) as u64).sum();
         let free = free_kb();
         if free < need * 3 / 2 + 512 {
-            return Err(format!("мало места: свободно {free} КБ, нужно ≈{} КБ", need * 3 / 2 + 512));
+            return Err(tr!("мало места: свободно {1} КБ, нужно ≈{0} КБ", need * 3 / 2 + 512, free));
         }
         {
             let mut s = self.st.lock().unwrap();
             if s.running {
-                return Err("установка уже идёт".into());
+                return Err(tr!("установка уже идёт").into());
             }
             *s = InstallState { running: true, pkgs: pkgs.clone(), ok: false, msg: String::new(), at: crate::util::now_wall().0 };
         }
@@ -426,12 +426,12 @@ impl Installer {
                 Ok(n) => {
                     s.ok = true;
                     s.msg = n;
-                    crate::log_info!("deps: установлено {}{}", list.join(" "), if s.msg.is_empty() { String::new() } else { format!(" ({})", s.msg) });
+                    crate::log_info!("{}", tr!("deps: установлено {}{}", list.join(" "), if s.msg.is_empty() { String::new() } else { format!(" ({})", s.msg) }));
                 }
                 Err(e) => {
                     let tail: String = String::from_utf8_lossy(&log).lines().rev().take(3).collect::<Vec<_>>().into_iter().rev().collect::<Vec<_>>().join(" / ");
                     s.msg = format!("{e}: {tail}").chars().take(400).collect();
-                    crate::log_err!("deps: установка {} не удалась: {}", list.join(" "), s.msg);
+                    crate::log_err!("{}", tr!("deps: установка {} не удалась: {}", list.join(" "), s.msg));
                 }
             }
         });
@@ -453,7 +453,7 @@ impl Installer {
 
 /// apk/opkg update + add.
 fn install_list(w: &mut dyn Write, p: &[String]) -> Result<(), String> {
-    let Some((pm, upd, inst)) = pkg_manager() else { return Err("нет ни apk, ни opkg".into()) };
+    let Some((pm, upd, inst)) = pkg_manager() else { return Err(tr!("нет ни apk, ни opkg").into()) };
     let run = |w: &mut dyn Write, args: &[&str]| -> Result<(), String> {
         let _ = writeln!(w, "# {}", args.join(" "));
         let o = std::process::Command::new(args[0]).args(&args[1..]).output().map_err(|e| e.to_string())?;
@@ -468,7 +468,7 @@ fn install_list(w: &mut dyn Write, p: &[String]) -> Result<(), String> {
     run(w, &upd).map_err(|e| format!("{pm} update: {e}"))?;
     let mut args: Vec<&str> = inst.to_vec();
     args.extend(p.iter().map(|s| s.as_str()));
-    run(w, &args).map_err(|e| format!("установка: {e} (модули ядра есть только под ядро вашей сборки — на snapshot их может не быть)"))
+    run(w, &args).map_err(|e| tr!("установка: {} (модули ядра есть только под ядро вашей сборки — на snapshot их может не быть)", e))
 }
 
 /// Проверка раз в минуту в демоне: изменения — в журнал, итог — в статус.
@@ -507,13 +507,13 @@ impl Watch {
         self.key = key;
         for m in &self.miss {
             let pkg = if m.dep.pkg.is_empty() { m.hint } else { m.dep.pkg };
-            crate::log_err!("deps: нет {} {} ({}) — нужно для: {}", m.dep.kind, m.dep.name, pkg, m.dep.feature);
+            crate::log_err!("{}", tr!("deps: нет {} {} ({}) — нужно для: {}", m.dep.kind, m.dep.name, pkg, m.dep.feature));
         }
         let p = missing_pkgs(&self.miss);
         if !p.is_empty() {
-            crate::log_err!("deps: установить: cgmon deps --install  (пакеты: {})", p.join(" "));
+            crate::log_err!("{}", tr!("deps: установить: cgmon deps --install  (пакеты: {})", p.join(" ")));
         } else if self.miss.is_empty() {
-            crate::log_info!("deps: все зависимости на месте");
+            crate::log_info!("{}", tr!("deps: все зависимости на месте"));
         }
         true
     }

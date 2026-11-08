@@ -1,8 +1,7 @@
 //! Справка: --help (кратко) и --help-advanced (подробно, как man) — перенос help.go.
 
 pub fn short() -> String {
-    format!(
-        "cgmon {} — монитор WAN, conntrack/NAT и устройств для OpenWrt/ImmortalWrt
+    tr!("cgmon {} — монитор WAN, conntrack/NAT и устройств для OpenWrt/ImmortalWrt
 
 Использование:
   cgmon [команда] [-config ФАЙЛ]
@@ -29,14 +28,11 @@ pub fn short() -> String {
   -v, --version        версия
 
 Страница: http://<роутер>/status.html   Конфиг: /etc/cgmon/cgmon.yaml
-",
-        crate::VERSION
-    )
+", crate::VERSION)
 }
 
 pub fn advanced() -> String {
-    format!(
-        "CGMON(8)                         cgmon {}
+    tr!("CGMON(8)                         cgmon {}
 
 ИМЯ
     cgmon — монитор внешнего канала, conntrack/NAT, устройств и трафика для
@@ -204,7 +200,5 @@ pub fn advanced() -> String {
     /etc/init.d/cgmon status. Отчёты не доходят до центра — на роутере
     страница «Настройки» показывает ошибку по каждому центру; на центре —
     logread | grep hub.
-",
-        crate::VERSION
-    )
+", crate::VERSION)
 }

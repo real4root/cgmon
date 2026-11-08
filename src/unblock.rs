@@ -285,7 +285,7 @@ impl Unblock {
         if forced {
             if e.blocked && !was {
                 self.save();
-                return vec![format!("Проверка «мой IP»: {} идёт через VPN (сайт покажет адрес туннеля)", v.domain)];
+                return vec![tr!("Проверка «мой IP»: {} идёт через VPN (сайт покажет адрес туннеля)", v.domain)];
             }
             return Vec::new();
         }
@@ -297,15 +297,15 @@ impl Unblock {
         // открывается — только тогда уводим. Ложные (телеметрия с RST) сюда не попадают.
         if v.blocked_v4() && !was {
             let via = match scheme {
-                "vpn" if self.routes() => "направлен через туннель (напрямую не открывался)",
-                "vpn" => "направил бы через туннель (режим наблюдения)",
-                "ipv6" => "открывается по IPv6 напрямую — туннель не нужен",
-                _ => "через туннель тоже не открылся",
+                "vpn" if self.routes() => tr!("направлен через туннель (напрямую не открывался)"),
+                "vpn" => tr!("направил бы через туннель (режим наблюдения)"),
+                "ipv6" => tr!("открывается по IPv6 напрямую — туннель не нужен"),
+                _ => tr!("через туннель тоже не открылся"),
             };
-            return vec![format!("Per-Site VPN: {} — {via}", v.domain)];
+            return vec![format!("Per-Site Routing: {} — {via}", v.domain)];
         }
         if !v.blocked_v4() && was {
-            return vec![format!("Per-Site VPN: {} снова открывается напрямую — убран из туннеля", v.domain)];
+            return vec![tr!("Per-Site Routing: {} снова открывается напрямую — убран из туннеля", v.domain)];
         }
         Vec::new()
     }
@@ -589,7 +589,7 @@ mod tests {
         let ip: Vec<IpAddr> = vec!["1.2.3.4".parse().unwrap()];
         let v = Verdict { domain: "example.org".into(), v4: ip.clone(), v6: vec!["2001:db8::1".parse().unwrap()], direct4: Probe::SniReset, direct6: Probe::SniReset, vpn4: Probe::Ok };
         let m = u.apply(1000, v);
-        assert!(m[0].contains("Per-Site VPN") && m[0].contains("через туннель"), "{m:?}");
+        assert!(m[0].contains("Per-Site Routing") && m[0].contains("через туннель"), "{m:?}");
         // запись помечена как заблокированная, её адрес попадёт в набор метки VPN
         let e = u.entries.get("example.org").unwrap();
         assert!(e.blocked && e.scheme == "vpn" && !e.v6.is_empty());

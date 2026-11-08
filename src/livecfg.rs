@@ -13,7 +13,7 @@ pub const HIDDEN: &[&str] = &[
     "gate_selector.interfaces", "gate_selector.switching.on_switch", "gate_selector.enabled",
     "billing.tasix_file", "billing.state_file", "witness.state_file", "payment.state_file",
     // файлы, в которые cgmon пишет, — только в cgmon.yaml
-    "dns_guard.upstream_file", "dns_guard.guard_file", "dns_guard.targets_file", "dns_guard.cache_file", "dns_guard.state_file", "flow_watch.learn_file", "devices.vendor_cache", "devices.vendor_url",
+    "dns_guard.upstream_file", "dns_guard.guard_file", "dns_guard.targets_file", "dns_guard.cache_file", "dns_guard.state_file", "dns_guard.persite_file", "vuln_scan.state_file", "flow_watch.learn_file", "devices.vendor_cache", "devices.vendor_url",
     "qos.device", "qos.ifb", "upload_shaper.device", "upload_shaper.class_id", "upload_shaper.stages",
     "accounting.enabled", "peers.list", "special_hosts", "dns.static",
     "report.token", "report.url", "hub.", // секреты и параметры центра
@@ -29,7 +29,7 @@ pub const MAIN: &[&str] = &[
     "lan_zones", "lan_interfaces", "isolated_zones",
     "billing.tasix_url",
     "report.enabled", "report.urls", "hub.enabled",
-    "dns_guard.mode", "dns_guard.unblock", "dns_guard.withdraw_ra", "dns_guard.v6_enter_sec",
+    "lang", "dns_guard.mode", "dns_guard.unblock", "dns_guard.persite", "dns_guard.persite_aaaa", "dns_guard.withdraw_ra", "dns_guard.v6_enter_sec",
     "dns_guard.v4_enter_sec", "dns_guard.recover_sec", "dns_guard.dns64_servers",
     "dns_guard.target_base_min", "dns_guard.target_max_hours",
     "dns_guard.alternatives", "dns_guard.metered", "dns_guard.metered_day_mb", "dns_guard.relays", "dns_guard.relay_mbit", "dns_guard.overlay", "dns_guard.overlay_fail_sec",
@@ -40,7 +40,7 @@ pub const MAIN: &[&str] = &[
     "payment.amount", "payment.note", "payment.remind_days", "payment.remind_hour",
     "flow_watch.learn_mode", "flow_watch.learn_min_kbit", "flow_watch.loss_only_percent",
     "client_retention_sec",
-    "devices.l2_watch", "devices.l2_probe", "path_trace.enabled", "storage",
+    "devices.l2_watch", "devices.l2_probe", "path_trace.enabled", "storage", "vuln_scan.mode", "vuln_scan.lan", "vuln_scan.isolate", "integration.home", "integration.names",
 ];
 
 /// Свободный текст (только показывается): буквы любых алфавитов.
@@ -281,53 +281,71 @@ pub const BILLING_FILE_SRC: &str = "file";
 /// Смысловые проверки после normalize.
 pub fn validate(c: &Config) -> Result<(), String> {
     if !crate::storage::valid(&c.storage) {
-        return Err(format!("storage: {:?} — flash, tmp или свой каталог (/mnt/usb/cgmon)", c.storage));
+        return Err(tr!("storage: {} — flash, tmp или свой каталог (/mnt/usb/cgmon)", format!("{:?}", c.storage)));
     }
     let dg = &c.dns_guard;
     for s in &dg.dns64_servers {
         let h = netx::split_host_port(s).map(|x| x.0).unwrap_or(s);
         if netx::parse_ip(h.trim_matches(['[', ']'])).is_none() {
-            return Err(format!("dns_guard.dns64_servers: {s:?} — нужен IP-адрес"));
+            return Err(tr!("dns_guard.dns64_servers: {} — нужен IP-адрес", format!("{:?}", s)));
         }
     }
     for id in dg.alternatives.iter().chain(&dg.metered).chain(&c.gate_selector.backups) {
         let id = id.split('=').next().unwrap_or(id); // metered может быть «id=МБ»
         if !path_id_ok(id) {
-            return Err(format!("dns_guard: путь {id:?} — нужно имя устройства (eth3, tailscale0) или proto"));
+            return Err(tr!("dns_guard: путь {} — нужно имя устройства (eth3, tailscale0) или proto", format!("{:?}", id)));
         }
     }
     if !dg.overlay.is_empty() && !path_id_ok(&dg.overlay) {
-        return Err(format!("dns_guard.overlay: путь {:?} — нужно имя устройства или @реле", dg.overlay));
+        return Err(tr!("dns_guard.overlay: путь {} — нужно имя устройства или @реле", format!("{:?}", dg.overlay)));
+    }
+    for m in &c.vuln_scan.isolate {
+        if crate::vulnscan::norm_mac(m).is_none() {
+            return Err(tr!("vuln_scan.isolate: {} — нужен MAC-адрес (aa:bb:cc:dd:ee:ff)", format!("{m:?}")));
+        }
+    }
+    if !matches!(c.integration.home.as_str(), "luci" | "cgmon" | "") {
+        return Err(tr!("integration.home: {} — luci или cgmon", format!("{:?}", c.integration.home)));
+    }
+    if crate::integration::clean_names(&c.integration.names).len() != c.integration.names.iter().filter(|n| !n.trim().is_empty()).count() {
+        return Err(tr!("integration.names: нужны DNS-имена (router.lan, cgmon.lan) без пробелов и повторов").to_string());
+    }
+    let ps = &dg.persite;
+    if !matches!(ps.as_str(), "off" | "auto" | "active") && !path_id_ok(ps) {
+        return Err(tr!("dns_guard.persite: {} — off, auto, active или путь (@узел, устройство)", format!("{ps:?}")));
+    }
+    if !c.lang.is_empty() && c.lang != "auto" && crate::i18n::id(&c.lang).is_none() {
+        return Err(tr!("lang: {} — auto, en, ru, uz, kk или zh", format!("{:?}", c.lang)));
     }
     for d in &dg.check_domains {
         if !domain_ok(&d.to_lowercase()) {
-            return Err(format!("dns_guard.check_domains: {d:?} — нужен домен (ipleak.net)"));
+            return Err(tr!("dns_guard.check_domains: {} — нужен домен (ipleak.net)", format!("{:?}", d)));
         }
     }
     let v = &dg.check_via;
     if !v.is_empty() && v != "direct" && v != DGR_PROTO && !path_id_ok(v) {
-        return Err(format!("dns_guard.check_via: {v:?} — пусто, direct, proto или устройство"));
+        return Err(tr!("dns_guard.check_via: {} — пусто, direct, proto или устройство", format!("{:?}", v)));
     }
     for r in &dg.relays {
         if parse_relay(r).is_none() {
-            return Err(format!("dns_guard.relays: {r:?} — нужно имя@адрес узла (node1@10.147.17.5, частный IPv4)"));
+            return Err(tr!("dns_guard.relays: {} — нужно имя@адрес узла (node1@10.147.17.5, частный IPv4)", format!("{:?}", r)));
         }
     }
     if dg.relays.len() > DGR_MAX_PATHS {
-        return Err(format!("dns_guard.relays: не больше {DGR_MAX_PATHS} узлов"));
+        return Err(tr!("dns_guard.relays: не больше {} узлов", DGR_MAX_PATHS));
     }
     if dg.relay_mbit < 0 || dg.relay_mbit > 10000 {
         return Err("dns_guard.relay_mbit: 0..10000".into());
     }
     if dg.check_domains.len() > 10 {
-        return Err("dns_guard.check_domains: не больше 10 сайтов".into());
+        return Err(tr!("dns_guard.check_domains: не больше 10 сайтов").into());
     }
     if dg.alternatives.len() > DGR_MAX_PATHS + 1 {
-        return Err(format!("dns_guard.alternatives: не больше {DGR_MAX_PATHS} путей"));
+        return Err(tr!("dns_guard.alternatives: не больше {} путей", DGR_MAX_PATHS));
     }
     let p = &c.payment;
     if p.mode != "monthly" && p.mode != "interval" {
-        return Err("payment.mode: monthly или interval".into());
+        return Err(tr!("payment.mode: monthly или interval").into());
     }
     if p.day < 1 || p.day > 31 {
         return Err("payment.day: 1..31".into());
@@ -336,31 +354,31 @@ pub fn validate(c: &Config) -> Result<(), String> {
         return Err("payment.interval_days: 1..366".into());
     }
     if p.enabled && p.mode == "interval" && !date_ok(&p.start_date) {
-        return Err("payment.start_date: нужна дата ГГГГ-ММ-ДД".into());
+        return Err(tr!("payment.start_date: нужна дата ГГГГ-ММ-ДД").into());
     }
     if !allowed_text(&p.amount) || !allowed_text(&p.note) {
-        return Err("payment.amount/note: недопустимые символы".into());
+        return Err(tr!("payment.amount/note: недопустимые символы").into());
     }
     for ep in c.probes.ipv4.iter().chain(&c.probes.ipv6) {
         match netx::split_host_port(ep) {
             Some((h, port)) if netx::parse_ip(h).is_some() && !port.is_empty() => {}
-            _ => return Err(format!("цель пробы {ep:?}: нужен адрес:порт (IPv6 — [адрес]:порт)")),
+            _ => return Err(tr!("цель пробы {}: нужен адрес:порт (IPv6 — [адрес]:порт)", format!("{:?}", ep))),
         }
     }
     for ep in &c.probes.ipv4 {
         let h = netx::split_host_port(ep).map(|x| x.0).unwrap_or("");
         if netx::parse_ip(h).as_ref().and_then(netx::to4).is_none() {
-            return Err(format!("цель пробы IPv4 {ep:?} — не IPv4"));
+            return Err(tr!("цель пробы IPv4 {} — не IPv4", format!("{:?}", ep)));
         }
     }
     for ep in &c.probes.ipv6 {
         let h = netx::split_host_port(ep).map(|x| x.0).unwrap_or("");
         if netx::parse_ip(h).as_ref().and_then(netx::to4).is_some() {
-            return Err(format!("цель пробы IPv6 {ep:?} — не IPv6"));
+            return Err(tr!("цель пробы IPv6 {} — не IPv6", format!("{:?}", ep)));
         }
     }
     if c.probes.ipv4.is_empty() {
-        return Err("нужна хотя бы одна цель пробы IPv4".into());
+        return Err(tr!("нужна хотя бы одна цель пробы IPv4").into());
     }
     if c.probe_interval_sec < 1 || c.probe_interval_sec > 3600 {
         return Err("probe_interval_sec: 1..3600".into());
@@ -373,26 +391,26 @@ pub fn validate(c: &Config) -> Result<(), String> {
     }
     for (bot, chat) in telegram_dests(&c.hub) {
         if !tg_bot_ok(&bot) {
-            return Err("telegram: неверный токен бота (нужен вид 123456:ABC…)".into());
+            return Err(tr!("telegram: неверный токен бота (нужен вид 123456:ABC…)").into());
         }
         if !tg_chat_ok(&chat) {
-            return Err(format!("telegram: неверный chat id {chat:?} (число, -100… или @канал)"));
+            return Err(tr!("telegram: неверный chat id {} (число, -100… или @канал)", format!("{:?}", chat)));
         }
     }
     if c.hub.enabled && c.hub.token.len() < 16 {
-        return Err("центр сбора: задайте hub.token в cgmon.yaml (не короче 16 символов)".into());
+        return Err(tr!("центр сбора: задайте hub.token в cgmon.yaml (не короче 16 символов)").into());
     }
     if c.report.enabled {
         if c.report.token.len() < 16 {
-            return Err("отправка на центр: задайте report.token в cgmon.yaml (не короче 16 символов)".into());
+            return Err(tr!("отправка на центр: задайте report.token в cgmon.yaml (не короче 16 символов)").into());
         }
         if c.report.urls.is_empty() && c.report.url.trim().is_empty() {
-            return Err("отправка на центр: нет адреса центра".into());
+            return Err(tr!("отправка на центр: нет адреса центра").into());
         }
         for u in c.report.urls.iter().chain(std::iter::once(&c.report.url).filter(|u| !u.trim().is_empty())) {
             match netx::url_scheme_host(u.trim()) {
                 Some(("http", h)) if !h.is_empty() => {}
-                _ => return Err(format!("адрес центра {u:?}: нужен http://адрес:порт/api/v1/report (данные шифруются сами)")),
+                _ => return Err(tr!("адрес центра {}: нужен http://адрес:порт/api/v1/report (данные шифруются сами)", format!("{:?}", u))),
             }
         }
     }
@@ -400,7 +418,7 @@ pub fn validate(c: &Config) -> Result<(), String> {
     if u != BILLING_FILE_SRC {
         match netx::url_scheme_host(u) {
             Some(("http" | "https", h)) if !h.is_empty() => {}
-            _ => return Err("список бесплатных сетей: нужна ссылка http(s)://… или file (загруженный файл)".into()),
+            _ => return Err(tr!("список бесплатных сетей: нужна ссылка http(s)://… или file (загруженный файл)").into()),
         }
     }
     if !matches!(c.log_level.to_lowercase().as_str(), "error" | "err" | "info" | "debug") {
@@ -408,7 +426,7 @@ pub fn validate(c: &Config) -> Result<(), String> {
     }
     for n in c.lan_networks.iter().chain(&c.tunnel_networks).chain(&c.exclude_networks) {
         if netx::parse_cidr(n).is_none() && netx::parse_ip(n).is_none() {
-            return Err(format!("сеть {n:?}: нужен CIDR"));
+            return Err(tr!("сеть {}: нужен CIDR", format!("{:?}", n)));
         }
     }
     Ok(())

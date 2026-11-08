@@ -72,8 +72,8 @@ mod imp {
     fn id(name: &'static str) -> u8 {
         let mut n = NAMES.lock().unwrap_or_else(|e| e.into_inner());
         if n.is_empty() {
-            n.push("workers (потоки)");
-            n.push("loop (вне областей)");
+            n.push(tr!("workers (потоки)"));
+            n.push(tr!("loop (вне областей)"));
         }
         if let Some(i) = n.iter().position(|x| *x == name) {
             return i as u8;
@@ -155,5 +155,5 @@ pub fn scope(_: &'static str) -> Guard {
 pub fn main_thread() {}
 #[cfg(not(feature = "prof"))]
 pub fn report() -> String {
-    "{\"error\":\"сборка без --features prof\"}".into()
+    tr!("{\"error\":\"сборка без --features prof\"}").into()
 }

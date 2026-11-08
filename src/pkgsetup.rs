@@ -45,13 +45,13 @@ pub fn zerotier() -> String {
     let _ = sh(&["uci", "commit", "zerotier"]);
     let _ = sh(&["/etc/init.d/zerotier", "enable"]);
     let _ = sh(&["/etc/init.d/zerotier", "restart"]);
-    "ZeroTier запущен; свою сеть подключите: zerotier-cli join <номер сети> (или LuCI → VPN → ZeroTier)".into()
+    tr!("ZeroTier запущен; свою сеть подключите: zerotier-cli join <номер сети> (или LuCI → VPN → ZeroTier)").into()
 }
 
 const SD_PORT: &str = "5399";
 
 /// Вышестоящие серверы: шифрованный DNS (DoH/DoT), адреса для начального разрешения — Quad9.
-const SD_UPSTREAM: &str = "# cgmon: вышестоящие серверы SmartDNS (DNS-страховка меняет этот файл в аварии)
+const SD_UPSTREAM: &str = "# cgmon: SmartDNS upstream servers (DNS guard rewrites this file during an outage)
 server 9.9.9.10 -bootstrap-dns -exclude-default-group
 server 149.112.112.10 -bootstrap-dns -exclude-default-group
 server-https https://cloudflare-dns.com/dns-query
@@ -60,8 +60,7 @@ server-tls common.dot.dns.yandex.net
 ";
 
 fn sd_custom(dg: &DNSGuardConfig) -> String {
-    format!(
-        "# cgmon: настройки SmartDNS (как на рабочем роутере, без личного)
+    tr!("# cgmon: настройки SmartDNS (как на рабочем роутере, без личного)
 speed-check-mode none
 dualstack-ip-selection no
 prefetch-domain yes
@@ -71,9 +70,7 @@ cache-persist no
 conf-file {}
 conf-file {}
 conf-file {}
-",
-        dg.upstream_file, dg.guard_file, dg.targets_file
-    )
+", dg.upstream_file, dg.guard_file, dg.targets_file)
 }
 
 /// В файле только комментарии и пустые строки.
@@ -96,10 +93,10 @@ fn answers(server: &str) -> bool {
 pub fn smartdns(dg: &DNSGuardConfig) -> String {
     let custom = "/etc/smartdns/custom.conf";
     if uci_get("smartdns.@smartdns[0].enabled") == "1" || !pristine(custom) {
-        return "SmartDNS уже настроен — его настройки не трогаю".into();
+        return tr!("SmartDNS уже настроен — его настройки не трогаю").into();
     }
     if !pristine(&dg.upstream_file) {
-        return format!("SmartDNS: {} уже есть — настройки не трогаю", dg.upstream_file);
+        return tr!("SmartDNS: {} уже есть — настройки не трогаю", dg.upstream_file);
     }
     let _ = std::fs::write(&dg.upstream_file, SD_UPSTREAM);
     for f in [&dg.guard_file, &dg.targets_file] {
@@ -117,7 +114,7 @@ pub fn smartdns(dg: &DNSGuardConfig) -> String {
     let _ = sh(&["/etc/init.d/smartdns", "restart"]);
     let sd = format!("127.0.0.1:{SD_PORT}");
     if !answers(&sd) {
-        return "SmartDNS поставлен, но не отвечает — DNS роутера не переключал".into();
+        return tr!("SmartDNS поставлен, но не отвечает — DNS роутера не переключал").into();
     }
     // dnsmasq → SmartDNS: серверы для отдельных доменов (/zt/…) остаются
     let before = uci_get("dhcp.@dnsmasq[0].server");
@@ -141,11 +138,11 @@ pub fn smartdns(dg: &DNSGuardConfig) -> String {
     new.push(format!("127.0.0.1#{SD_PORT}"));
     set(&new, "1");
     if answers("127.0.0.1:53") {
-        return format!("SmartDNS: шифрованный DNS (Cloudflare, Google, Яндекс), dnsmasq → 127.0.0.1#{SD_PORT}; прежние серверы — /etc/cgmon/dnsmasq-before-smartdns.txt");
+        return tr!("SmartDNS: шифрованный DNS (Cloudflare, Google, Яндекс), dnsmasq → 127.0.0.1#{}; прежние серверы — /etc/cgmon/dnsmasq-before-smartdns.txt", SD_PORT);
     }
     let old: Vec<String> = before.split_whitespace().map(|s| s.trim_matches('\'').to_string()).collect();
     set(&old, &noresolv);
-    "SmartDNS: через него DNS роутера не заработал — вернул как было".into()
+    tr!("SmartDNS: через него DNS роутера не заработал — вернул как было").into()
 }
 
 #[cfg(test)]

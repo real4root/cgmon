@@ -162,14 +162,14 @@ pub fn dur(n: i64, base_min: i64, max_hours: i64) -> i64 {
 /// «45 мин» / «2 ч».
 pub fn dur_text(ms: i64) -> String {
     if ms < HOUR {
-        return format!("{} мин", ms / MIN);
+        return tr!("{} мин", ms / MIN);
     }
-    format!("{} ч", (ms as f64 / HOUR as f64).round() as i64)
+    tr!("{} ч", (ms as f64 / HOUR as f64).round() as i64)
 }
 
 pub fn list_text(l: &[String]) -> String {
     if l.len() > 6 {
-        return format!("{} и ещё {}", l[..6].join(", "), l.len() - 6);
+        return tr!("{} и ещё {}", l[..6].join(", "), l.len() - 6);
     }
     l.join(", ")
 }
@@ -207,13 +207,13 @@ impl Test {
 
     pub fn describe_via(&self, fam: &str) -> String {
         let f = fam_name(fam);
-        let mut direct = format!("напрямую по {f} ответили {} из {}", self.ok_bad, self.n_bad);
+        let mut direct = tr!("напрямую по {2} ответили {0} из {1}", self.ok_bad, self.n_bad, f);
         if self.ok_bad > 0 {
-            direct.push_str(&format!(" ({:.0} мс)", self.med_bad));
+            direct.push_str(&tr!(" ({:.0} мс)", self.med_bad));
         }
-        let mut s = format!("{direct}, через {} — {} из {} ({:.0} мс)", self.via_name, self.ok_via, PROBE_N, self.med_via);
+        let mut s = tr!("{4}, через {0} — {1} из {2} ({3:.0} мс)", self.via_name, self.ok_via, PROBE_N, self.med_via, direct);
         if !self.skipped.is_empty() {
-            s.push_str(&format!("; пропущены: {}", self.skipped.join(", ")));
+            s.push_str(&tr!("; пропущены: {}", self.skipped.join(", ")));
         }
         s
     }
@@ -221,10 +221,10 @@ impl Test {
     pub fn describe(&self, fam: &str) -> String {
         let (f, o) = (fam_name(fam), fam_name(other(fam)));
         if self.ok_bad + 2 > self.n_bad && self.ok_bad > 0 && self.ok_alt > 0 && self.med_bad > 2.0 * self.med_alt + 50.0 {
-            return format!("по {f} медленно: {:.0} мс против {:.0} мс по {o}", self.med_bad, self.med_alt);
+            return tr!("по {2} медленно: {0:.0} мс против {1:.0} мс по {3}", self.med_bad, self.med_alt, f, o);
         }
-        let ms = |ok: usize, m: f64| if ok == 0 { String::new() } else { format!(" ({m:.0} мс)") };
-        format!("по {f} ответили {} из {}{}, по {o} — {} из {}{}", self.ok_bad, self.n_bad, ms(self.ok_bad, self.med_bad), self.ok_alt, self.n_alt, ms(self.ok_alt, self.med_alt))
+        let ms = |ok: usize, m: f64| if ok == 0 { String::new() } else { tr!(" ({:.0} мс)", m) };
+        tr!("по {6} ответили {0} из {1}{2}, по {7} — {3} из {4}{5}", self.ok_bad, self.n_bad, ms(self.ok_bad, self.med_bad), self.ok_alt, self.n_alt, ms(self.ok_alt, self.med_alt), f, o)
     }
 }
 
@@ -353,11 +353,11 @@ pub fn choose_alt(sys: &dyn Sys, r: &mut Test, alts: &[Alt], fam: &str) {
                 return;
             }
             let why = if r.n_alt == 0 {
-                "адресов нет"
+                tr!("адресов нет")
             } else if !bad {
-                "не быстрее"
+                tr!("не быстрее")
             } else {
-                "тоже плохо"
+                tr!("тоже плохо")
             };
             r.skipped.push(format!("{} — {}", fam_name(other(fam)), why));
             continue;
@@ -376,7 +376,7 @@ pub fn choose_alt(sys: &dyn Sys, r: &mut Test, alts: &[Alt], fam: &str) {
             if let Ok(ip) = r.ips[0].parse::<IpAddr>() {
                 let (bok, kb) = sys.bulk(&r.names[0], &ip, a);
                 if !bok {
-                    r.skipped.push(format!("{} — соединения есть, но загрузка {} замирает на {} КБ", a.label, r.names[0], kb));
+                    r.skipped.push(tr!("{} — соединения есть, но загрузка {} замирает на {} КБ", a.label, r.names[0], kb));
                     continue;
                 }
             }
@@ -388,7 +388,7 @@ pub fn choose_alt(sys: &dyn Sys, r: &mut Test, alts: &[Alt], fam: &str) {
             r.med_via = med;
             return;
         }
-        r.skipped.push(format!("{} — ответили {} из {}", a.label, ok, PROBE_N));
+        r.skipped.push(tr!("{} — ответили {} из {}", a.label, ok, PROBE_N));
     }
 }
 
@@ -632,10 +632,10 @@ impl DnsGuard {
             t.nets.clear();
             t.nets6.clear();
             if prev_path {
-                return vec![format!("Обход: {} — {}, обход через {} снят (был {})", t.owner, why, prev_name, dur_text(now - t.since))];
+                return vec![tr!("Обход: {} — {}, обход через {} снят (был {})", t.owner, why, prev_name, dur_text(now - t.since))];
             }
             let next = dur(t.strikes + 1, base, maxh);
-            vec![format!("DNS-страховка (адресно): {} — {}, отказ по {} снят (был {}; при повторе в ближайшие сутки — {})", t.owner, why, f, dur_text(now - t.since), dur_text(next))]
+            vec![tr!("DNS-страховка (адресно): {} — {}, отказ по {} снят (был {}; при повторе в ближайшие сутки — {})", t.owner, why, f, dur_text(now - t.since), dur_text(next))]
         };
         if !r.via.is_empty() && !r.recheck {
             t.via = r.via.clone();
@@ -670,7 +670,7 @@ impl DnsGuard {
                         o.nets.clear();
                         o.nets6.clear();
                         o.until = now;
-                        freed.push(format!("DNS-страховка (адресно): {} — по {} снова в норме ({}), отказ по {} снят — оба протокола сразу не штрафуются", t.owner, fam_name(&o.fam), r.describe(&t.fam), fam_name(&o.fam)));
+                        freed.push(tr!("DNS-страховка (адресно): {} — по {} снова в норме ({}), отказ по {} снят — оба протокола сразу не штрафуются", t.owner, fam_name(&o.fam), r.describe(&t.fam), fam_name(&o.fam)));
                     }
                 }
             }
@@ -678,17 +678,14 @@ impl DnsGuard {
             t.until = now + d;
             if t.via_path() {
                 t.reason = r.describe_via(&t.fam);
-                return vec![format!(
-                    "Обход: {} — новые соединения по {} идут через {} на {}, {} (штраф {}; сетей: {}, домены: {})",
-                    t.owner, f, r.via_name, dur_text(d), t.reason, t.strikes, t.nets.len(), list_text(&t.domains)
-                )];
+                return vec![tr!("Обход: {} — новые соединения по {} идут через {} на {}, {} (штраф {}; сетей: {}, домены: {})", t.owner, f, r.via_name, dur_text(d), t.reason, t.strikes, t.nets.len(), list_text(&t.domains))];
             }
             t.reason = r.describe(&t.fam);
             if !r.skipped.is_empty() {
-                t.reason.push_str(&format!("; пропущены: {}", r.skipped.join(", ")));
+                t.reason.push_str(&tr!("; пропущены: {}", r.skipped.join(", ")));
             }
             let nn = if t.fam == "ipv4" { t.nets.len() } else { t.nets6.len() };
-            return freed.into_iter().chain(std::iter::once(format!("DNS-страховка (адресно): {} — новые соединения по {f} к его сетям отклоняются, клиенты сразу уходят на {o}; на {}, {} (штраф {}; сетей: {nn})", t.owner, dur_text(d), t.reason, t.strikes))).collect();
+            return freed.into_iter().chain(std::iter::once(tr!("DNS-страховка (адресно): {0} — новые соединения по {4} к его сетям отклоняются, клиенты сразу уходят на {5}; на {1}, {2} (штраф {3}; сетей: {6})", t.owner, dur_text(d), t.reason, t.strikes, f, o, nn))).collect();
         }
         if !r.via.is_empty() && r.recheck {
             if early {
@@ -707,7 +704,7 @@ impl DnsGuard {
                     let l = crate::dgroute::nets_add(std::mem::take(&mut t.nets), &t.ips);
                     t.nets = crate::dgroute::nets_add(l, &t.pend);
                     t.reason = r.describe_via(&t.fam);
-                    return vec![format!("Обход: {} — по {} всё ещё плохо, теперь через {} ещё {} ({}; штраф {})", t.owner, f, r.via_name, dur_text(d), t.reason, t.strikes)];
+                    return vec![tr!("Обход: {} — по {} всё ещё плохо, теперь через {} ещё {} ({}; штраф {})", t.owner, f, r.via_name, dur_text(d), t.reason, t.strikes)];
                 }
                 if t.fam == "ipv4" {
                     let l = crate::dgroute::nets_add(std::mem::take(&mut t.nets), &t.ips);
@@ -718,18 +715,18 @@ impl DnsGuard {
                     t.nets6 = crate::dgv6::nets6_add(l, &t.pend6);
                 }
                 t.reason = r.describe(&t.fam);
-                return vec![format!("DNS-страховка (адресно): {} — по {} всё ещё плохо, вместо обхода через {} соединения по {} отклоняются ещё {} (штраф {})", t.owner, f, prev_name, f, dur_text(d), t.strikes)];
+                return vec![tr!("DNS-страховка (адресно): {} — по {} всё ещё плохо, вместо обхода через {} соединения по {} отклоняются ещё {} (штраф {})", t.owner, f, prev_name, f, dur_text(d), t.strikes)];
             }
             if t.via_path() {
                 t.reason = r.describe_via(&t.fam);
-                return vec![format!("Обход: {} — по {} всё ещё плохо ({}), через {} ещё {} (штраф {})", t.owner, f, r.describe(&t.fam), r.via_name, dur_text(d), t.strikes)];
+                return vec![tr!("Обход: {} — по {} всё ещё плохо ({}), через {} ещё {} (штраф {})", t.owner, f, r.describe(&t.fam), r.via_name, dur_text(d), t.strikes)];
             }
             t.reason = r.describe(&t.fam);
-            return vec![format!("DNS-страховка (адресно): {} — по {} всё ещё плохо ({}), отказ по {} ещё {} (штраф {})", t.owner, f, t.reason, f, dur_text(d), t.strikes)];
+            return vec![tr!("DNS-страховка (адресно): {} — по {} всё ещё плохо ({}), отказ по {} ещё {} (штраф {})", t.owner, f, t.reason, f, dur_text(d), t.strikes)];
         }
         if r.recheck && r.n_bad > 0 && !bad {
             // просто медленно, а быстрее пути нет — тоже снять
-            return release(self, t, format!("по {f} снова в норме ({})", r.describe(&t.fam)));
+            return release(self, t, tr!("по {1} снова в норме ({0})", r.describe(&t.fam), f));
         }
         if r.recheck && r.n_bad > 0 && early {
             return Vec::new();
@@ -738,26 +735,26 @@ impl DnsGuard {
             // плохо, но уйти некуда
             if prev_path && !self.path_usable(&prev_via) {
                 let why = self.path_why(&prev_via);
-                return release(self, t, format!("путь {prev_name} больше не годится ({why}), других альтернатив нет"));
+                return release(self, t, tr!("путь {} больше не годится ({}), других альтернатив нет", prev_name, why));
             }
             t.until = now + 30 * MIN; // повторить через полчаса
             return Vec::new();
         }
         if r.recheck {
             // адресов владельца не найти — держать запрет без доказательств нельзя
-            return release(self, t, format!("проверить по {o} не удалось (адресов нет)"));
+            return release(self, t, tr!("проверить по {} не удалось (адресов нет)", o));
         }
         Vec::new()
     }
 
     /// Содержимое targets_file по действующим штрафам.
     pub fn targets_conf(&self) -> String {
-        let mut b = String::from("# cgmon dns_guard: проверочные сайты «мой IP» (файл пишет cgmon; штрафы и обход — в nft, не здесь)\n");
+        let mut b = String::from(tr!("# cgmon dns_guard: проверочные сайты «мой IP» (файл пишет cgmon; штрафы и обход — в nft, не здесь)\n"));
         let mut seen: std::collections::HashSet<String> = std::collections::HashSet::new();
         let targeted = self.cfg.mode == "targeted";
         if self.cfg.check_via == DGR_PROTO && targeted {
             // проверка IPv6: сайтам не отдаём A — браузер идёт к ним только по IPv6
-            b.push_str("# проверка: сайты «мой IP» только по IPv6\n");
+            b.push_str(tr!("# проверка: сайты «мой IP» только по IPv6\n"));
             for d in &self.cfg.check_domains {
                 let d = d.to_lowercase();
                 if domain_ok(&d) && seen.insert(format!("{d}#4")) {
@@ -816,8 +813,8 @@ impl DnsGuard {
                             self.t_written = content;
                         }
                         Err(e) => {
-                            self.err = format!("адресный режим: {e}");
-                            out = Some(format!("DNS-страховка (адресно): не удалось записать {}: {}", self.cfg.targets_file, e));
+                            self.err = tr!("адресный режим: {}", e);
+                            out = Some(tr!("DNS-страховка (адресно): не удалось записать {}: {}", self.cfg.targets_file, e));
                         }
                     }
                 }
@@ -848,11 +845,11 @@ impl DnsGuard {
             return;
         }
         if b.name() != "smartdns" {
-            self.t_err = format!("проверка «мой IP» только по IPv6 (check_via: proto) работает только со SmartDNS; сейчас {}", b.name());
+            self.t_err = tr!("проверка «мой IP» только по IPv6 (check_via: proto) работает только со SmartDNS; сейчас {}", b.name());
             return;
         }
         if !dgsys::includes(&*self.sys).contains(&self.cfg.targets_file) {
-            self.t_err = format!("в custom.conf SmartDNS нет строки «conf-file {}» — адресные запреты не действуют", self.cfg.targets_file);
+            self.t_err = tr!("в custom.conf SmartDNS нет строки «conf-file {}» — адресные запреты не действуют", self.cfg.targets_file);
             return;
         }
         // файл должен существовать: SmartDNS без включённого файла не стартует
@@ -911,7 +908,7 @@ impl DnsGuard {
 /// Записать файл, перезапустить SmartDNS, проверить запрет (dgtWriteSmartDNS).
 fn write_targets(sys: &dyn Sys, file: &str, cache: &str, content: &str, check: Option<(String, String)>) -> Result<(), String> {
     if file.is_empty() {
-        return Err("не задан targets_file".into());
+        return Err(tr!("не задан targets_file").into());
     }
     if sys.read_file(file).as_deref() == Some(content) {
         return Ok(());
@@ -982,8 +979,8 @@ pub mod tests {
         assert_eq!(dur(1, 60, 24), HOUR);
         assert_eq!(dur(3, 60, 24), 4 * HOUR);
         assert_eq!(dur(9, 60, 24), 24 * HOUR);
-        assert_eq!(dur_text(45 * MIN), "45 мин");
-        assert_eq!(dur_text(2 * HOUR), "2 ч");
+        assert_eq!(dur_text(45 * MIN), tr!("45 мин"));
+        assert_eq!(dur_text(2 * HOUR), tr!("2 ч"));
         assert_eq!(sanitize_label(" <b>Google\u{1}</b> "), "bGoogle/b");
     }
 

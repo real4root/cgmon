@@ -494,12 +494,12 @@ pub fn ask(cfg: &Config, cmd: &str) -> Result<String, String> {
 /// cgmon nft-status — все таблицы cgmon кратко; отсутствие — с причиной.
 pub fn nft_status(cfg: &Config) -> i32 {
     let tables = [
-        (cfg.nft.table.as_str(), "создаётся, когда лимитер впервые ограничивает клиента (в dry-run — никогда)"),
-        ("cgmon_acct", "учёт трафика выключен (accounting.enabled)"),
-        (cfg.hard_limit.table.as_str(), "жёсткие лимиты выключены (hard_limit.enabled)"),
-        ("cgmon_route", "обход маршрутом не используется (dns_guard.alternatives)"),
-        ("cgmon_v6", "отказ в IPv6 не действует"),
-        ("cgmon_l2", "доступ к пойманным устройствам не открыт"),
+        (cfg.nft.table.as_str(), tr!("создаётся, когда лимитер впервые ограничивает клиента (в dry-run — никогда)")),
+        ("cgmon_acct", tr!("учёт трафика выключен (accounting.enabled)")),
+        (cfg.hard_limit.table.as_str(), tr!("жёсткие лимиты выключены (hard_limit.enabled)")),
+        ("cgmon_route", tr!("обход маршрутом не используется (dns_guard.alternatives)")),
+        ("cgmon_v6", tr!("отказ в IPv6 не действует")),
+        ("cgmon_l2", tr!("доступ к пойманным устройствам не открыт")),
     ];
     for (t, why) in tables {
         let o = std::process::Command::new(crate::acct::nft_bin()).args(["-t", "list", "table", "inet", t]).output();
@@ -508,8 +508,8 @@ pub fn nft_status(cfg: &Config) -> i32 {
             _ => std::process::Command::new(crate::acct::nft_bin()).args(["-t", "list", "table", "ip", t]).output().ok().filter(|o| o.status.success()),
         };
         match o {
-            Some(o) => println!("# таблица {t}\n{}\n", String::from_utf8_lossy(&o.stdout).trim()),
-            None => println!("# таблица {t}: нет — {why}\n"),
+            Some(o) => println!("{}", tr!("# таблица {1}\n{0}\n", String::from_utf8_lossy(&o.stdout).trim(), t)),
+            None => println!("{}", tr!("# таблица {}: нет — {}\n", t, why)),
         }
     }
     0
@@ -537,17 +537,17 @@ pub fn disable(cfg: &Config) -> i32 {
 pub fn telegram_test(cfg: &Config) -> i32 {
     let dests = crate::livecfg::telegram_dests(&cfg.hub);
     if dests.is_empty() {
-        eprintln!("в hub.telegram нет получателей");
+        eprintln!("{}", tr!("в hub.telegram нет получателей"));
         return 1;
     }
-    let text = format!("✅ <b>cgmon {}</b>: проверка уведомлений с {} — сообщения центра сбора будут приходить сюда.", crate::VERSION, crate::status::hostname());
+    let text = tr!("✅ <b>cgmon {}</b>: проверка уведомлений с {} — сообщения центра сбора будут приходить сюда.", crate::VERSION, crate::status::hostname());
     let mut code = 0;
     for (bot, chat) in dests {
-        let label = format!("бот {} → {chat}", bot.split(':').next().unwrap_or(""));
+        let label = tr!("бот {} → {}", bot.split(':').next().unwrap_or(""), chat);
         match crate::hub::send_telegram(&bot, &chat, &text) {
-            Ok(()) => println!("{label}: отправлено"),
+            Ok(()) => println!("{}", tr!("{}: отправлено", label)),
             Err(e) => {
-                println!("{label}: ошибка: {e}");
+                println!("{}", tr!("{}: ошибка: {}", label, e));
                 code = 1;
             }
         }
@@ -568,20 +568,20 @@ pub fn deps(cfg: &Config, args: &[String]) -> i32 {
     }
     let p = crate::deps::missing_pkgs(&crate::deps::check(cfg));
     if p.is_empty() {
-        println!("Недостающее пакетами не ставится (см. пояснения выше).");
+        println!("{}", tr!("Недостающее пакетами не ставится (см. пояснения выше)."));
         return 1;
     }
-    if !yes && !crate::wizard::yes_no(&format!("Установить {}? Будут скачаны списки пакетов и сами пакеты. [y/N]: ", p.join(" "))) {
-        println!("Отменено.");
+    if !yes && !crate::wizard::yes_no(&tr!("Установить {}? Будут скачаны списки пакетов и сами пакеты. [y/N]: ", p.join(" "))) {
+        println!("{}", tr!("Отменено."));
         return 1;
     }
     match crate::deps::install(&mut out, cfg) {
         Ok(()) => {
-            println!("Перезапуск не обязателен: cgmon подхватит пакеты в течение минуты (QoS — при следующей сверке).");
+            println!("{}", tr!("Перезапуск не обязателен: cgmon подхватит пакеты в течение минуты (QoS — при следующей сверке)."));
             0
         }
         Err(e) => {
-            eprintln!("Ошибка: {e}");
+            eprintln!("{}", tr!("Ошибка: {}", e));
             1
         }
     }
@@ -598,6 +598,6 @@ pub fn mem_json() -> String {
             j.key(&k.to_lowercase()).int(v);
         }
     }
-    j.key("unit").str("kB (threads — штук)").end_obj();
+    j.key("unit").str(tr!("kB (threads — штук)")).end_obj();
     j.b
 }

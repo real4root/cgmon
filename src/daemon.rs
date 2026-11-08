@@ -171,6 +171,9 @@ pub struct Daemon {
     pub phy: crate::phywatch::PhyWatch,
     /// обход блокировок по имени: заблокированные сайты в VPN
     pub unblock: crate::unblock::Unblock,
+    pub persite: crate::persite::PerSite,
+    pub vuln: crate::vulnscan::VulnScan,
+    pub integr: crate::integration::Integration,
     pub plugins: crate::plugins::Plugins,
 }
 
@@ -224,7 +227,7 @@ fn listen_unix(path: &str) -> Result<i32, String> {
     sa.sun_family = libc::AF_UNIX as u16;
     let b = path.as_bytes();
     if b.len() >= sa.sun_path.len() {
-        return Err(format!("{path}: путь сокета слишком длинный"));
+        return Err(tr!("{}: путь сокета слишком длинный", path));
     }
     for (i, c) in b.iter().enumerate() {
         sa.sun_path[i] = *c as libc::c_char;
@@ -243,7 +246,7 @@ fn listen_unix(path: &str) -> Result<i32, String> {
 impl Daemon {
     pub fn new(path: &str) -> Result<Daemon, String> {
         crate::prof::main_thread();
-        let _pc = crate::prof::scope("config (+слой страницы)");
+        let _pc = crate::prof::scope(tr!("config (+слой страницы)"));
         let base = config::load(path)?;
         let overlay = livecfg::read_overlay(&base.paths.runtime);
         // слой со страницы: при ошибке — cgmon.yaml как есть (страница покажет)
@@ -259,6 +262,7 @@ impl Daemon {
             })
         };
         util::set_log_level(&cfg.log_level);
+        crate::i18n::set(&cfg.lang);
         // /tmp/cgmon и каталог данных — до того, как компоненты прочитают свои файлы
         util::migrate_tmp();
         // страница и CGI из бинарника — в /tmp/cgmon/www, в /www — ссылки
@@ -276,10 +280,10 @@ impl Daemon {
         let ms = evloop::now_ms();
         drop(_pc);
         let prober = { let _p = crate::prof::scope("prober"); Prober::new(&cfg, TOK_PROBER) };
-        let acct = { let _p = crate::prof::scope("acct (учёт трафика)"); Acct::new(&cfg) };
+        let acct = { let _p = crate::prof::scope(tr!("acct (учёт трафика)")); Acct::new(&cfg) };
         let cfg_witness = cfg.witness.clone();
-        let resolver = { let _p = crate::prof::scope("resolver (имена)"); Resolver::new(&cfg.dns.r#static) };
-        let _pi = crate::prof::scope("init (прочее)");
+        let resolver = { let _p = crate::prof::scope(tr!("resolver (имена)")); Resolver::new(&cfg.dns.r#static) };
+        let _pi = crate::prof::scope(tr!("init (прочее)"));
         let mut d = Daemon {
             t_tick: Every::new(cfg.interval_sec.max(1) as u64 * 1000, ms + 1000),
             t_tcp: Every::new(cfg.probe_interval_sec.max(1) as u64 * 1000, ms),
@@ -355,6 +359,9 @@ impl Daemon {
             gmaps: Default::default(),
             phy: Default::default(),
             unblock: Default::default(),
+            persite: Default::default(),
+            vuln: Default::default(),
+            integr: Default::default(),
             plugins: Default::default(),
         };
         d.prober.mode = d.rt.cur.wan_check.clone();
@@ -663,7 +670,7 @@ impl Daemon {
         let mut v: Vec<crate::report::Issue> = Vec::new();
         let mut add = |level: &str, kind: String, text: String| v.push(crate::report::Issue { level: level.into(), kind, text });
         if self.cfg.wan_monitor.enabled && !self.wan.up {
-            add("crit", "wan_down".into(), "WAN: нет связи с провайдером".into());
+            add("crit", "wan_down".into(), tr!("WAN: нет связи с провайдером").into());
         } else if matches!(self.health.phase, "CRITICAL" | "WARNING") {
             add(if self.health.phase == "CRITICAL" { "crit" } else { "warn" }, "wan".into(), format!("WAN: {} — {}", self.health.phase, self.health.diagnosis));
         }
@@ -671,37 +678,37 @@ impl Daemon {
             add(l, k, t);
         }
         if let Some((link, true)) = self.gate.as_ref().and_then(|g| g.link()) {
-            add("warn", "backup".into(), format!("Интернет через резервный канал {}", crate::dgtarget::sanitize_label(&link)));
+            add("warn", "backup".into(), tr!("Интернет через резервный канал {}", crate::dgtarget::sanitize_label(&link)));
         }
         if self.downdet.mass() {
-            add("warn", "mass".into(), "Массовые сбои соединений к сайтам — вероятна беда маршрутов провайдера".into());
+            add("warn", "mass".into(), tr!("Массовые сбои соединений к сайтам — вероятна беда маршрутов провайдера").into());
         }
         if let Some(g) = &self.dg {
             if g.saved.state != crate::dnsguard::NORMAL && g.acts() {
-                add("warn", "dns_guard".into(), format!("DNS-страховка в общем режиме: {}", g.saved.state));
+                add("warn", "dns_guard".into(), tr!("DNS-страховка в общем режиме: {}", g.saved.state));
             }
             if g.v6_all != 0 {
-                add("warn", "v6_all".into(), "IPv6 совсем плохой: клиентам отказ во всём IPv6, работают по IPv4".into());
+                add("warn", "v6_all".into(), tr!("IPv6 совсем плохой: клиентам отказ во всём IPv6, работают по IPv4").into());
             }
         }
         if let Some(o) = self.pathc.open_first() {
             add("warn", "culprit".into(), o);
         }
         if !self.local.pressure_reason.is_empty() {
-            add("warn", "pressure".into(), format!("Роутер перегружен: {}", self.local.pressure_reason));
+            add("warn", "pressure".into(), tr!("Роутер перегружен: {}", self.local.pressure_reason));
         }
         if self.local_m.mem_available_mb > 0 && self.local_m.mem_available_mb < 12 {
-            add("warn", "mem".into(), format!("Мало памяти: {} МБ доступно", self.local_m.mem_available_mb));
+            add("warn", "mem".into(), tr!("Мало памяти: {} МБ доступно", self.local_m.mem_available_mb));
         }
         let t = self.sys.temp_c;
         if t >= 85.0 {
-            add("crit", "temp".into(), format!("Температура SoC {t:.0}°C — перегрев, возможен троттлинг"));
+            add("crit", "temp".into(), tr!("Температура SoC {:.0}°C — перегрев, возможен троттлинг", t));
         } else if t >= 75.0 {
-            add("warn", "temp".into(), format!("Температура SoC {t:.0}°C — горячо"));
+            add("warn", "temp".into(), tr!("Температура SoC {:.0}°C — горячо", t));
         }
         let miss = crate::deps::missing_pkgs(&self.deps.miss);
         if !miss.is_empty() {
-            add("warn", "deps".into(), format!("Не хватает пакетов для включённых функций: {}", miss.join(" ")));
+            add("warn", "deps".into(), tr!("Не хватает пакетов для включённых функций: {}", miss.join(" ")));
         }
         v.truncate(30);
         v
@@ -826,7 +833,7 @@ impl Daemon {
         for m in msgs {
             self.add_event(wall, "dns", &m);
             crate::log_info!("{}", m);
-            if m.starts_with("Обход:") || m.starts_with("DNS-страховка (адресно)") {
+            if m.starts_with(tr!("Обход:")) || m.starts_with(tr!("DNS-страховка (адресно)")) {
                 continue; // адресный режим: только лог и события — у штрафов свой блок на странице
             }
             let typ = if m.starts_with("DHCP:") { "dhcp_guard" } else { "dns_guard" };
@@ -863,7 +870,7 @@ impl Daemon {
             let now = evloop::now_ms();
             self.tick(now);
             let probe_due = { let _p = crate::prof::scope("prober"); self.prober.sweep(&self.cfg, &self.poller, now) };
-            let dns_due = { let _p = crate::prof::scope("dns (резолвер)"); self.dns.sweep(&self.poller, now) };
+            let dns_due = { let _p = crate::prof::scope(tr!("dns (резолвер)")); self.dns.sweep(&self.poller, now) };
             { let _p = crate::prof::scope("ipowner"); self.owner.tick(&mut self.dns, &self.poller, now); }
             { let _p = crate::prof::scope("path_trace"); self.step_trace(now); }
             let fast = self.tick_fast(now);
@@ -922,7 +929,7 @@ impl Daemon {
                     let _p = crate::prof::scope("witness");
                     self.witness.on_event(tok, &self.poller, now);
                 } else if self.dns.owns(tok) {
-                    let _p = crate::prof::scope("dns (резолвер)");
+                    let _p = crate::prof::scope(tr!("dns (резолвер)"));
                     self.dns.on_event(tok, &self.poller);
                 } else {
                     let _p = crate::prof::scope("sock");
@@ -1001,6 +1008,7 @@ impl Daemon {
     /// Новый конфиг со страницы: заменить и перенастроить то, что держит копии.
     fn apply_live_config(&mut self, nc: Config, now: u64) {
         util::set_log_level(&nc.log_level);
+        crate::i18n::set(&nc.lang);
         let topo_changed = nc.probes != self.cfg.probes || nc.lan_interfaces != self.cfg.lan_interfaces || nc.lan_networks != self.cfg.lan_networks || nc.lan_zones != self.cfg.lan_zones || nc.isolated_zones != self.cfg.isolated_zones || nc.tunnel_networks != self.cfg.tunnel_networks || nc.exclude_networks != self.cfg.exclude_networks || nc.wan != self.cfg.wan;
         let prot_changed = nc.whitelist != self.cfg.whitelist || nc.protected_networks != self.cfg.protected_networks;
         self.acct.set_timing(nc.accounting.refresh_sec, nc.accounting.window_sec);
@@ -1066,7 +1074,7 @@ impl Daemon {
             self.sys.own_tick(now);
         }
         {
-            let _p = crate::prof::scope("acct (учёт трафика)");
+            let _p = crate::prof::scope(tr!("acct (учёт трафика)"));
             if self.acct.wan_dev != self.stats_dev.dev {
                 self.acct.wan_dev = self.stats_dev.dev.clone();
             }
@@ -1079,10 +1087,10 @@ impl Daemon {
             crate::log_info!("billing: {}", msg);
         }
         drop(_pb);
-        { let _p = crate::prof::scope("resolver (имена)"); self.resolver.maybe_reload(now, &self.cfg.dns.r#static); }
+        { let _p = crate::prof::scope(tr!("resolver (имена)")); self.resolver.maybe_reload(now, &self.cfg.dns.r#static); }
         self.light_tick(now, unix);
         if run_output {
-            let _p = crate::prof::scope("clients (пики)");
+            let _p = crate::prof::scope(tr!("clients (пики)"));
             if let Some(snap) = self.snap.take() {
                 let top = clients::top_offender(&snap, &self.protected, self.cfg.limits.min_offender_connections).cloned();
                 if let Some(m) = self.clients.update_peaks(&snap, top.as_ref(), wall) {
@@ -1092,7 +1100,7 @@ impl Daemon {
             }
             drop(_p);
             { let _p = crate::prof::scope("stats_dev"); self.stats_dev.publish(now); }
-            { let _p = crate::prof::scope("status (сборка JSON)"); self.write_status(unix); }
+            { let _p = crate::prof::scope(tr!("status (сборка JSON)")); self.write_status(unix); }
             { let _p = crate::prof::scope("report+payment"); self.tick_report(now, unix); }
         }
     }
@@ -1100,7 +1108,7 @@ impl Daemon {
     /// Тяжёлый блок: чтение conntrack и динамика клиентов.
     fn heavy(&mut self, now: u64, wall: (i64, u32)) {
         { let _p = crate::prof::scope("plugins"); self.plugins.scan(now); }
-        let _pc = crate::prof::scope("conntrack (чтение)");
+        let _pc = crate::prof::scope(tr!("conntrack (чтение)"));
         let tv: Vec<u16> = self.plugins.watch_ports();
         let ctx = conntrack::Ctx {
             lan_nets: &self.lan_nets,
@@ -1129,7 +1137,7 @@ impl Daemon {
         }
         snap.wan_flows.clear(); // счётчики потоков сохранены в flows — память не держим
         drop(_pf);
-        let _p = crate::prof::scope("clients (динамика)");
+        let _p = crate::prof::scope(tr!("clients (динамика)"));
         if let Some(m) = self.clients.update(&mut snap, now, wall, self.cfg.interval_sec, self.cfg.stat_long_window_sec, self.cfg.client_retention_sec) {
             self.add_event(wall, "alert", &m);
         }
@@ -1138,7 +1146,7 @@ impl Daemon {
 
     /// Лёгкий блок каждого такта: статистика проб, нагрузка, фаза WAN, журнал.
     fn light_tick(&mut self, now: u64, unix: i64) {
-        let _pl = crate::prof::scope("light: пробы/нагрузка/wan");
+        let _pl = crate::prof::scope(tr!("light: пробы/нагрузка/wan"));
         let w = self.cfg.stat_window_sec;
         let syn = if self.syn.fd.is_some() { Some(&self.syn) } else { None };
         let _ps = crate::prof::scope("light: stats_mode");
@@ -1184,7 +1192,7 @@ impl Daemon {
             crate::storage::recheck(&cfg.storage, evloop::now_ms() as i64, || cfg.storage_files());
         }
         {
-            let _p = crate::prof::scope("phy (порты)");
+            let _p = crate::prof::scope(tr!("phy (порты)"));
             let up = std::fs::read_to_string("/proc/uptime").ok().and_then(|s| s.split('.').next().and_then(|x| x.parse::<i64>().ok())).unwrap_or(0);
             // настенное время: страница показывает «линк держится N» от up_ms
             for m in self.phy.tick(wall.0 * 1000 + (wall.1 / 1_000_000) as i64, up) {
@@ -1257,8 +1265,47 @@ impl Daemon {
             for m in self.unblock.tick(wall.0 * 1000 + (wall.1 / 1_000_000) as i64, evloop::now_ms(), gate_mark, &cands, &active, &force, &resets, &known) {
                 crate::log_info!("{}", m);
                 // только в лог/поток событий — НЕ в журнал инцидентов и не в отчёты хаба.
-                // На странице свой блок «Per-Site VPN» строится из текущего списка st.unblock
+                // На странице свой блок «Per-Site Routing» строится из текущего списка st.unblock
                 self.add_event(wall, "unblock", &m);
+            }
+        }
+        {
+            // Per-Site Routing, постоянный список (persite.rs): гейт — свой или как у Per-Site Routing
+            let _p = crate::prof::scope("persite");
+            let dg = &self.cfg.dns_guard;
+            let on = dg.persite != "off" && !dg.persite.is_empty();
+            let (gate, _) = self.persite_gate();
+            let wms = wall.0 * 1000 + (wall.1 / 1_000_000) as i64;
+            let (file, aaaa) = (dg.persite_file.clone(), dg.persite_aaaa);
+            for m in self.persite.tick(wms, evloop::now_ms(), on, gate, &file, aaaa, &self.dnsw) {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "unblock", &m);
+            }
+        }
+        {
+            // интеграция с OpenWrt: стартовая страница и имена роутера
+            let (home, names) = (self.cfg.integration.home.clone(), self.cfg.integration.names.clone());
+            for m in self.integr.tick(evloop::now_ms(), &home, &names) {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "config", &m);
+            }
+        }
+        {
+            // сканер уязвимостей: итоги фонового потока и плановый запуск
+            let _p = crate::prof::scope("vulnscan");
+            let wms = wall.0 * 1000 + (wall.1 / 1_000_000) as i64;
+            let vs = self.cfg.vuln_scan.clone();
+            let billed = self.cfg.billing.enabled;
+            let (resolver, acct) = (&self.resolver, &self.acct);
+            let lan_ifs = topo::lan_interface_names(&self.lan_nets);
+            let input = || vuln_input(&vs, resolver, acct, &lan_ifs);
+            for m in self.vuln.tick(wms, &vs.mode, billed, &vs.state_file, input) {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "vuln", &m);
+            }
+            for m in self.vuln.isolate_tick(&vs.isolate, evloop::now_ms()) {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "vuln", &m);
             }
         }
         {
@@ -1302,7 +1349,7 @@ impl Daemon {
         };
         for m in msgs {
             crate::log_info!("down detector: {}", m);
-            let typ = if m.starts_with("Массовые сбои") { "mass_failure" } else { "service_down" };
+            let typ = if m.starts_with(tr!("Массовые сбои")) { "mass_failure" } else { "service_down" };
             self.journal.record(typ, &m, wall);
         }
         drop(_pd);
@@ -1322,7 +1369,7 @@ impl Daemon {
         }
         drop(_ps);
         let v6src = { let _p = crate::prof::scope("light: wan_ipv6_src"); self.prober.wan_ipv6_src(now) };
-        { let _p = crate::prof::scope("dns_guard (+обход)"); self.tick_dns_guard(now, wall, &v4, &v6, v6src); }
+        { let _p = crate::prof::scope(tr!("dns_guard (+обход)")); self.tick_dns_guard(now, wall, &v4, &v6, v6src); }
         let _pw = crate::prof::scope("witness");
         // метрики по сайтам (наблюдение): расхождение с диагнозом — в журнал
         let (wmsgs, wchanged) = self.witness.tick(now, wall.0, v6.available, self.health.diagnosis, &self.syn, &self.dnsw, &mut self.owner, &mut self.dns, &self.poller, v6src);
@@ -1484,6 +1531,29 @@ impl Daemon {
     }
 
     /// Запрос сокета → ответ (команды как в Go api.go).
+    /// Гейт постоянного списка Per-Site Routing: метка (0 — некуда уводить) и имя для страницы.
+    pub fn persite_gate(&self) -> (u32, String) {
+        let dg = &self.cfg.dns_guard;
+        let path = |id: &str| -> (u32, String) {
+            let m = self.dg.as_ref().and_then(|g| g.path_mark(id)).unwrap_or(0);
+            let name = self.dg.as_ref().and_then(|g| g.gate_display(id)).unwrap_or_else(|| id.to_string());
+            (m, name)
+        };
+        match dg.persite.as_str() {
+            "off" | "" => (0, String::new()),
+            "active" | "vpn" => (crate::unblock::VPN_MARK_U, "VPN (table 53)".into()),
+            "auto" => match dg.unblock.as_str() {
+                "active" | "vpn" => (crate::unblock::VPN_MARK_U, "VPN (table 53)".into()),
+                "off" | "observe" | "" => match self.dg.as_ref().and_then(|g| g.first_mark()) {
+                    Some((m, id)) => (m, self.dg.as_ref().and_then(|g| g.gate_display(&id)).unwrap_or(id)),
+                    None => (0, String::new()),
+                },
+                id => path(id),
+            },
+            id => path(id),
+        }
+    }
+
     pub fn handle(&mut self, req: &str) -> String {
         let v = match parse_json(req) {
             Ok(v) => v,
@@ -1527,6 +1597,64 @@ impl Daemon {
                 }
                 format!("{{\"ok\":true,\"nets\":{n}}}")
             }
+            "set_lang" => {
+                let cfg = self.cfg.clone();
+                let code = v.get("text").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                match self.rt.set_lang(&cfg, &code, now) {
+                    Ok(()) => "{\"ok\":true}".to_string(),
+                    Err(e) => err_json(&e),
+                }
+            }
+            "vuln_get" => self.vuln.report_json(),
+            "vuln_scan" | "vuln_action" => {
+                let cfg = self.cfg.clone();
+                if let Err(e) = self.rt.check_password(&cfg, &password, now) {
+                    return err_json(&e);
+                }
+                if cmd == "vuln_scan" {
+                    let lan_ifs = topo::lan_interface_names(&self.lan_nets);
+                    let input = vuln_input(&cfg.vuln_scan, &self.resolver, &self.acct, &lan_ifs);
+                    let w = util::now_wall();
+                    if self.vuln.start(w.0 * 1000 + (w.1 / 1_000_000) as i64, input) {
+                        "{\"ok\":true}".to_string()
+                    } else {
+                        err_json(&tr!("проверка уже идёт"))
+                    }
+                } else {
+                    let kind = v.get("text").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                    let pkgs: Vec<String> = match v.get("pkgs") {
+                        Some(Value::List(l)) => l.iter().filter_map(|x| x.as_str().map(String::from)).take(64).collect(),
+                        _ => Vec::new(),
+                    };
+                    match self.vuln.action(&kind, pkgs) {
+                        Ok(()) => "{\"ok\":true}".to_string(),
+                        Err(e) => err_json(&e),
+                    }
+                }
+            }
+            "persite_get" => {
+                // окно списка Per-Site Routing: текст и разбор (без пароля — секретов нет)
+                let f = self.cfg.dns_guard.persite_file.clone();
+                self.persite.get_json(&f)
+            }
+            "persite_set" => {
+                let cfg = self.cfg.clone();
+                if let Err(e) = self.rt.check_password(&cfg, &password, now) {
+                    return err_json(&e);
+                }
+                let text = v.get("text").and_then(|x| x.as_str()).unwrap_or("").to_string();
+                match self.persite.save(&cfg.dns_guard.persite_file, &text) {
+                    Ok(l) => {
+                        crate::log_info!("{}", tr!("Per-Site Routing: список изменён со страницы — {} доменов, {} сетей, {} AS", l.domains.len(), l.net4.len() + l.net6.len(), l.asns.len()));
+                        let mut j = J::new();
+                        j.obj().key("ok").bool(true);
+                        crate::persite::list_json(&mut j, &l);
+                        j.end_obj();
+                        j.b
+                    }
+                    Err(e) => err_json(&e),
+                }
+            }
             "pkg_install" => {
                 // кнопка «установить» на странице: apk/opkg в фоне, итог — status.pkg_install
                 let cfg = self.cfg.clone();
@@ -1536,7 +1664,7 @@ impl Daemon {
                 let want: Vec<String> = v.get("text").and_then(|x| x.as_str()).unwrap_or("").split_whitespace().map(String::from).collect();
                 match self.deps.inst.start(&want, &cfg) {
                     Ok(p) => {
-                        crate::log_info!("deps: установка со страницы: {}", p.join(" "));
+                        crate::log_info!("{}", tr!("deps: установка со страницы: {}", p.join(" ")));
                         let mut r = String::from("{\"ok\":true,\"pkgs\":");
                         crate::value::json_str(&mut r, &p.join(" "));
                         r.push('}');
@@ -1588,7 +1716,7 @@ impl Daemon {
                 match self.hub.as_mut() {
                     None => err_json("this router is not a hub"),
                     Some(h) => {
-                        if h.forget(&name, crate::util::now_wall().0 * 1000, "убран со страницы") {
+                        if h.forget(&name, crate::util::now_wall().0 * 1000, tr!("убран со страницы")) {
                             "{\"ok\":true}".to_string()
                         } else {
                             err_json("no such router")
@@ -1641,12 +1769,17 @@ impl Daemon {
             "config_get" => {
                 // поля cgmon.yaml для страницы (без путей, паролей, команд)
                 // пояснения: из своего cgmon.yaml, иначе из встроенного справочника
-                let mut hints = std::fs::read_to_string(&self.cfg.source).map(|t| livecfg::hints(&t)).unwrap_or_default();
+                let mut hints = crate::textenc::read(&self.cfg.source).map(|t| livecfg::hints(&t.0)).unwrap_or_default();
                 for h in livecfg::hints(config::REFERENCE) {
                     if !hints.iter().any(|x| x.0 == h.0) {
                         hints.push(h);
                     }
                 }
+                // не русский язык — пояснения из каталога (комментарии в cgmon.yaml русские)
+                let hints = match v.get("lang").and_then(|x| x.as_str()).and_then(crate::i18n::id) {
+                    Some(l) => crate::i18n::localize_hints_in(l, hints), // язык страницы
+                    None => crate::i18n::localize_hints(hints),
+                };
                 let mut j = J::new();
                 j.obj().key("fields").arr();
                 self.cfg.walk("", &mut |p, f| {
@@ -1757,7 +1890,7 @@ pub fn request(socket: &str, req: &str, timeout_ms: i32) -> Result<String, Strin
     }
     unsafe { libc::close(fd) };
     if out.is_empty() {
-        return Err("нет ответа".into());
+        return Err(tr!("нет ответа").into());
     }
     Ok(String::from_utf8_lossy(&out).trim_end().to_string())
 }
@@ -1791,4 +1924,28 @@ impl dg::Feed for DgFeed<'_> {
             }
         }
     }
+}
+
+/// Данные для сканера: устройства LAN из ARP (имена — как в таблице устройств) и
+/// собственные адреса роутера.
+fn vuln_input(vs: &crate::config::VulnScanConfig, resolver: &crate::resolver::Resolver, acct: &crate::acct::Acct, lan_ifs: &[String]) -> crate::vulnscan::Input {
+    let own: Vec<IpAddr> = crate::netx::if_addrs().into_iter().map(|x| x.1).collect();
+    let mut lan = Vec::new();
+    if vs.lan {
+        for l in std::fs::read_to_string("/proc/net/arp").unwrap_or_default().lines().skip(1) {
+            let c: Vec<&str> = l.split_whitespace().collect();
+            // только устройства на интерфейсах LAN (не ZeroTier/tailscale и не модем на WAN)
+            if c.len() < 6 || c[2] == "0x0" || !lan_ifs.iter().any(|i| i == c[5]) {
+                continue;
+            }
+            let Ok(ip) = c[0].parse::<IpAddr>() else { continue };
+            if !crate::netx::to4(&ip).map_or(false, crate::netx::is_private4) || own.contains(&ip) {
+                continue;
+            }
+            let name = resolver.name_for(c[0], &acct.mac_of(c[0]));
+            let (d, u) = acct.day(c[0], crate::evloop::unix_now());
+            lan.push((ip, name, c[3].to_string(), d + u));
+        }
+    }
+    crate::vulnscan::Input { lan: vs.lan, lan_devices: lan, own }
 }

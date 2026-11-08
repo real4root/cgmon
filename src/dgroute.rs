@@ -389,7 +389,7 @@ impl DnsGuard {
 
     pub fn path_label(&self, id: &str) -> String {
         match self.r_paths.get(id) {
-            Some(p) if p.relay => format!("узел {} ({})", p.label, p.dev),
+            Some(p) if p.relay => format!("{} ({})", p.label, p.dev),
             Some(p) if !p.label.is_empty() && p.label != id => format!("{} ({id})", p.label),
             _ => id.to_string(),
         }
@@ -425,12 +425,12 @@ impl DnsGuard {
     /// Почему путь сейчас не годится.
     pub fn path_why(&self, id: &str) -> String {
         match self.r_paths.get(id) {
-            None => "нет маршрута",
-            Some(p) if p.primary => "сейчас основной",
-            Some(_) if self.over_limit(id) => "лимит на сегодня исчерпан",
-            Some(p) if !p.checked => "ещё не проверен",
-            Some(p) if !p.up => "путь не работает",
-            _ => "не настроен",
+            None => tr!("нет маршрута"),
+            Some(p) if p.primary => tr!("сейчас основной"),
+            Some(_) if self.over_limit(id) => tr!("лимит на сегодня исчерпан"),
+            Some(p) if !p.checked => tr!("ещё не проверен"),
+            Some(p) if !p.up => tr!("путь не работает"),
+            _ => tr!("не настроен"),
         }
         .into()
     }
@@ -544,14 +544,14 @@ impl DnsGuard {
             old.primary = p.primary;
             if became && on && self.used(&id) {
                 self.route_lost(now, &id);
-                msgs.push(format!("Обход: {} стал основным каналом — для обхода не используется", self.path_label(&id)));
+                msgs.push(tr!("Обход: {} стал основным каналом — для обхода не используется", self.path_label(&id)));
             }
         }
         let gone: Vec<String> = self.r_paths.keys().filter(|id| !found.contains_key(*id)).cloned().collect();
         for id in gone {
             if self.r_paths[&id].up && on && self.used(&id) {
                 self.route_lost(now, &id);
-                msgs.push(format!("Обход: путь {} пропал (нет маршрута) — его сети перепроверяются", self.path_label(&id)));
+                msgs.push(tr!("Обход: путь {} пропал (нет маршрута) — его сети перепроверяются", self.path_label(&id)));
             }
             self.r_paths.remove(&id);
         }
@@ -581,7 +581,7 @@ impl DnsGuard {
             Err(e) => {
                 let mut msgs = Vec::new();
                 if self.r_err != e {
-                    msgs.push(format!("Обход: не удалось настроить маршруты: {e}"));
+                    msgs.push(tr!("Обход: не удалось настроить маршруты: {}", e));
                 }
                 self.r_err = e;
                 msgs
@@ -620,7 +620,12 @@ impl DnsGuard {
         self.r_paths.get(id).map(|p| p.label.clone()).filter(|l| !l.is_empty())
     }
 
-    /// Метка активного пути по его id (для Per-Site VPN: уводить через выбранный гейт).
+    /// Первый рабочий путь обхода (по порядку alternatives, без proto): метка и id.
+    pub fn first_mark(&self) -> Option<(u32, String)> {
+        self.cfg.alternatives.iter().filter(|a| *a != DGR_PROTO).find_map(|a| self.path_mark(a).map(|m| (m, a.clone())))
+    }
+
+    /// Метка активного пути по его id (для Per-Site Routing: уводить через выбранный гейт).
     /// Путь должен быть поднят и проверен — иначе уводить некуда.
     pub fn path_mark(&self, id: &str) -> Option<u32> {
         self.r_paths.get(id).filter(|p| p.idx > 0 && p.up && p.checked).map(|p| mark(p.idx))
@@ -798,10 +803,10 @@ impl DnsGuard {
         }
         if was && !up {
             self.route_lost(now, &h.id);
-            return vec![format!("Обход: путь {} не работает (проверка через него без ответа) — его сети перепроверяются", self.path_label(&h.id))];
+            return vec![tr!("Обход: путь {} не работает (проверка через него без ответа) — его сети перепроверяются", self.path_label(&h.id))];
         }
         if !was && up && !first {
-            return vec![format!("Обход: путь {} снова работает ({:.0} мс)", self.path_label(&h.id), h.ms)];
+            return vec![tr!("Обход: путь {} снова работает ({:.0} мс)", self.path_label(&h.id), h.ms)];
         }
         Vec::new()
     }
@@ -844,7 +849,7 @@ impl DnsGuard {
             if !over && self.over_limit(&id) {
                 self.route_lost(now, &id);
                 self.persist();
-                msgs.push(format!("Обход: {} — лимит трафика на сегодня исчерпан ({} МБ), путь не используется до полуночи", self.path_label(&id), self.limit_mb(&id)));
+                msgs.push(tr!("Обход: {} — лимит трафика на сегодня исчерпан ({} МБ), путь не используется до полуночи", self.path_label(&id), self.limit_mb(&id)));
             }
         }
         self.r_last = Some(last);

@@ -77,7 +77,7 @@ pub fn vendor_category(v: &str) -> &'static str {
     let l = v.to_lowercase();
     for (keys, cat) in CATEGORIES {
         if keys.split('|').any(|k| l.contains(k)) {
-            return if *cat == "Apple" { "" } else { cat };
+            return if *cat == "Apple" { "" } else { crate::i18n::tr(cat) };
         }
     }
     ""
@@ -357,7 +357,7 @@ impl DevIdent {
     fn vendor_name(self: &Arc<Self>, i: &mut Inner, mac: &str, now: i64) -> String {
         let Some(b) = mac_bytes(mac) else { return String::new() };
         if b[0] & 0x02 != 0 {
-            return "*Телефон/планшет (частный MAC)".into(); // случайный MAC — почти только телефоны
+            return tr!("*Телефон/планшет (частный MAC)").into(); // случайный MAC — почти только телефоны
         }
         let oui = format!("{:02x}{:02x}{:02x}", b[0], b[1], b[2]);
         let v = i.vendor.get(&oui).cloned();

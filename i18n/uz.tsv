@@ -1,0 +1,835 @@
+# cgmon — uz: source (ru)<TAB>translation; \n = newline. tools/i18n.py check
+\# cgmon: бесплатные сети, загружено со страницы\n{}\n	\# cgmon: bepul tarmoqlar, sahifadan yuklangan\n{}\n
+нет uclient-fetch, wget или curl	uclient-fetch, wget yoki curl yoʻq
+создаётся, когда лимитер впервые ограничивает клиента (в dry-run — никогда)	limiter mijozni birinchi marta cheklaganda yaratiladi (dry-run rejimida — hech qachon)
+учёт трафика выключен (accounting.enabled)	trafik hisobi oʻchirilgan (accounting.enabled)
+жёсткие лимиты выключены (hard_limit.enabled)	qatʼiy limitlar oʻchirilgan (hard_limit.enabled)
+обход маршрутом не используется (dns_guard.alternatives)	marshrut orqali aylanib oʻtish ishlatilmaydi (dns_guard.alternatives)
+отказ в IPv6 не действует	IPv6 rad etish faol emas
+доступ к пойманным устройствам не открыт	tutilgan qurilmalarga kirish ochilmagan
+\# таблица {1}\n{0}\n	\# jadval {1}\n{0}\n
+\# таблица {}: нет — {}\n	\# jadval {}: yoʻq — {}\n
+в hub.telegram нет получателей	hub.telegram da qabul qiluvchilar yoʻq
+✅ <b>cgmon {}</b>: проверка уведомлений с {} — сообщения центра сбора будут приходить сюда.	✅ <b>cgmon {}</b>: {} dan bildirishnoma sinovi — markaz xabarlari shu yerga keladi.
+бот {} → {}	bot {} → {}
+{}: отправлено	{}: yuborildi
+{}: ошибка: {}	{}: xato: {}
+Недостающее пакетами не ставится (см. пояснения выше).	Yetishmayotganlar paket orqali oʻrnatilmaydi (yuqoridagi izohlarga qarang).
+Установить {}? Будут скачаны списки пакетов и сами пакеты. [y/N]: 	{} oʻrnatilsinmi? Paketlar roʻyxati va paketlarning oʻzi yuklab olinadi. [y/N]: 
+Отменено.	Bekor qilindi.
+Перезапуск не обязателен: cgmon подхватит пакеты в течение минуты (QoS — при следующей сверке).	Qayta ishga tushirish shart emas: cgmon paketlarni bir daqiqa ichida aniqlaydi (QoS — keyingi tekshiruvda).
+Ошибка: {}	Xato: {}
+kB (threads — штук)	kB (threads — dona)
+{}: ожидается true/false, а не {}	{}: true/false kutilgan, {} emas
+{}: ожидается true/false	{}: true/false kutilgan
+{}: ожидается целое, а не {}	{}: butun son kutilgan, {} emas
+{}: ожидается число, а не {}	{}: son kutilgan, {} emas
+{}: ожидается число	{}: son kutilgan
+{}: ожидается строка	{}: satr kutilgan
+{}: ожидается список	{}: roʻyxat kutilgan
+{}: ожидается словарь	{}: lugʻat kutilgan
+config.reference.yaml: встроенный справочник не разбирается	config.reference.yaml: ichki maʼlumotnoma tahlil qilinmaydi
+config.reference.yaml: встроенный справочник не применяется	config.reference.yaml: ichki maʼlumotnoma qoʻllanmaydi
+конфиг	konfiguratsiya
+{}: путь сокета слишком длинный	{}: soket yoʻli juda uzun
+config (+слой страницы)	config (+sahifa qatlami)
+acct (учёт трафика)	acct (trafik hisobi)
+resolver (имена)	resolver (nomlar)
+init (прочее)	init (boshqalar)
+WAN: нет связи с провайдером	WAN: provayder bilan aloqa yoʻq
+Интернет через резервный канал {}	Internet zaxira kanal orqali: {}
+Массовые сбои соединений к сайтам — вероятна беда маршрутов провайдера	Ommaviy uzilishlar: saytlarga ulanishlar ommaviy ravishda oʻtmayapti — ehtimol provayder marshrutlarida muammo
+DNS-страховка в общем режиме: {}	DNS-himoya umumiy rejimda: {}
+IPv6 совсем плохой: клиентам отказ во всём IPv6, работают по IPv4	IPv6 juda yomon: mijozlarga barcha IPv6 rad etildi, ular IPv4 orqali ishlaydi
+Роутер перегружен: {}	Router haddan tashqari yuklangan: {}
+Мало памяти: {} МБ доступно	Xotira kam: {} MB mavjud
+Температура SoC {:.0}°C — перегрев, возможен троттлинг	SoC harorati {:.0}°C — qizib ketish, tezlik pasayishi mumkin
+Температура SoC {:.0}°C — горячо	SoC harorati {:.0}°C — issiq
+Не хватает пакетов для включённых функций: {}	Yoqilgan funksiyalar uchun paketlar yetishmaydi: {}
+Обход:	Aylanib oʻtish:
+DNS-страховка (адресно)	DNS-himoya (manzilli)
+dns (резолвер)	dns (resolver)
+clients (пики)	clients (choʻqqilar)
+status (сборка JSON)	status (JSON yigʻish)
+conntrack (чтение)	conntrack (oʻqish)
+clients (динамика)	clients (dinamika)
+light: пробы/нагрузка/wan	light: sinovlar/yuklama/wan
+phy (порты)	phy (portlar)
+Массовые сбои	Ommaviy uzilishlar
+dns_guard (+обход)	dns_guard (+aylanib oʻtish)
+проверка уже идёт	tekshiruv allaqachon ketmoqda
+Per-Site Routing: список изменён со страницы — {} доменов, {} сетей, {} AS	Per-Site Routing: roʻyxat sahifadan oʻzgartirildi — {} domen, {} tarmoq, {} AS
+deps: установка со страницы: {}	deps: sahifadan oʻrnatish: {}
+убран со страницы	sahifadan olib tashlandi
+нет ответа	javob yoʻq
+соединения (conntrack)	ulanishlar (conntrack)
+правила nftables	nftables qoidalari
+жёсткие лимиты соединений (hard_limit)	qatʼiy ulanish limitlari (hard_limit)
+шейпер отдачи (upload_shaper)	yuborish sheyperi (upload_shaper)
+{}: приём	{}: qabul
+выбор шлюза (gate_selector)	shlyuz tanlash (gate_selector)
+адресная DNS-страховка (dns_guard.mode: targeted)	manzilli DNS-himoya (dns_guard.mode: targeted)
+обход маршрутом (dns_guard.alternatives)	marshrut orqali aylanib oʻtish (dns_guard.alternatives)
+проверка загрузки через путь обхода	aylanib oʻtish yoʻli orqali yuklashni tekshirish
+обход через свои роутеры (dns_guard.relays)	oʻz routerlaringiz orqali aylanib oʻtish (dns_guard.relays)
+провайдер для отчётов	hisobotlar uchun provayder
+список TAS-IX	TAS-IX roʻyxati
+производители по MAC	MAC boʻyicha ishlab chiqaruvchilar
+ip из busybox не умеет таблицы > 255 и fwmark с маской	busybox ip 255 dan katta jadvallar va niqobli fwmark bilan ishlay olmaydi
+или wget, или uclient-fetch + libustream-*ssl	yoki wget, yoki uclient-fetch + libustream-*ssl
+ядро без conntrack/procfs: нужна другая сборка прошивки (kmod-nf-conntrack, CONFIG_NF_CONNTRACK_PROCFS)	conntrack/procfs siz yadro: proshivkaning boshqa yigʻmasi kerak (kmod-nf-conntrack, CONFIG_NF_CONNTRACK_PROCFS)
+Зависимости: всё на месте ({} проверено для включённых функций).	Bogʻliqliklar: hammasi joyida (yoqilgan funksiyalar uchun {} ta tekshirildi).
+Не хватает ({} из {}):	Yetishmaydi ({} / {}):
+  {} {} пакет {} → {}	  {} {} paket {} → {}
+Установить: {2} update && {0} {1}   (или: cgmon deps --install)	Oʻrnatish: {2} update && {0} {1}   (yoki: cgmon deps --install)
+Пакеты: {} (менеджер пакетов не найден)	Paketlar: {} (paket menejeri topilmadi)
+Устанавливать нечего.	Oʻrnatadigan narsa yoʻq.
+после установки всё ещё не хватает {}	oʻrnatgandan keyin ham yetishmaydi: {}
+Готово: все зависимости на месте.	Tayyor: barcha bogʻliqliklar joyida.
+в сборке cgmon {} пакеты не ставятся: только то, что есть в прошивке	cgmon {} yigʻmasida paketlar oʻrnatilmaydi: faqat proshivkada borlari
+пакет {} не ставится со страницы	{} paketi sahifadan oʻrnatilmaydi
+устанавливать нечего	oʻrnatadigan narsa yoʻq
+нет ни apk, ни opkg	apk ham, opkg ham yoʻq
+мало места: свободно {1} КБ, нужно ≈{0} КБ	joy kam: {1} KB boʻsh, ≈{0} KB kerak
+установка уже идёт	oʻrnatish allaqachon ketmoqda
+deps: установлено {}{}	deps: oʻrnatildi {}{}
+deps: установка {} не удалась: {}	deps: {} ni oʻrnatib boʻlmadi: {}
+установка: {} (модули ядра есть только под ядро вашей сборки — на snapshot их может не быть)	oʻrnatish: {} (yadro modullari faqat yigʻmangiz yadrosi uchun bor — snapshot da boʻlmasligi mumkin)
+deps: нет {} {} ({}) — нужно для: {}	deps: {} {} yoʻq ({}) — kerak: {}
+deps: установить: cgmon deps --install  (пакеты: {})	deps: oʻrnatish: cgmon deps --install  (paketlar: {})
+deps: все зависимости на месте	deps: barcha bogʻliqliklar joyida
+камера	kamera
+телефон/планшет	telefon/planshet
+ТВ/приставка	TV/pristavka
+компьютер	kompyuter
+сетевое	tarmoq qurilmasi
+колонка	kolonka
+приставка/ПК	pristavka/KK
+*Телефон/планшет (частный MAC)	*Telefon/planshet (xususiy MAC)
+нет маршрута	marshrut yoʻq
+сейчас основной	hozir asosiy
+лимит на сегодня исчерпан	bugungi limit tugadi
+ещё не проверен	hali tekshirilmagan
+путь не работает	yoʻl ishlamayapti
+не настроен	sozlanmagan
+Обход: {} стал основным каналом — для обхода не используется	Aylanib oʻtish: {} asosiy kanal boʻldi — aylanib oʻtish uchun ishlatilmaydi
+Обход: путь {} пропал (нет маршрута) — его сети перепроверяются	Aylanib oʻtish: {} yoʻli yoʻqoldi (marshrut yoʻq) — uning tarmoqlari qayta tekshirilmoqda
+Обход: не удалось настроить маршруты: {}	Aylanib oʻtish: marshrutlarni sozlab boʻlmadi: {}
+Обход: путь {} не работает (проверка через него без ответа) — его сети перепроверяются	Aylanib oʻtish: {} yoʻli ishlamayapti (u orqali tekshiruv javobsiz) — uning tarmoqlari qayta tekshirilmoqda
+Обход: путь {} снова работает ({:.0} мс)	Aylanib oʻtish: {} yoʻli yana ishlayapti ({:.0} ms)
+Обход: {} — лимит трафика на сегодня исчерпан ({} МБ), путь не используется до полуночи	Aylanib oʻtish: {} — bugungi trafik limiti tugadi ({} MB), yoʻl yarim tungacha ishlatilmaydi
+{} мин	{} daq
+{} ч	{} soat
+{} и ещё {}	{} va yana {}
+напрямую по {2} ответили {0} из {1}	toʻgʻridan-toʻgʻri {2} orqali {1} tadan {0} tasi javob berdi
+ ({:.0} мс)	 ({:.0} ms)
+{4}, через {0} — {1} из {2} ({3:.0} мс)	{4}, {0} orqali — {2} tadan {1} ({3:.0} ms)
+; пропущены: {}	; oʻtkazib yuborildi: {}
+по {2} медленно: {0:.0} мс против {1:.0} мс по {3}	{2} orqali sekin: {0:.0} ms, {3} orqali {1:.0} ms
+по {6} ответили {0} из {1}{2}, по {7} — {3} из {4}{5}	{6} orqali {1} tadan {0} tasi javob berdi{2}, {7} orqali — {4} tadan {3}{5}
+адресов нет	manzillar yoʻq
+не быстрее	tezroq emas
+тоже плохо	u ham yomon
+{} — соединения есть, но загрузка {} замирает на {} КБ	{} — ulanishlar bor, lekin {} yuklanishi {} KB da toʻxtab qoladi
+{} — ответили {} из {}	{} — {2} tadan {1} tasi javob berdi
+Обход: {} — {}, обход через {} снят (был {})	Aylanib oʻtish: {} — {}, {} orqali aylanib oʻtish olib tashlandi ({} davom etdi)
+DNS-страховка (адресно): {} — {}, отказ по {} снят (был {}; при повторе в ближайшие сутки — {})	DNS-himoya (manzilli): {} — {}, {} orqali rad etish olib tashlandi ({} davom etdi; bir sutka ichida takrorlansa — {})
+DNS-страховка (адресно): {} — по {} снова в норме ({}), отказ по {} снят — оба протокола сразу не штрафуются	DNS-himoya (manzilli): {} — {} orqali yana normal ({}), {} orqali rad etish olib tashlandi — ikkala protokol birdaniga jarimalanmaydi
+Обход: {} — новые соединения по {} идут через {} на {}, {} (штраф {}; сетей: {}, домены: {})	Aylanib oʻtish: {} — {} orqali yangi ulanishlar {} orqali {} davomida oʻtadi, {} (jarima {}; tarmoqlar: {}, domenlar: {})
+DNS-страховка (адресно): {0} — новые соединения по {4} к его сетям отклоняются, клиенты сразу уходят на {5}; на {1}, {2} (штраф {3}; сетей: {6})	DNS-himoya (manzilli): {0} — uning tarmoqlariga {4} orqali yangi ulanishlar rad etiladi, mijozlar darhol {5} ga oʻtadi; {1} davomida, {2} (jarima {3}; tarmoqlar: {6})
+Обход: {} — по {} всё ещё плохо, теперь через {} ещё {} ({}; штраф {})	Aylanib oʻtish: {} — {} orqali hali ham yomon, endi {} orqali yana {} ({}; jarima {})
+DNS-страховка (адресно): {} — по {} всё ещё плохо, вместо обхода через {} соединения по {} отклоняются ещё {} (штраф {})	DNS-himoya (manzilli): {} — {} orqali hali ham yomon, {} orqali aylanib oʻtish oʻrniga {} orqali ulanishlar yana {} rad etiladi (jarima {})
+Обход: {} — по {} всё ещё плохо ({}), через {} ещё {} (штраф {})	Aylanib oʻtish: {} — {} orqali hali ham yomon ({}), {} orqali yana {} (jarima {})
+DNS-страховка (адресно): {} — по {} всё ещё плохо ({}), отказ по {} ещё {} (штраф {})	DNS-himoya (manzilli): {} — {} orqali hali ham yomon ({}), {} orqali rad etish yana {} (jarima {})
+по {1} снова в норме ({0})	{1} orqali yana normal ({0})
+путь {} больше не годится ({}), других альтернатив нет	{} yoʻli endi yaramaydi ({}), boshqa muqobil yoʻq
+проверить по {} не удалось (адресов нет)	{} orqali tekshirib boʻlmadi (manzillar yoʻq)
+\# cgmon dns_guard: проверочные сайты «мой IP» (файл пишет cgmon; штрафы и обход — в nft, не здесь)\n	\# cgmon dns_guard: «mening IP» tekshiruv saytlari (faylni cgmon yozadi; jarimalar va aylanib oʻtish — nft da, bu yerda emas)\n
+\# проверка: сайты «мой IP» только по IPv6\n	\# tekshiruv: «mening IP» saytlari faqat IPv6 orqali\n
+адресный режим: {}	manzilli rejim: {}
+DNS-страховка (адресно): не удалось записать {}: {}	DNS-himoya (manzilli): {} ni yozib boʻlmadi: {}
+проверка «мой IP» только по IPv6 (check_via: proto) работает только со SmartDNS; сейчас {}	«mening IP» ni faqat IPv6 orqali tekshirish (check_via: proto) faqat SmartDNS bilan ishlaydi; hozir {}
+в custom.conf SmartDNS нет строки «conf-file {}» — адресные запреты не действуют	SmartDNS custom.conf da «conf-file {}» qatori yoʻq — manzilli rad etishlar ishlamaydi
+не задан targets_file	targets_file berilmagan
+, метрики по сайтам {:.0}	, saytlar boʻyicha metrikalar {:.0}
+IPv6: клиентам отказ во всех новых IPv6-соединениях в интернет — пробы IPv6 {0:.0}%{1} (порог {3:.0}) дольше {2}; клиенты сразу уходят на IPv4	IPv6: mijozlarga internetga barcha yangi IPv6 ulanishlar rad etiladi — IPv6 sinovlari {0:.0}%{1} (chegara {3:.0}) {2} dan uzoq; mijozlar darhol IPv4 ga oʻtadi
+IPv6: отказ во всех IPv6-соединениях снят — пробы IPv6 {:.0}%{} (действовал {})	IPv6: barcha IPv6 ulanishlarni rad etish olib tashlandi — IPv6 sinovlari {:.0}%{} ({} davom etdi)
+DHCP: IPv6 шлюз отключен (клиентам не раздаётся IPv6-маршрут) из-за деградации IPv6 провайдера	DHCP: provayder IPv6 degradatsiyasi sababli IPv6 shlyuz oʻchirildi (mijozlarga IPv6 marshrut berilmaydi)
+DHCP: IPv6 шлюз снова включен	DHCP: IPv6 shlyuz yana yoqildi
+\n# cgmon dns_guard: у провайдера плохой IPv6 — без AAAA\nforce-AAAA-SOA yes\n	\n# cgmon dns_guard: provayderda IPv6 yomon — AAAA siz\nforce-AAAA-SOA yes\n
+\# cgmon dns_guard: у провайдера сломан IPv4 — DNS64 (обычные серверы вернутся сами)\n	\# cgmon dns_guard: provayderda IPv4 buzilgan — DNS64 (oddiy serverlar oʻzi qaytadi)\n
+SmartDNS работает, но в его custom.conf нет строк «conf-file {}» и «conf-file {}» (вышестоящие серверы — в первом файле); пока через dnsmasq — при DNS64 запросы пойдут мимо SmartDNS	SmartDNS ishlayapti, lekin uning custom.conf ida «conf-file {}» va «conf-file {}» qatorlari yoʻq (yuqori serverlar — birinchi faylda); hozircha dnsmasq orqali — DNS64 da soʻrovlar SmartDNS ni chetlab oʻtadi
+DNS: клиентам отдаем только IPv4 адрес, у провайдера деградация IPv6	DNS: mijozlarga faqat IPv4 manzil beramiz, provayderda IPv6 degradatsiyasi
+DNS: клиентам отдаем IPv6 адреса через DNS64, у провайдера деградация IPv4	DNS: mijozlarga DNS64 orqali IPv6 manzillar beramiz, provayderda IPv4 degradatsiyasi
+DNS: обычные настройки восстановлены	DNS: oddiy sozlamalar tiklandi
+DNS-страховка: {}	DNS-himoya: {}
+DNS-страховка: при старте DNS в аварийном режиме ({}) — обычные настройки вернутся, когда провайдер будет в норме	DNS-himoya: ishga tushganda DNS favqulodda rejimda edi ({}) — provayder normal boʻlganda oddiy sozlamalar qaytadi
+{} (действует с {})	{} ({} dan beri amalda)
+dns guard: настройки DNS изменены — сохранены как обычные	dns guard: DNS sozlamalari oʻzgardi — oddiy sifatida saqlandi
+DNS-страховка: настройки DNS изменены вручную во время аварийного режима — приняты как обычные	DNS-himoya: favqulodda rejimda DNS sozlamalari qoʻlda oʻzgartirildi — oddiy sifatida qabul qilindi
+DNS-страховка (наблюдение): сделал бы — {}	DNS-himoya (kuzatuv): qilgan boʻlardi — {}
+DNS-страховка: не удалось переключить ({}): {}	DNS-himoya: oʻtkazib boʻlmadi ({}): {}
+ (проверка: DNS отвечает как «{}»)	 (tekshiruv: DNS «{}» kabi javob beradi)
+DNS-страховка не помогла: после переключения стал плохим {} — обычные настройки DNS, этот режим не включится ещё 1h0m0s	DNS-himoya yordam bermadi: oʻtkazgandan keyin {} yomonlashdi — oddiy DNS sozlamalari, bu rejim yana 1h0m0s yoqilmaydi
+DNS-страховка (наблюдение): {}	DNS-himoya (kuzatuv): {}
+DNS-страховка: не удалось вернуть обычные настройки: {}	DNS-himoya: oddiy sozlamalarni qaytarib boʻlmadi: {}
+IPv6 (без IPv4)	IPv6 (IPv4 siz)
+напрямую	toʻgʻridan-toʻgʻri
+IPv4 и IPv6	IPv4 va IPv6
+отвечает медленно по {1} — медиана рукопожатия {0:.0} мс	{1} orqali sekin javob beradi — qoʻl berishish medianasi {0:.0} ms
+не отвечает по {2} — {0} из {1} соединений без ответа за 5 мин	{2} orqali javob bermayapti — 5 daqiqada {1} ta ulanishdan {0} tasi javobsiz
+; адреса {}	; manzillar {}
+; клиенты: {}	; mijozlar: {}
+роутер	router
+{}: снова в норме по {} (сбой {})	{}: {} orqali yana normal (uzilish {})
+Массовые сбои соединений по {} — {:.0}% из {} без ответа за 2 мин, направлений: {} (пробы WAN в норме — вероятна частичная беда маршрутов провайдера)	Ommaviy uzilishlar: {} orqali ulanishlar — 2 daqiqada {:.0}% ({} tadan) javobsiz, yoʻnalishlar: {} (WAN sinovlari normal — ehtimol provayder marshrutlarida qisman muammo)
+Массовые сбои соединений по {} закончились	Ommaviy uzilishlar: {} orqali ulanishlar uzilishlari tugadi
+Шлюз {}: работает ({} мс)	Shlyuz {}: ishlayapti ({} ms)
+Шлюз {}: не отвечает	Shlyuz {}: javob bermayapti
+основной маршрут (все шлюзы карты не отвечают)	asosiy marshrut (xaritaning barcha shlyuzlari javob bermayapti)
+без интернета (все шлюзы не отвечают, kill)	internetsiz (barcha shlyuzlar javob bermayapti, kill)
+через {}	{} orqali
+Карта шлюзов «{}»: {}	«{}» shlyuzlar xaritasi: {}
+cgmon {} — монитор WAN, conntrack/NAT и устройств для OpenWrt/ImmortalWrt\n\nИспользование:\n  cgmon [команда] [-config ФАЙЛ]\n\nОсновные команды:\n  daemon               запуск демона (по умолчанию; обычно — служба /etc/init.d/cgmon)\n  status               состояние WAN, пробы, нагрузка\n  top                  самые активные устройства\n  sites                направления tcp/443 за 5 мин: имена, ответы, клиенты\n  trace <ip>...        TCP-трассировка (443) и общий виновник плохих маршрутов\n  config-test          проверить конфиг и выйти\n  deps [--install]     хватает ли пакетов (kmod-*, tc, curl…) для включённых функций\n\nУстановка и настройка:\n  --install            мастер: выбор — минимальная, обычная или подробная настройка\n  --install-min        минимальная: только пароль страницы, остальное — по умолчанию\n  --install-basic      обычная: основное, чего нет на странице (центр сбора, Telegram, шлюзы…)\n  --advanced-install   подробная: все параметры по разделам\n  --uninstall          снять службу и убрать страницу из /www (конфиг и данные остаются)\n\nФлаги:\n  -config ФАЙЛ         конфиг (по умолчанию /etc/cgmon/cgmon.yaml)\n  --help-advanced      подробная справка (все команды, файлы, порты, примеры)\n  -v, --version        версия\n\nСтраница: http://<роутер>/status.html   Конфиг: /etc/cgmon/cgmon.yaml\n	cgmon {} — OpenWrt/ImmortalWrt uchun WAN, conntrack/NAT va qurilmalar monitori\n\nFoydalanish:\n  cgmon [buyruq] [-config FAYL]\n\nAsosiy buyruqlar:\n  daemon               demonni ishga tushirish (standart; odatda — /etc/init.d/cgmon xizmati)\n  status               WAN holati, sinovlar, yuklama\n  top                  eng faol qurilmalar\n  sites                5 daqiqadagi tcp/443 yoʻnalishlari: nomlar, javoblar, mijozlar\n  trace <ip>...        TCP-trassirovka (443) va yomon marshrutlarning umumiy aybdori\n  config-test          konfiguratsiyani tekshirish va chiqish\n  deps [--install]     yoqilgan funksiyalar uchun paketlar (kmod-*, tc, curl…) yetarlimi\n\nOʻrnatish va sozlash:\n  --install            ustoz: minimal, oddiy yoki batafsil sozlashni tanlash\n  --install-min        minimal: faqat sahifa paroli, qolgani — standart\n  --install-basic      oddiy: sahifada yoʻq asosiy narsalar (markaz, Telegram, shlyuzlar…)\n  --advanced-install   batafsil: barcha parametrlar boʻlimlar boʻyicha\n  --uninstall          xizmatni olib tashlash va sahifani /www dan oʻchirish (konfiguratsiya va maʼlumotlar qoladi)\n\nBayroqlar:\n  -config FAYL         konfiguratsiya (standart /etc/cgmon/cgmon.yaml)\n  --help-advanced      batafsil maʼlumotnoma (barcha buyruqlar, fayllar, portlar, misollar)\n  -v, --version        versiya\n\nSahifa: http://<router>/status.html   Konfiguratsiya: /etc/cgmon/cgmon.yaml\n
+CGMON(8)                         cgmon {}\n\nИМЯ\n    cgmon — монитор внешнего канала, conntrack/NAT, устройств и трафика для\n    роутеров OpenWrt/ImmortalWrt за CGNAT; центр сбора сбоев с нескольких роутеров.\n\nИСПОЛЬЗОВАНИЕ\n    cgmon [daemon|run] [-config ФАЙЛ]\n    cgmon КОМАНДА [-config ФАЙЛ]\n    cgmon --install | --install-min | --install-basic | --advanced-install [-config ФАЙЛ]\n\nОПИСАНИЕ\n    Демон каждую секунду–пять секунд читает conntrack и счётчики nftables,\n    проверяет WAN пробами (TCP 443 к 1.1.1.1/8.8.8.8…), ведёт журнал\n    инцидентов, учитывает трафик устройств, может ограничивать новые\n    соединения самого агрессивного клиента, вести очередь канала (SQM),\n    шейпер отдачи, детекторы блокировок P2P и недоступных сервисов, отправлять\n    состояние на центры сбора и сам быть центром (с уведомлениями в Telegram).\n    Веб-страница status.html показывает всё это и меняет настройки без\n    перезапуска.\n    Сам cgmon трафик не маршрутизирует: пакеты пересылает ядро, а cgmon\n    по ситуации меняет правила — свои таблицы nftables (fw4 не трогает),\n    ip rule и таблицы маршрутов (обход, выбор шлюза), tc (SQM), SmartDNS/\n    dnsmasq (DNS-страховка, nftset для обхода). Каналы обхода — уже\n    поднятые запасной WAN, tailscale exit node, роутеры в ZeroTier.\n    Один процесс, один основной поток (epoll); долгие действия (перезапуск\n    SmartDNS, Telegram, проверки путей) — в коротких рабочих потоках.\n\nКОМАНДЫ\n    daemon, run       запуск демона (под procd: /etc/init.d/cgmon start)\n    status            состояние: фаза WAN (NORMAL/WARNING/CRITICAL/RECOVERY),\n                      диагноз, пробы IPv4/IPv6/UDP, conntrack, нагрузка\n    top               устройства с наибольшим числом соединений\n    probes            результаты последних проб (JSON)\n    sites             направления tcp/443 за 5 минут: сервис, ответы/провалы,\n                      медиана рукопожатия, адреса, клиенты (down detector)\n    trace <ip> [ip...]  TCP-трассировка (SYN на 443 с hop limit 1..20) до адресов\n                      и разбор: узел/оператор, через который идут все плохие\n                      маршруты и не идёт ни один хороший (path_trace)\n    nft-status        таблицы nftables cgmon\n    ports             порты: кабель, скорость, дуплекс, сеть (JSON)\n    config-test       прочитать и проверить конфиг; код 0 — в порядке\n                      (в stderr — недостающие пакеты)\n    deps              какие пакеты и модули ядра нужны включённым функциям и\n                      каких нет (код 1 — чего-то не хватает)\n    deps --install [-y]\n                      поставить недостающее через apk (OpenWrt 25+) или opkg;\n                      без -y спрашивает подтверждение\n    heap              память демона (RSS, данные, потоки)\n    disable           выключить активные действия до перезапуска\n    telegram-test     пробное сообщение всем получателям центра (hub.telegram)\n\nУСТАНОВКА И НАСТРОЙКА\n    Всё, что меняется на странице (пробы, лимитер, QoS, DNS-страховка, оплата,\n    cgfinder…), мастер не спрашивает в минимальном и обычном вариантах —\n    остаются значения по умолчанию, настраивается потом на странице.\n    --install-min     только пароль страницы (Enter — сгенерировать) — и\n                      установка службы. Хватает, чтобы роутер заработал.\n    --install-basic   пароль; отправка на центр сбора (адрес, общий секрет);\n                      этот ли роутер центр (секрет, бот и чаты Telegram, порт);\n                      учёт трафика; выбор шлюза; QoS/шейпер — устройство.\n    --advanced-install\n                      все параметры по разделам с пояснением;\n                      Enter — оставить значение, цифра — выбрать вариант,\n                      «!» — оставить раздел, «?» — пояснение, «q» — выход без\n                      сохранения.\n    --install         спросить, какой из трёх вариантов.\n    Во всех вариантах: бекап старого файла, запись cgmon.yaml (существующий\n    файл правится на месте — комментарии сохраняются; новый — из справочного\n    с пояснениями), проверка пакетов, установка службы и запуск.\n\nФЛАГИ\n    -config ФАЙЛ, --config ФАЙЛ\n                      путь к конфигу (в любом месте командной строки)\n    -h, --help        краткая справка\n    --help-advanced   эта справка\n    -v, --version     версия\n\nКОНФИГ\n    Поиск: -config → $CGMON_CONFIG → /etc/cgmon/cgmon.yaml → /etc/cgmon.yaml →\n    /opt/cgmon/cgmon.yaml → /etc/config/cgmon.yaml → встроенные значения.\n    Все параметры с пояснениями — config.reference.yaml (он же — основа мастера).\n    Изменения со страницы хранятся в /etc/cgmon/runtime.json поверх cgmon.yaml\n    (сам cgmon.yaml не переписывается). Секреты (web.password, report.token,\n    hub.*) задаются только в cgmon.yaml — права файла 0600.\n\nФАЙЛЫ\n    /opt/cgmon/cgmon                     бинарник\n    /etc/init.d/cgmon                    служба procd\n    /etc/cgmon/cgmon.yaml                конфиг\n    /etc/cgmon/runtime.json              настройки со страницы\n    /var/run/cgmon.sock                  сокет команд (status, top, …)\n    /var/run/cgmon.status.json           состояние для страницы\n    /tmp/cgmon/                          все временные файлы (журналы, учёт, история графика)\n    /tmp/cgmon/www/                      страница и CGI из бинарника; в /www — ссылки\n    /tmp/cgmon/incidents.jsonl           журнал инцидентов\n    /etc/cgmon/acct_state.json           учёт трафика (переживает перезагрузку)\n    /etc/cgmon/hub_state.json            центр сбора: роутеры и сбои\n    /tmp/cgmon/hub.jsonl                 центр сбора: общий журнал\n    /www/status.html, /www/cgi-bin/api_* веб-страница и её CGI\n\nЦЕНТР СБОРА (hub) И ОТПРАВКА (report)\n    Каждый роутер (report.enabled) раз в минуту и при любом изменении шлёт на\n    центры из report.urls: состояние WAN, пробы, открытые инциденты, сбои\n    сервисов и своего провайдера (AS внешнего IP). Центров может быть\n    несколько — данные уходят во все.\n    Центр (hub.enabled, галочка «Главный центр сбора») сопоставляет отчёты и\n    шлёт в Telegram (hub.telegram: несколько ботов, у каждого несколько чатов —\n    уведомление уходит всем): общий сбой внешнего канала (деградация у роутеров ≥2\n    разных провайдеров), сбой одного провайдера, сервис не отвечает у многих,\n    роутер не на связи; восстановление — с длительностью.\n\n    Порт: TCP 7788 (hub.listen). Для центра в интернете открыть в firewall\n    только его: входящий TCP 7788 на WAN.\n\n    Безопасность: каждый отчёт шифруется и подписывается AES-256-GCM ключом из\n    общего секрета (report.token = hub.token, ≥16 символов) — секрет по сети не\n    передаётся, прочитать/подделать отчёт нельзя. Повтор перехваченного пакета\n    отвергается (метка времени ±5 мин, одноразовые номера). Ограничения:\n    64 соединения, 8 с одного IP, 120 запросов в минуту с IP, 10 с на запрос,\n    тело ≤64 КБ, ≤500 роутеров. На любую ошибку — одинаковый 403. Подробное\n    состояние центра наружу не отдаётся (только 127.0.0.1 и страница центра).\n    Часы роутеров должны идти верно (NTP): расхождение >5 мин — отчёт отвергнут.\n    Секрет общий: утечка с любого роутера позволяет подделывать отчёты —\n    при подозрении смените его везде.\n\nПЕРЕМЕННЫЕ ОКРУЖЕНИЯ\n    CGMON_CONFIG      путь к конфигу\n    NO_COLOR          без цвета в выводе команд\n    CGMON_READONLY=1  ничего не менять в системе (сверка рядом с другим демоном)\n\nКОДЫ ВЫХОДА\n    0 — успех; 1 — ошибка (конфиг, демон не запущен, отказ мастера); 2 — неверные\n    аргументы.\n\nПРИМЕРЫ\n    Первая установка (только пароль):\n        scp -O cgmon root@router:/tmp/ && ssh root@router /tmp/cgmon --install-min\n    Проверить конфиг после правки:\n        cgmon config-test && /etc/init.d/cgmon restart\n    Что сейчас с WAN и кто грузит:\n        cgmon status; cgmon top\n    Какие сайты не отвечают клиентам:\n        cgmon sites\n    Ключ для центра сбора (одинаковый на центре и роутерах):\n        head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n'\n\nЗАВИСИМОСТИ\n    Всегда: nftables (nft), conntrack (/proc/net/nf_conntrack).\n    qos / upload_shaper:  tc-tiny, kmod-sched-core (htb, fq_codel, flow,\n                          ingress, mirred), kmod-sched-cake, kmod-ifb (приём)\n    hard_limit:           kmod-nft-connlimit\n    gate_selector:        ip-full\n    dns_guard (обход через другой путь): ip-full; curl — проверка\n                          загрузки через путь (wget не умеет); relays — ZeroTier\n    HTTPS (Telegram, отчёты, TAS-IX, производители): curl, wget\n                          или uclient-fetch + libustream-*ssl\n    Демон проверяет это раз в минуту: в журнал — «deps: нет …», на странице —\n    предупреждение. Установка: cgmon deps --install.\n\nДИАГНОСТИКА\n    logread | grep cgmon                 журнал демона\n    cgmon status                         фаза и диагноз\n    MONITORING_ONLY первые startup_grace_sec после запуска — норма.\n    Страница не обновляется — проверьте /var/run/cgmon.status.json и\n    /etc/init.d/cgmon status. Отчёты не доходят до центра — на роутере\n    страница «Настройки» показывает ошибку по каждому центру; на центре —\n    logread | grep hub.\n	CGMON(8)                         cgmon {}\n\nNOMI\n    cgmon — CGNAT ortidagi OpenWrt/ImmortalWrt routerlari uchun tashqi kanal,\n    conntrack/NAT, qurilmalar va trafik monitori; bir nechta routerdan nosozliklarni yigʻuvchi markaz.\n\nFOYDALANISH\n    cgmon [daemon|run] [-config FAYL]\n    cgmon BUYRUQ [-config FAYL]\n    cgmon --install | --install-min | --install-basic | --advanced-install [-config FAYL]\n\nTAVSIF\n    Demon har bir–besh soniyada conntrack va nftables hisoblagichlarini oʻqiydi,\n    WAN ni sinovlar bilan tekshiradi (1.1.1.1/8.8.8.8… ga TCP 443), hodisalar\n    jurnalini yuritadi, qurilmalar trafigini hisoblaydi, eng agressiv mijozning\n    yangi ulanishlarini cheklashi, kanal navbatini (SQM), yuborish sheyperini,\n    P2P bloklash va ishlamaydigan xizmatlar detektorlarini yuritishi, holatini\n    yigʻish markazlariga yuborishi va oʻzi markaz boʻlishi mumkin (Telegram bildirishnomalari bilan).\n    status.html veb-sahifasi bularning barchasini koʻrsatadi va sozlamalarni\n    qayta ishga tushirmasdan oʻzgartiradi.\n    cgmon trafikni oʻzi marshrutlamaydi: paketlarni yadro uzatadi, cgmon esa\n    vaziyatga qarab qoidalarni oʻzgartiradi — oʻz nftables jadvallari (fw4 ga tegmaydi),\n    ip rule va marshrut jadvallari (aylanib oʻtish, shlyuz tanlash), tc (SQM), SmartDNS/\n    dnsmasq (DNS-himoya, aylanib oʻtish uchun nftset). Aylanib oʻtish kanallari —\n    allaqachon koʻtarilgan zaxira WAN, tailscale exit node, ZeroTier dagi routerlar.\n    Bitta jarayon, bitta asosiy oqim (epoll); uzoq amallar (SmartDNS ni qayta\n    ishga tushirish, Telegram, yoʻllarni tekshirish) — qisqa ishchi oqimlarda.\n\nBUYRUQLAR\n    daemon, run       demonni ishga tushirish (procd ostida: /etc/init.d/cgmon start)\n    status            holat: WAN fazasi (NORMAL/WARNING/CRITICAL/RECOVERY),\n                      tashxis, IPv4/IPv6/UDP sinovlari, conntrack, yuklama\n    top               eng koʻp ulanishli qurilmalar\n    probes            oxirgi sinovlar natijalari (JSON)\n    sites             5 daqiqadagi tcp/443 yoʻnalishlari: xizmat, javoblar/muvaffaqiyatsizliklar,\n                      qoʻl berishish medianasi, manzillar, mijozlar (down detector)\n    trace <ip> [ip...]  manzillargacha TCP-trassirovka (443 ga SYN, hop limit 1..20)\n                      va tahlil: barcha yomon marshrutlar oʻtadigan va birorta yaxshisi\n                      oʻtmaydigan tugun/operator (path_trace)\n    nft-status        cgmon nftables jadvallari\n    ports             portlar: kabel, tezlik, dupleks, tarmoq (JSON)\n    config-test       konfiguratsiyani oʻqish va tekshirish; kod 0 — joyida\n                      (stderr ga — yetishmayotgan paketlar)\n    deps              yoqilgan funksiyalarga qaysi paketlar va yadro modullari kerak va\n                      qaysilari yoʻq (kod 1 — nimadir yetishmaydi)\n    deps --install [-y]\n                      yetishmayotganini apk (OpenWrt 25+) yoki opkg orqali oʻrnatish;\n                      -y siz tasdiq soʻraydi\n    heap              demon xotirasi (RSS, maʼlumotlar, oqimlar)\n    disable           faol amallarni qayta ishga tushguncha oʻchirish\n    telegram-test     markazning barcha qabul qiluvchilariga sinov xabari (hub.telegram)\n\nOʻRNATISH VA SOZLASH\n    Sahifada oʻzgartiriladigan hamma narsani (sinovlar, limiter, QoS, DNS-himoya,\n    toʻlov, cgfinder…) ustoz minimal va oddiy variantlarda soʻramaydi —\n    standart qiymatlar qoladi, keyin sahifada sozlanadi.\n    --install-min     faqat sahifa paroli (Enter — yaratish) — va xizmatni\n                      oʻrnatish. Router ishlashi uchun yetarli.\n    --install-basic   parol; markazga yuborish (manzil, umumiy sir);\n                      bu router markazmi (sir, Telegram boti va chatlari, port);\n                      trafik hisobi; shlyuz tanlash; QoS/sheyper — qurilma.\n    --advanced-install\n                      barcha parametrlar boʻlimlar boʻyicha izoh bilan;\n                      Enter — qiymatni qoldirish, raqam — variantni tanlash,\n                      «!» — boʻlimni qoldirish, «?» — izoh, «q» — saqlamasdan\n                      chiqish.\n    --install         uchtadan qaysi birini soʻrash.\n    Barcha variantlarda: eski faylning zaxira nusxasi, cgmon.yaml yoziladi (mavjud\n    fayl joyida tahrirlanadi — izohlar saqlanadi; yangisi — izohli\n    maʼlumotnomadan), paketlar tekshiriladi, xizmat oʻrnatiladi va ishga tushiriladi.\n\nBAYROQLAR\n    -config FAYL, --config FAYL\n                      konfiguratsiya yoʻli (buyruq qatorining istalgan joyida)\n    -h, --help        qisqa maʼlumotnoma\n    --help-advanced   ushbu maʼlumotnoma\n    -v, --version     versiya\n\nKONFIGURATSIYA\n    Qidiruv: -config → $CGMON_CONFIG → /etc/cgmon/cgmon.yaml → /etc/cgmon.yaml →\n    /opt/cgmon/cgmon.yaml → /etc/config/cgmon.yaml → ichki qiymatlar.\n    Barcha parametrlar izohlari bilan — config.reference.yaml (ustozning asosi ham).\n    Sahifadan oʻzgarishlar cgmon.yaml ustidan /etc/cgmon/runtime.json da saqlanadi\n    (cgmon.yaml ning oʻzi qayta yozilmaydi). Sirlar (web.password, report.token,\n    hub.*) faqat cgmon.yaml da beriladi — fayl huquqlari 0600.\n\nFAYLLAR\n    /opt/cgmon/cgmon                     ikkilik fayl\n    /etc/init.d/cgmon                    procd xizmati\n    /etc/cgmon/cgmon.yaml                konfiguratsiya\n    /etc/cgmon/runtime.json              sahifadagi sozlamalar\n    /var/run/cgmon.sock                  buyruqlar soketi (status, top, …)\n    /var/run/cgmon.status.json           sahifa uchun holat\n    /tmp/cgmon/                          barcha vaqtinchalik fayllar (jurnallar, hisob, grafik tarixi)\n    /tmp/cgmon/www/                      ikkilik fayldan sahifa va CGI; /www da — havolalar\n    /tmp/cgmon/incidents.jsonl           hodisalar jurnali\n    /etc/cgmon/acct_state.json           trafik hisobi (qayta yuklashdan keyin ham saqlanadi)\n    /etc/cgmon/hub_state.json            markaz: routerlar va nosozliklar\n    /tmp/cgmon/hub.jsonl                 markaz: umumiy jurnal\n    /www/status.html, /www/cgi-bin/api_* veb-sahifa va uning CGI si\n\nYIGʻISH MARKAZI (hub) VA YUBORISH (report)\n    Har bir router (report.enabled) daqiqada bir marta va har qanday oʻzgarishda\n    report.urls dagi markazlarga yuboradi: WAN holati, sinovlar, ochiq hodisalar,\n    xizmatlar nosozliklari va oʻz provayderi (tashqi IP ning AS i). Markazlar\n    bir nechta boʻlishi mumkin — maʼlumotlar hammasiga ketadi.\n    Markaz (hub.enabled, «Asosiy yigʻish markazi» belgisi) hisobotlarni solishtiradi va\n    Telegram ga yuboradi (hub.telegram: bir nechta bot, har birida bir nechta chat —\n    bildirishnoma hammasiga ketadi): tashqi kanalning umumiy nosozligi (≥2 turli provayder\n    routerlarida degradatsiya), bitta provayder nosozligi, xizmat koʻpchilikda ishlamayapti,\n    router aloqada emas; tiklanish — davomiyligi bilan.\n\n    Port: TCP 7788 (hub.listen). Internetdagi markaz uchun firewall da faqat\n    uni oching: WAN da kiruvchi TCP 7788.\n\n    Xavfsizlik: har bir hisobot umumiy sirdan olingan kalit bilan AES-256-GCM orqali\n    shifrlanadi va imzolanadi (report.token = hub.token, ≥16 belgi) — sir tarmoq orqali\n    uzatilmaydi, hisobotni oʻqib yoki soxtalashtirib boʻlmaydi. Ushlab olingan paketni\n    takrorlash rad etiladi (vaqt belgisi ±5 daq, bir martalik raqamlar). Cheklovlar:\n    64 ulanish, bitta IP dan 8, IP dan daqiqasiga 120 soʻrov, soʻrovga 10 s,\n    tana ≤64 KB, ≤500 router. Har qanday xatoga — bir xil 403. Markazning batafsil\n    holati tashqariga berilmaydi (faqat 127.0.0.1 va markaz sahifasi).\n    Routerlar soati toʻgʻri boʻlishi kerak (NTP): >5 daq farq — hisobot rad etiladi.\n    Sir umumiy: istalgan routerdan sizib chiqsa, hisobotlarni soxtalashtirish mumkin —\n    shubha boʻlsa, uni hamma joyda almashtiring.\n\nMUHIT OʻZGARUVCHILARI\n    CGMON_CONFIG      konfiguratsiya yoʻli\n    CGMON_LANG        xabarlar tili (en, ru, uz, kk, zh)\n    NO_COLOR          buyruqlar chiqishida rangsiz\n    CGMON_READONLY=1  tizimda hech narsani oʻzgartirmaslik (boshqa demon yonida solishtirish)\n\nCHIQISH KODLARI\n    0 — muvaffaqiyat; 1 — xato (konfiguratsiya, demon ishlamayapti, ustoz rad etdi); 2 — notoʻgʻri\n    argumentlar.\n\nMISOLLAR\n    Birinchi oʻrnatish (faqat parol):\n        scp -O cgmon root@router:/tmp/ && ssh root@router /tmp/cgmon --install-min\n    Tahrirdan keyin konfiguratsiyani tekshirish:\n        cgmon config-test && /etc/init.d/cgmon restart\n    WAN bilan nima boʻlyapti va kim yuklayapti:\n        cgmon status; cgmon top\n    Qaysi saytlar mijozlarga javob bermayapti:\n        cgmon sites\n    Markaz uchun kalit (markazda va routerlarda bir xil):\n        head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n'\n\nBOGʻLIQLIKLAR\n    Doim: nftables (nft), conntrack (/proc/net/nf_conntrack).\n    qos / upload_shaper:  tc-tiny, kmod-sched-core (htb, fq_codel, flow,\n                          ingress, mirred), kmod-sched-cake, kmod-ifb (qabul)\n    hard_limit:           kmod-nft-connlimit\n    gate_selector:        ip-full\n    dns_guard (boshqa yoʻl orqali aylanib oʻtish): ip-full; curl — yoʻl orqali\n                          yuklashni tekshirish (wget qila olmaydi); relays — ZeroTier\n    HTTPS (Telegram, hisobotlar, TAS-IX, ishlab chiqaruvchilar): curl, wget\n                          yoki uclient-fetch + libustream-*ssl\n    Demon buni daqiqada bir tekshiradi: jurnalga — «deps: yoʻq …», sahifada —\n    ogohlantirish. Oʻrnatish: cgmon deps --install.\n\nDIAGNOSTIKA\n    logread | grep cgmon                 demon jurnali\n    cgmon status                         faza va tashxis\n    Ishga tushgandan keyin birinchi startup_grace_sec davomida MONITORING_ONLY — normal.\n    Sahifa yangilanmayapti — /var/run/cgmon.status.json va\n    /etc/init.d/cgmon status ni tekshiring. Hisobotlar markazga yetmayapti — routerda\n    «Sozlamalar» sahifasi har bir markaz boʻyicha xatoni koʻrsatadi; markazda —\n    logread | grep hub.\n
+{} ч {} мин	{} soat {} daq
+{} мин {} с	{} daq {} s
+{} с	{} s
+провайдер {}	provayder {}
+нет curl, uclient-fetch или wget	curl, uclient-fetch yoki wget yoʻq
+{}: нужен адрес:порт	{}: manzil:port kerak
+{}: порт	{}: port
+{}: адрес	{}: manzil
+✅ <b>{}</b>: прошло — {}	✅ <b>{}</b>: oʻtdi — {}
+🗑 <b>{}</b> убран с центра ({})	🗑 <b>{}</b> markazdan olib tashlandi ({})
+🟢 <b>{}</b> снова на связи (не было {})	🟢 <b>{}</b> yana aloqada ({} yoʻq edi)
+⚫ <b>{}</b> не на связи с {} (последнее состояние: {}, провайдер {})	⚫ <b>{}</b> {} dan beri aloqada emas (oxirgi holat: {}, provayder {})
+не на связи 30 дней	30 kun aloqada emas
+не отвечает или отвечает медленно	javob bermayapti yoki sekin javob beradi
+отвечает медленно	sekin javob beradi
+не отвечает	javob bermayapti
+ по {}	 {} orqali
+🔴 <b>Общий сбой внешнего канала</b>\nНовые соединения не проходят у {0} из {2} роутеров, провайдеры: {1}.\nПохоже на сбой магистрали/внешнего канала, а не у отдельных роутеров.\n	🔴 <b>Tashqi kanalning umumiy nosozligi</b>\nYangi ulanishlar {2} ta routerdan {0} tasida oʻtmayapti, provayderlar: {1}.\nAlohida routerlar emas, magistral/tashqi kanal nosozligiga oʻxshaydi.\n
+🟠 <b>Сбой у провайдера {}</b>\nДеградация у {} роутеров этого провайдера, у остальных провайдеров всё в порядке.\n	🟠 <b>{} provayderida nosozlik</b>\nUshbu provayderning {} ta routerida degradatsiya, boshqa provayderlarda hammasi joyida.\n
+🟡 <b>{0} {1}</b> у {2} из {4} роутеров: {3}; их WAN в норме.\n	🟡 <b>{0} {1}</b> {4} ta routerdan {2} tasida: {3}; ularning WAN i normal.\n
+Провайдеры разные ({}) — похоже, сбой самого сервиса.	Provayderlar turli ({}) — xizmatning oʻzi ishlamayotganga oʻxshaydi.
+Все у одного провайдера ({}) — похоже, проблема провайдера с этим сервисом.	Hammasi bitta provayderda ({}) — provayderda bu xizmat bilan muammo borga oʻxshaydi.
+🟠 <b>Сбой на роутере {}</b>\n	🟠 <b>{} routerida nosozlik</b>\n
+WAN не работает	WAN ishlamayapti
+пробы IPv4 {:.0}%	IPv4 sinovlari {:.0}%
+🟢 <b>Внешний канал восстановлен</b>\nСбой длился {4} ({5}), затронуто роутеров: {0}, провайдеров: {1} ({2}). Худшие пробы IPv4: {3:.0}%.	🟢 <b>Tashqi kanal tiklandi</b>\nNosozlik {4} davom etdi ({5}), taʼsirlangan routerlar: {0}, provayderlar: {1} ({2}). Eng yomon IPv4 sinovlari: {3:.0}%.
+🟢 <b>Провайдер {0} восстановился</b> — сбой {2} ({3}), роутеров: {1}.	🟢 <b>{0} provayderi tiklandi</b> — nosozlik {2} ({3}), routerlar: {1}.
+🟢 <b>{}</b> снова отвечает — сбой {} ({}).	🟢 <b>{}</b> yana javob beradi — nosozlik {} ({}).
+🟢 <b>{}</b>: восстановилось — сбой {} ({}).	🟢 <b>{}</b>: tiklandi — nosozlik {} ({}).
+нет	yoʻq
+{} из 100	100 dan {}
+не проходят	oʻtmayapti
+не проходили	oʻtmadi
+Новые соединения IPv4 {}	Yangi IPv4 ulanishlar {}
+успешных проб до {}	muvaffaqiyatli sinovlar {} gacha
+IPv6 работал — сбой у провайдера на IPv4 (CGNAT)	IPv6 ishladi — provayderning IPv4 (CGNAT) da nosozlik
+IPv6 тоже: {}	IPv6 ham: {}
+ — сразу после возврата связи: лавина переподключений	 — aloqa qaytgandan darhol keyin: qayta ulanishlar toʻlqini
+; соединений в пике: всего {}	; choʻqqida ulanishlar: jami {}
+, полезных {} (остальное — пробы cgmon)	, foydali {} (qolgani — cgmon sinovlari)
+; больше всех соединений у {} — {}	; eng koʻp ulanish {} da — {}
+Интернета нет: WAN не работает	Internet yoʻq: WAN ishlamayapti
+Интернета не было: WAN не работал	Internet yoʻq edi: WAN ishlamadi
+Роутер перегружен	Router haddan tashqari yuklangan
+Канал {} работает плохо: качество IPv4 {}, IPv6 {}	{} kanali yomon ishlayapti: IPv4 sifati {}, IPv6 {}
+Возврат на основной канал {} (с {})	Asosiy kanal {} ga qaytish ({} dan)
+Переключение на канал {}: канал {} потерял связь	{} kanaliga oʻtish: {} kanali aloqani yoʻqotdi
+Переключение на канал {}: канал {} работал плохо	{} kanaliga oʻtish: {} kanali yomon ishladi
+Переключение на канал {} (с {}, {})	{} kanaliga oʻtish ({} dan, {})
+Интернет теперь идёт через {} (было {})	Internet endi {} orqali ({} edi)
+Новый внешний IP: {} ({})	Yangi tashqi IP: {} ({})
+идёт сейчас	hozir davom etmoqda
+восстановилось	tiklandi
+интернет вернулся	internet qaytdi
+нагрузка спала	yuklama pasaydi
+cgmon перезапущен	cgmon qayta ishga tushirildi
+; больше всех соединений	; eng koʻp ulanishlar
+; клиенты:	; mijozlar:
+cgfinder выключен	cgfinder oʻchirilgan
+нужен IPv4-адрес	IPv4 manzil kerak
+{} не из частных сетей — доступ не открываю	{} xususiy tarmoqlardan emas — kirishni ochmayman
+{} нет среди пойманных устройств	{} tutilgan qurilmalar orasida yoʻq
+открыто уже {} доступа — закройте лишний	allaqachon {} ta kirish ochiq — keraksizini yoping
+сеть {} уже открыта на {}	{} tarmogʻi allaqachon {} da ochiq
+не подобрать адрес роутеру в сети {}	{} tarmogʻida routerga manzil topib boʻlmadi
+сеть {} уже используется на роутере ({}) — доступ не открываю	{} tarmogʻi routerda allaqachon ishlatilmoqda ({}) — kirishni ochmayman
+доступ к {} не открыт	{} ga kirish ochilmagan
+скан уже идёт или был меньше 30 с назад	skanerlash allaqachon ketmoqda yoki 30 s dan kamroq oldin boʻlgan
+{}/{} на {}	{}/{} — {} da
+маршруты не прочитать	marshrutlarni oʻqib boʻlmadi
+storage: {} — flash, tmp или свой каталог (/mnt/usb/cgmon)	storage: {} — flash, tmp yoki oʻz katalogingiz (/mnt/usb/cgmon)
+dns_guard.dns64_servers: {} — нужен IP-адрес	dns_guard.dns64_servers: {} — IP manzil kerak
+dns_guard: путь {} — нужно имя устройства (eth3, tailscale0) или proto	dns_guard: {} yoʻli — qurilma nomi (eth3, tailscale0) yoki proto kerak
+dns_guard.overlay: путь {} — нужно имя устройства или @реле	dns_guard.overlay: {} yoʻli — qurilma nomi yoki @rele kerak
+vuln_scan.isolate: {} — нужен MAC-адрес (aa:bb:cc:dd:ee:ff)	vuln_scan.isolate: {} — MAC manzil kerak (aa:bb:cc:dd:ee:ff)
+dns_guard.persite: {} — off, auto, active или путь (@узел, устройство)	dns_guard.persite: {} — off, auto, active yoki yoʻl (@tugun, qurilma)
+lang: {} — auto, en, ru, uz, kk или zh	lang: {} — auto, en, ru, uz, kk yoki zh
+dns_guard.check_domains: {} — нужен домен (ipleak.net)	dns_guard.check_domains: {} — domen kerak (ipleak.net)
+dns_guard.check_via: {} — пусто, direct, proto или устройство	dns_guard.check_via: {} — boʻsh, direct, proto yoki qurilma
+dns_guard.relays: {} — нужно имя@адрес узла (node1@10.147.17.5, частный IPv4)	dns_guard.relays: {} — tugunning nom@manzili kerak (node1@10.147.17.5, xususiy IPv4)
+dns_guard.relays: не больше {} узлов	dns_guard.relays: {} tadan koʻp tugun emas
+dns_guard.check_domains: не больше 10 сайтов	dns_guard.check_domains: 10 tadan koʻp sayt emas
+dns_guard.alternatives: не больше {} путей	dns_guard.alternatives: {} tadan koʻp yoʻl emas
+payment.mode: monthly или interval	payment.mode: monthly yoki interval
+payment.start_date: нужна дата ГГГГ-ММ-ДД	payment.start_date: YYYY-MM-DD sana kerak
+payment.amount/note: недопустимые символы	payment.amount/note: ruxsat etilmagan belgilar
+цель пробы {}: нужен адрес:порт (IPv6 — [адрес]:порт)	sinov maqsadi {}: manzil:port kerak (IPv6 — [manzil]:port)
+цель пробы IPv4 {} — не IPv4	IPv4 sinov maqsadi {} — IPv4 emas
+цель пробы IPv6 {} — не IPv6	IPv6 sinov maqsadi {} — IPv6 emas
+нужна хотя бы одна цель пробы IPv4	kamida bitta IPv4 sinov maqsadi kerak
+telegram: неверный токен бота (нужен вид 123456:ABC…)	telegram: bot tokeni notoʻgʻri (123456:ABC… koʻrinishida boʻlishi kerak)
+telegram: неверный chat id {} (число, -100… или @канал)	telegram: chat id {} notoʻgʻri (son, -100… yoki @kanal)
+центр сбора: задайте hub.token в cgmon.yaml (не короче 16 символов)	yigʻish markazi: cgmon.yaml da hub.token ni bering (kamida 16 belgi)
+отправка на центр: задайте report.token в cgmon.yaml (не короче 16 символов)	markazga yuborish: cgmon.yaml da report.token ni bering (kamida 16 belgi)
+отправка на центр: нет адреса центра	markazga yuborish: markaz manzili yoʻq
+адрес центра {}: нужен http://адрес:порт/api/v1/report (данные шифруются сами)	markaz manzili {}: http://manzil:port/api/v1/report kerak (maʼlumotlar baribir shifrlanadi)
+список бесплатных сетей: нужна ссылка http(s)://… или file (загруженный файл)	bepul tarmoqlar roʻyxati: http(s)://… havola yoki file (yuklangan fayl) kerak
+сеть {}: нужен CIDR	{} tarmogʻi: CIDR kerak
+укажите домен: cgmon blockcheck ozodlik.org	domenni koʻrsating: cgmon blockcheck ozodlik.org
+открывается	ochiladi
+TCP есть, TLS рвётся (блок по имени)	TCP bor, TLS uziladi (nom boʻyicha blok)
+нет TCP	TCP yoʻq
+{1}: адресов IPv4 {0}	{1}: IPv4 manzillar {0}
+  напрямую IPv4: {}	  toʻgʻridan-toʻgʻri IPv4: {}
+  напрямую IPv6: {}	  toʻgʻridan-toʻgʻri IPv6: {}
+  через VPN:     {}	  VPN orqali:     {}
+ИТОГ: заблокирован, рабочего пути не нашлось	NATIJA: bloklangan, ishlaydigan yoʻl topilmadi
+ИТОГ: не заблокирован	NATIJA: bloklanmagan
+ИТОГ: заблокирован по IPv4, открывается по IPv6 — обход не нужен	NATIJA: IPv4 orqali bloklangan, IPv6 orqali ochiladi — aylanib oʻtish kerak emas
+ИТОГ: заблокирован по имени — открывается через VPN (dns_guard.unblock: active уведёт туда)	NATIJA: nom boʻyicha bloklangan — VPN orqali ochiladi (dns_guard.unblock: active uni oʻsha yerga yoʻnaltiradi)
+ПЛОХО	YOMON
+хорошо	yaxshi
+== {} {} AS{}: дошло {}/{} — {}	== {} {} AS{}: yetib bordi {}/{} — {}
+\nобщего виновника нет (нужно ≥2 плохих цели разных владельцев и ≥1 хорошая)	\numumiy aybdor yoʻq (turli egalarning ≥2 yomon maqsadi va ≥1 yaxshisi kerak)
+{}: общий виновник — {}	{}: umumiy aybdor — {}
+{}: общий виновник — стык {} → {}	{}: umumiy aybdor — tutashuv {} → {}
+. Через него идут все плохие маршруты ({}), хорошие ({}) — в обход	. Barcha yomon marshrutlar u orqali oʻtadi ({}), yaxshilari ({}) — chetlab
+; развилка после {}	; {} dan keyin ayrilish
+; TCP-соединения дальше этого места почти не проходят	; TCP ulanishlar bu joydan nariga deyarli oʻtmaydi
+path trace {}: общего виновника нет ({} целей)	path trace {}: umumiy aybdor yoʻq ({} maqsad)
+{}: общий виновник больше не виден — {}	{}: umumiy aybdor endi koʻrinmaydi — {}
+{}: деградация прошла, общий виновник снят — {}	{}: degradatsiya oʻtdi, umumiy aybdor olib tashlandi — {}
+{}: общий виновник плохих маршрутов — {}	{}: yomon marshrutlarning umumiy aybdori — {}
+, сумма: {}	, summa: {}
+💳 Сегодня день оплаты интернета{}	💳 Bugun internet uchun toʻlov kuni{}
+💳 Оплата интернета через {} дн. — до {}.{}.{}{}	💳 Internet uchun toʻlov {} kundan keyin — {}.{}.{} gacha{}
+список слишком большой (больше {} КБ)	roʻyxat juda katta ({} KB dan ortiq)
+Per-Site Routing: AS{} — {} сетей IPv4, {} IPv6 (RIPEstat)	Per-Site Routing: AS{} — {} ta IPv4 tarmoq, {} IPv6 (RIPEstat)
+Per-Site Routing: AS{} — не удалось получить сети: {}	Per-Site Routing: AS{} — tarmoqlarni olib boʻlmadi: {}
+Per-Site Routing: гейт недоступен — сайты из списка идут напрямую	Per-Site Routing: shlyuz mavjud emas — roʻyxatdagi saytlar toʻgʻridan-toʻgʻri oʻtadi
+Per-Site Routing: сайты из списка идут через гейт ({} доменов, {} сетей)	Per-Site Routing: roʻyxatdagi saytlar shlyuz orqali oʻtadi ({} domen, {} tarmoq)
+dnsmasq: не удалось перезапустить	dnsmasq: qayta ishga tushirib boʻlmadi
+Per-Site Routing: список доменов передан dnsmasq ({}), dnsmasq перезапускается	Per-Site Routing: domenlar roʻyxati dnsmasq ga berildi ({}), dnsmasq qayta ishga tushirilmoqda
+RIPEstat не ответил	RIPEstat javob bermadi
+RIPEstat: непонятный ответ	RIPEstat: tushunarsiz javob
+кадр	kadr
+длина	uzunlik
+пропущено	oʻtkazib yuborilgan
+несущая	tashuvchi
+выравнивание	tekislash
+короткие	qisqa
+обрывки	parchalar
+переполнение	toʻlib ketish
+длинные	uzun
+поздние коллизии	kech kolliziyalar
+отсрочки	kechiktirishlar
+сброс по коллизиям	kolliziyalar tufayli uzilish
+недогрузка	yetishmovchilik
+нет линка	link yoʻq
+{} Мбит/с{}	{} Mbit/s{}
+, полудуплекс	, yarim dupleks
+{:.1} млн	{:.1} mln
+{:.1} тыс.	{:.1} ming
+ (1 на {} кадров)	 ({} kadrdan 1 ta)
+{1} порт {2}{0}	{1} port {2}{0}
+Порт {2}: с загрузки роутера ({0}) ошибок: {3}; сейчас {1}	Port {2}: router yuklanganidan beri ({0}) xatolar: {3}; hozir {1}
+Порт {1}: линк пропал (был {0})	Port {1}: link yoʻqoldi ({0} edi)
+ через {}	 {} dan keyin
+Порт {1}: линк появился{2} — {0}	Port {1}: link paydo boʻldi{2} — {0}
+Порт {3}: {0} → {1}{2}	Port {3}: {0} → {1}{2}
+ — так бывает при плохом кабеле или разъёме	 — bu yomon kabel yoki ulagichda boʻladi
+Порт {2}: линк мигал {0} раз за {1} с	Port {2}: link {1} s ichida {0} marta miltilladi
+за {}	{} ichida
+с прошлого опроса	oxirgi soʻrovdan beri
+Порт {1}: ошибки кадров {2}: {3} ({0})	Port {1}: kadr xatolari {2}: {3} ({0})
+Порт {}: {}	Port {}: {}
+Порт {0}: {2} ошибок CRC за сутки{1} — кабель или разъём повреждены, ещё немного — и связи не будет	Port {0}: sutkada {2} ta CRC xato{1} — kabel yoki ulagich shikastlangan, yana biroz — va aloqa boʻlmaydi
+Порт {0}: {2} ошибок CRC за сутки{1} — кабель или разъём под подозрением	Port {0}: sutkada {2} ta CRC xato{1} — kabel yoki ulagichdan shubha bor
+кабель или разъём повреждены, ещё немного — и связи не будет	kabel yoki ulagich shikastlangan, yana biroz — va aloqa boʻlmaydi
+кабель или разъём под подозрением	kabel yoki ulagichdan shubha bor
+ и {} обрыв(ов) линка	 va {} ta link uzilishi
+Порт {}: {} ошибок CRC{}{} с загрузки роутера, новых пока нет — {}	Port {}: router yuklanganidan beri {} ta CRC xato{}{}, yangilari hali yoʻq — {}
+Порт {}: {} обрыв(ов) линка за час	Port {}: bir soatda {} ta link uzilishi
+Порт {}: {} обрыв(ов) линка за сутки	Port {}: sutkada {} ta link uzilishi
+Порт {}: {} ошибок кадров за час	Port {}: bir soatda {} ta kadr xatosi
+работает на {} Мбит/с, а {} было {}	{} Mbit/s da ishlayapti, {} esa {} edi
+{} — устройство на другом конце кабеля теперь объявляет только до {}: обычно так оно само понижает скорость после сбоев на кабеле (downshift)	{} — kabelning narigi uchidagi qurilma endi faqat {} gacha eʼlon qiladi: odatda u kabeldagi nosozliklardan keyin tezlikni oʻzi pasaytiradi (downshift)
+{}, и обе стороны по-прежнему умеют {} — почти всегда кабель или разъём (для гигабита нужны все 4 пары)	{}, va ikkala tomon hali ham {} ni qila oladi — deyarli har doim kabel yoki ulagich (gigabit uchun barcha 4 juftlik kerak)
+{} — кабель, разъём или устройство на другом конце кабеля	{} — kabel, ulagich yoki kabelning narigi uchidagi qurilma
+ZeroTier запущен; свою сеть подключите: zerotier-cli join <номер сети> (или LuCI → VPN → ZeroTier)	ZeroTier ishga tushdi; oʻz tarmogʻingizni ulang: zerotier-cli join <tarmoq raqami> (yoki LuCI → VPN → ZeroTier)
+\# cgmon: настройки SmartDNS (как на рабочем роутере, без личного)\nspeed-check-mode none\ndualstack-ip-selection no\nprefetch-domain yes\nserve-expired no\ncache-size 4096\ncache-persist no\nconf-file {}\nconf-file {}\nconf-file {}\n	\# cgmon: SmartDNS sozlamalari (ishlayotgan routerdagidek, shaxsiy narsalarsiz)\nspeed-check-mode none\ndualstack-ip-selection no\nprefetch-domain yes\nserve-expired no\ncache-size 4096\ncache-persist no\nconf-file {}\nconf-file {}\nconf-file {}\n
+SmartDNS уже настроен — его настройки не трогаю	SmartDNS allaqachon sozlangan — uning sozlamalariga tegmayman
+SmartDNS: {} уже есть — настройки не трогаю	SmartDNS: {} allaqachon bor — sozlamalarga tegmayman
+SmartDNS поставлен, но не отвечает — DNS роутера не переключал	SmartDNS oʻrnatildi, lekin javob bermayapti — router DNS i oʻtkazilmadi
+SmartDNS: шифрованный DNS (Cloudflare, Google, Яндекс), dnsmasq → 127.0.0.1#{}; прежние серверы — /etc/cgmon/dnsmasq-before-smartdns.txt	SmartDNS: shifrlangan DNS (Cloudflare, Google, Yandex), dnsmasq → 127.0.0.1#{}; avvalgi serverlar — /etc/cgmon/dnsmasq-before-smartdns.txt
+SmartDNS: через него DNS роутера не заработал — вернул как было	SmartDNS: u orqali router DNS i ishlamadi — avvalgidek qaytarildi
+plugins: {}: нет строки «// cgmon-plugin: name=…»	plugins: {}: «// cgmon-plugin: name=…» qatori yoʻq
+workers (потоки)	workers (oqimlar)
+loop (вне областей)	loop (sohalardan tashqari)
+{"error":"сборка без --features prof"}	{"error":"--features prof siz yigʻilgan"}
+пароль страницы не задан — настройки только для просмотра; задайте пароль: LuCI → Службы → cgmon (или web.password в cgmon.yaml)	sahifa paroli berilmagan — sozlamalar faqat koʻrish uchun; parolni bering: LuCI → Services → cgmon (yoki cgmon.yaml da web.password)
+runtime: {}: не объект (ignored)	runtime: {}: obyekt emas (eʼtiborsiz qoldirildi)
+скорость после триггера должна быть ниже начальной	triggerdan keyingi tezlik boshlangʻichdan past boʻlishi kerak
+лимит начальной скорости выше Upload канала	boshlangʻich tezlik limiti kanal Upload idan yuqori
+скорость после триггера должна быть ниже Upload канала	triggerdan keyingi tezlik kanal Upload idan past boʻlishi kerak
+лимит отдачи на соединение выше Upload канала	ulanishga yuborish limiti kanal Upload idan yuqori
+лимит загрузки на соединение выше Download канала	ulanishga yuklash limiti kanal Download idan yuqori
+st: события/инциденты	st: hodisalar/insidentlar
+st: клиенты (имена, JSON)	st: mijozlar (nomlar, JSON)
+st: топология/прочее	st: topologiya/boshqalar
+st: runtime/настройки	st: runtime/sozlamalar
+st: запись JSON	st: JSON yozish
+{} на внутренней памяти роутера (носитель не смонтирован?)	{} routerning ichki xotirasida (tashuvchi ulanmaganmi?)
+{}: носитель не смонтирован	{}: tashuvchi ulanmagan
+{} — данные пока в {}	{} — maʼlumotlar hozircha {} da
+{}: файл был в кодировке {} — переписан в UTF-8 (оригинал: {})	{}: fayl {} kodlashida edi — UTF-8 ga qayta yozildi (asli: {})
+Проверка «мой IP»: {} идёт через VPN (сайт покажет адрес туннеля)	«Mening IP» tekshiruvi: {} VPN orqali oʻtadi (sayt tunnel manzilini koʻrsatadi)
+направлен через туннель (напрямую не открывался)	tunnel orqali yoʻnaltirildi (toʻgʻridan-toʻgʻri ochilmadi)
+направил бы через туннель (режим наблюдения)	tunnel orqali yoʻnaltirgan boʻlardi (kuzatuv rejimi)
+открывается по IPv6 напрямую — туннель не нужен	IPv6 orqali toʻgʻridan-toʻgʻri ochiladi — tunnel kerak emas
+через туннель тоже не открылся	tunnel orqali ham ochilmadi
+Per-Site Routing: {} снова открывается напрямую — убран из туннеля	Per-Site Routing: {} yana toʻgʻridan-toʻgʻri ochiladi — tunneldan olib tashlandi
+учитель отдачи: общее наказание — встали отдачи на {} адреса при общей отдаче {:.1} Мбит/с (раз: {}); подсказка шейперу: постоянная скорость не выше {:.1} Мбит/с	yuborish oʻqituvchisi: umumiy jarima — umumiy {1:.1} Mbit/s yuborishda {0} ta manzilga yuborish toʻxtadi (marta: {2}); sheyperga maslahat: doimiy tezlik {3:.1} Mbit/s dan oshmasin
+; без наказания бывало до {:.1} Мбит/с	; jarimasiz {:.1} Mbit/s gacha boʻlgan
+учитель отдачи: {1} — наказание на {2:.1} Мбит/с (раз: {0}{3}); в активном режиме ограничил бы до {4:.1} Мбит/с	yuborish oʻqituvchisi: {1} — {2:.1} Mbit/s da jarima (marta: {0}{3}); faol rejimda {4:.1} Mbit/s gacha cheklagan boʻlardi
+json: лишнее после значения (позиция {})	json: qiymatdan keyin ortiqcha (pozitsiya {})
+json: {} (позиция {})	json: {} (pozitsiya {})
+неизвестное слово	nomaʼlum soʻz
+слишком глубоко	juda chuqur
+неожиданный конец	kutilmagan oxir
+ожидается ключ	kalit kutilgan
+ожидается :	: kutilgan
+ожидается , или }	, yoki } kutilgan
+ожидается , или ]	, yoki ] kutilgan
+плохое число	yomon son
+неожиданный символ	kutilmagan belgi
+короткий \\u	qisqa \\u
+json: плохой \\u	json: yomon \\u
+json: не UTF-8	json: UTF-8 emas
+обрыв строки	satr uzilgan
+плохое экранирование	yomon ekranlash
+yaml: строка {}: плохая строка в кавычках	yaml: {}-qator: qoʻshtirnoqdagi satr yomon
+yaml: строка {}: незакрытая скобка (многострочные [ ] не поддерживаются)	yaml: {}-qator: yopilmagan qavs (koʻp qatorli [ ] qoʻllab-quvvatlanmaydi)
+yaml: строка {}: ожидается ключ: значение	yaml: {}-qator: kalit: qiymat kutilgan
+yaml: строка {}: табуляция в отступе	yaml: {}-qator: chekinishda tabulyatsiya
+yaml: строка {}: неожиданный отступ	yaml: {}-qator: kutilmagan chekinish
+yaml: строка {}: якоря и теги не поддерживаются	yaml: {}-qator: langarlar va teglar qoʻllab-quvvatlanmaydi
+yaml: строка {}: ожидается «ключ: значение»	yaml: {}-qator: «kalit: qiymat» kutilgan
+Сканер уязвимостей: обновлено — {}	Zaifliklar skaneri: yangilandi — {}
+Сканер уязвимостей: обновить не удалось — {}	Zaifliklar skaneri: yangilab boʻlmadi — {}
+Сканер уязвимостей: проверка завершена — критических {}, серьёзных {}, всего находок {}	Zaifliklar skaneri: tekshiruv tugadi — jiddiy {}, xavfli {}, jami topilmalar {}
+обновление уже идёт	yangilash allaqachon ketmoqda
+Изоляция: {} отрезано от интернета — только локальная сеть	Izolyatsiya: {} internetdan uzildi — faqat mahalliy tarmoq
+Изоляция снята: {} снова выходит в интернет	Izolyatsiya olib tashlandi: {} yana internetga chiqadi
+Изоляция: не удалось применить правила nft: {}	Izolyatsiya: nft qoidalarini qoʻllab boʻlmadi: {}
+cgmon {} — уже последняя версия	cgmon {} — allaqachon oxirgi versiya
+в SHA256SUMS нет {}	SHA256SUMS da {} yoʻq
+{}: контрольная сумма не совпала	{}: nazorat summasi mos kelmadi
+новый бинарник не запускается на этом роутере	yangi ikkilik fayl bu routerda ishlamayapti
+нечего обновлять	yangilaydigan narsa yoʻq
+gzip -dc: ошибка	gzip -dc: xato
+служба остановлена и снята: {}	xizmat toʻxtatildi va olib tashlandi: {}
+ссылок страницы убрано: {}; /tmp/cgmon очищен	sahifa havolalari olib tashlandi: {}; /tmp/cgmon tozalandi
+остались (удалите сами, если не нужны): /opt/cgmon (бинарник), /etc/cgmon (настройки и данные)	qoldi (kerak boʻlmasa, oʻzingiz oʻchiring): /opt/cgmon (ikkilik fayl), /etc/cgmon (sozlamalar va maʼlumotlar)
+сайты отвечают, а диагноз — деградация {}	saytlar javob beradi, tashxis esa — {} degradatsiyasi
+сайты не отвечают, а диагноз этого сбоя не видит	saytlar javob bermayapti, tashxis esa bu nosozlikni koʻrmayapti
+Метрики по сайтам: {} — оценка снова совпадает с диагнозом (балл {:.0}, ответили {} из {})	Saytlar boʻyicha metrikalar: {} — baho yana tashxisga mos (ball {:.0}, {} tadan {} javob berdi)
+Метрики по сайтам: {} — {} (балл {:.0}, ответили {} из {})	Saytlar boʻyicha metrikalar: {} — {} (ball {:.0}, {} tadan {} javob berdi)
+обычный журнал	oddiy jurnal
+подробный (отладка)	batafsil (nosozliklarni tuzatish)
+только ошибки	faqat xatolar
+активные пробы (рекомендуется)	faol sinovlar (tavsiya etiladi)
+трафик + проба раз в 30 с	trafik + 30 s da bir sinov
+только трафик (эксперимент)	faqat trafik (tajriba)
+от текущих соединений клиента	mijozning joriy ulanishlaridan
+фиксированные warning/critical	qatʼiy warning/critical
+выключена	oʻchirilgan
+наблюдение (только журнал)	kuzatuv (faqat jurnal)
+активно: весь протокол	faol: butun protokol
+адресно: только сети с плохим протоколом (SmartDNS)	manzilli: faqat yomon protokolli tarmoqlar (SmartDNS)
+только соединения в интернет	faqat internetga ulanishlar
+внутри LAN	LAN ichida
+все	hammasi
+через netifd (ubus)	netifd (ubus) orqali
+командой ifup	ifup buyrugʻi bilan
+да	ha
+{}\n  1) да  2) нет  [Enter = {}]: 	{}\n  1) ha  2) yoʻq  [Enter = {}]: 
+пусто	boʻsh
+сгенерировать	yaratish
+оставить текущий	joriysini qoldirish
+  сгенерирован: {}  (запишите)	  yaratildi: {}  (yozib oling)
+  {}: {} — оставлено как было	  {}: {} — avvalgidek qoldirildi
+Уведомления в Telegram: сейчас получателей {}. Новый бот (токен от @BotFather, Enter — оставить как есть)	Telegram bildirishnomalari: hozir {} ta qabul qiluvchi. Yangi bot (@BotFather dan token, Enter — boricha qoldirish)
+Уведомления в Telegram: токен бота от @BotFather (Enter — без Telegram)	Telegram bildirishnomalari: @BotFather dan bot tokeni (Enter — Telegram siz)
+  ID чатов через запятую (личка — число, группа -100…, канал @имя): 	  Chat ID lar vergul bilan (shaxsiy — son, guruh -100…, kanal @nom): 
+  без чатов — Telegram не настроен	  chatlarsiz — Telegram sozlanmagan
+Текущий {} не читается ({}) — начинаем со значений по умолчанию.	Joriy {} oʻqilmaydi ({}) — standart qiymatlardan boshlaymiz.
+\ncgmon {} — мастер установки ({})	\ncgmon {} — oʻrnatish ustozi ({})
+Значения по умолчанию в вопросах — из текущего файла.	Savollardagi standart qiymatlar — joriy fayldan.
+Вариант настройки (всё, что есть на странице, можно поменять потом там):\n  1) минимальная — только пароль страницы\n  2) обычная — плюс центр сбора, Telegram, учёт трафика, выбор шлюза\n  3) подробная — все параметры по разделам	Sozlash varianti (sahifadagi hamma narsani keyin u yerda oʻzgartirish mumkin):\n  1) minimal — faqat sahifa paroli\n  2) oddiy — qoʻshimcha markaz, Telegram, trafik hisobi, shlyuz tanlash\n  3) batafsil — barcha parametrlar boʻlimlar boʻyicha
+  выбор [Enter = 1]: 	  tanlov [Enter = 1]: 
+\nВвод закончился — выхожу без сохранения.	\nKiritish tugadi — saqlamasdan chiqaman.
+\nПароль на изменение настроек со страницы status.html.	\nstatus.html sahifasidan sozlamalarni oʻzgartirish paroli.
+Пароль	Parol
+  недопустимые символы — оставлено как было	  ruxsat etilmagan belgilar — avvalgidek qoldirildi
+\n==== Центр сбора: отправка ====	\n==== Yigʻish markazi: yuborish ====
+Отправлять состояние этого роутера на центр сбора?	Bu router holatini yigʻish markaziga yuborilsinmi?
+Адреса центров (http://адрес:7788/api/v1/report, через запятую)	Markazlar manzillari (http://manzil:7788/api/v1/report, vergul bilan)
+  нужны адреса http:// — оставлено как было	  http:// manzillar kerak — avvalgidek qoldirildi
+Общий секрет центра (тот же, что hub.token на центре, ≥16 знаков)	Markazning umumiy siri (markazdagi hub.token bilan bir xil, ≥16 belgi)
+\n==== Центр сбора: этот роутер ====	\n==== Yigʻish markazi: bu router ====
+Этот роутер — центр сбора (принимает отчёты, шлёт в Telegram)?	Bu router — yigʻish markazimi (hisobotlarni qabul qiladi, Telegram ga yuboradi)?
+Общий секрет центра (≥16 знаков; роутеры шлют с ним же)	Markazning umumiy siri (≥16 belgi; routerlar ham shu bilan yuboradi)
+Порт центра (адрес:порт)	Markaz porti (manzil:port)
+\n==== Прочее (нет на странице) ====	\n==== Boshqalar (sahifada yoʻq) ====
+Учёт трафика устройств (счётчики nftables)?	Qurilmalar trafigi hisobi (nftables hisoblagichlari)?
+Резервный канал: проверять несколько WAN и переключать маршрут (gate selector)?	Zaxira kanal: bir nechta WAN ni tekshirib, marshrutni almashtirish (gate selector)?
+{} ({}, приоритет {})	{} ({}, ustuvorlik {})
+  шлюзы зоны wan: {}	  wan zonasi shlyuzlari: {}
+не найдены — задайте gate_selector.interfaces в cgmon.yaml	topilmadi — cgmon.yaml da gate_selector.interfaces ni bering
+  пока в режиме наблюдения (gate_selector.dry_run) — переключать начнёт после снятия на странице «Все настройки»	  hozircha kuzatuv rejimida (gate_selector.dry_run) — «Barcha sozlamalar» sahifasida oʻchirilgandan keyin almashtira boshlaydi
+Enter — оставить значение, цифра — выбрать вариант, «!» — оставить весь раздел, «?» — пояснение, «q» — выйти без сохранения.	Enter — qiymatni qoldirish, raqam — variantni tanlash, «!» — butun boʻlimni qoldirish, «?» — izoh, «q» — saqlamasdan chiqish.
+\n==== Раздел: {} ====	\n==== Boʻlim: {} ====
+общие	umumiy
+\n{} — сложный список, настраивается в cgmon.yaml:\n  {}	\n{} — murakkab roʻyxat, cgmon.yaml da sozlanadi:\n  {}
+  1) да  2) нет  [Enter = {}]: 	  1) ha  2) yoʻq  [Enter = {}]: 
+  выбор [Enter = {}]: 	  tanlov [Enter = {}]: 
+<сгенерировать>	<yaratish>
+<оставить текущий>	<joriysini qoldirish>
+Выйти без сохранения? 1) да  2) нет [2]: 	Saqlamasdan chiqilsinmi? 1) ha  2) yoʻq [2]: 
+  Путь: {}, тип: {}, сейчас: {}	  Yoʻl: {}, turi: {}, hozir: {}
+  сгенерирован: {} (запишите — нужен на всех роутерах/центрах)	  yaratildi: {} (yozib oling — barcha routerlar/markazlarda kerak)
+\nВнимание: {}	\nDiqqat: {}
+1) сохранить всё равно  2) выйти без сохранения [2]: 	1) baribir saqlash  2) saqlamasdan chiqish [2]: 
+Ничего не записано.	Hech narsa yozilmadi.
+\n==== Итог: изменений {} ====	\n==== Natija: {} ta oʻzgarish ====
+  {}: задан	  {}: berilgan
+  hub.telegram: задан	  hub.telegram: berilgan
+Записать в [Enter = {}]: 	Qayerga yozish [Enter = {}]: 
+\# cgmon.yaml — записан мастером cgmon {}, {}-{}-{} {}:{}.\n# Пояснения ко всем настройкам: cgmon --help-advanced, config.reference.yaml.\n	\# cgmon.yaml — cgmon {} ustozi tomonidan yozilgan, {}-{}-{} {}:{}.\n# Barcha sozlamalar izohlari: cgmon --help-advanced, config.reference.yaml.\n
+Старый файл сохранён: {}	Eski fayl saqlandi: {}
+Ошибка записи: {}	Yozish xatosi: {}
+Записанный файл не читается: {}	Yozilgan fayl oʻqilmaydi: {}
+Записано: {} (права 0600 — в файле секреты)	Yozildi: {} (huquqlar 0600 — faylda sirlar bor)
+Пакеты: 1) установить сейчас  2) пропустить (функции без них работать не будут) [2]: 	Paketlar: 1) hozir oʻrnatish  2) oʻtkazib yuborish (ularsiz funksiyalar ishlamaydi) [2]: 
+Не удалось: {}	Boʻlmadi: {}
+Служба: 1) установить/обновить и (пере)запустить  2) только записать конфиг [{}]: 	Xizmat: 1) oʻrnatish/yangilash va (qayta) ishga tushirish  2) faqat konfiguratsiyani yozish [{}]: 
+Бинарник: {}	Ikkilik fayl: {}
+Служба: /etc/init.d/cgmon	Xizmat: /etc/init.d/cgmon
+Готово: cgmon запущен. Проверка: cgmon status; страница: http://<роутер>/status.html	Tayyor: cgmon ishga tushdi. Tekshiruv: cgmon status; sahifa: http://<router>/status.html
+cfg:accounting	==== Qurilmalar boʻyicha trafik hisobi ====
+cfg:accounting.enabled	Qurilmalar boʻyicha trafik hisobi (soat/sutka) — nft inet cgmon_acct jadvali (qayta ishga tushirish kerak).
+cfg:accounting.refresh_sec	Hisoblagichlarni qanchalik tez-tez oʻqish, s (1 — sahifadagi grafiklar uchun).
+cfg:accounting.window_sec	Tezliklar/tarix oynasi, s.
+cfg:billing	==== Pullik trafik (bepul tarmoqlardan tashqari hammasi) ====
+cfg:billing.daily_limit_mb	Sutkada pullik trafik shundan oshsa ogohlantirish, MB (0 — yoʻq).
+cfg:billing.enabled	Pullik trafik hisoblagichi (provayderning bepul tarmoqlaridan tashqari hammasi) standart yoqilgan; sahifadagi belgi bilan ham yoqiladi va oʻchiriladi.
+cfg:billing.month_start_day	Hisob oyining boshlanish kuni.
+cfg:billing.monthly_limit_mb	… hisob oyi uchun, MB.
+cfg:billing.refresh_hours	Roʻyxatni har shuncha soatda yangilash.
+cfg:billing.state_file	Kunlar/oylar boʻyicha hisoblagichlar.
+cfg:billing.tasix_file	Roʻyxat qayerda (yuklab olingan yoki yuklangan).
+cfg:billing.tasix_url	Bepul tarmoqlar roʻyxati: matnga http(s) havola (har qatorda bitta tarmoq, IPv4/IPv6, # — izoh) yoki file — faqat sahifadan yuklangan oʻz faylingiz (yuklab olinmaydi). Standart — TAS-IX (Oʻzbekiston).
+cfg:client_retention_sec	Qurilma oxirgi faollikdan keyin «Faol qurilmalar» jadvalida necha soniya qoladi.
+cfg:counting	==== Ulanishlarni hisoblash ====
+cfg:counting.mode	Mijoz ulanishlari deb nima hisoblanadi: lan_to_wan — faqat internetga; lan_only — LAN ichida; all — hammasi.
+cfg:devices	==== Qurilmalar nomlari ====
+cfg:devices.l2_probe	Har 10 daqiqada jim qurilmalarni uygʻotish: oʻz quyi tarmoqlaringizni ARP bilan aylanib chiqish (/22 gacha), broadcast ga ping, ONVIF, SSDP, SADP.
+cfg:devices.l2_watch	Qurilmalar tutqichi (MikroTik dagi IP Scan kabi): LAN da ARP/NDP ni tinglash va manzili oʻz quyi tarmogʻingizdan boʻlmagan qurilmalarni koʻrsatish (statik IP li eski kamera).
+cfg:devices.probe	Qurilmalar nomlarini aniqlash: teskari DNS, mDNS, NetBIOS, mDNS/SSDP ni tinglash.
+cfg:devices.vendor_cache	Ishlab chiqaruvchilar keshi.
+cfg:devices.vendor_lookup	MAC boʻyicha ishlab chiqaruvchi (onlayn, kesh bilan).
+cfg:devices.vendor_url	MAC boʻyicha ishlab chiqaruvchilar xizmati.
+cfg:dns	==== Teskari DNS ====
+cfg:dns.cache_ttl_sec	Teskari DNS keshi, s.
+cfg:dns.resolve	Hisobotlarda tashqi manzillar uchun teskari DNS (sekinroq).
+cfg:dns.static	Statik nomlar IP → nom, faqat cgmon.yaml da. Misol: 192.168.1.50: tv
+cfg:dns.timeout_ms	Teskari DNS kutish vaqti, ms.
+cfg:dns_guard	==== DNS-himoya ====
+cfg:dns_guard.alternatives	Manzilli rejim: yomon protokolli tarmoqni qayerga yoʻnaltirish, tartib bilan (birinchi yaroqlisi): proto — DNS orqali boshqa protokol; qurilma (eth3, tailscale0) — egasining tarmoqlariga yangi IPv4 ulanishlar shu yoʻl orqali, agar yoʻl tirik va ega u orqali javob bersa. Tartibni sahifada oʻzgartirish qulayroq.
+cfg:dns_guard.backend	Qayerda almashtirish: auto — SmartDNS, agar u DNS ni xizmat qilsa va uning custom.conf i upstream_file va guard_file ni qoʻshsa (shunda reklama bloklash DNS64 da ham qoladi), aks holda dnsmasq | smartdns | dnsmasq.
+cfg:dns_guard.cache_file	smartdns uchun — diskdagi kesh, almashtirishda oʻchiriladi.
+cfg:dns_guard.check_domains	Manzilli rejim: «mening IP» saytlari doim (IPv4) birinchi ishlaydigan aylanib oʻtish yoʻlidan oʻtadi — internet sizni qayerdan koʻrayotganini bilish uchun brauzerda oching; IPv6 ni ular toʻgʻridan-toʻgʻri koʻrsatadi (aylanib oʻtish faqat IPv4).
+cfg:dns_guard.check_via	Tekshiruv saytlarini nima orqali yuborish: "" — birinchi ishlaydigan aylanib oʻtish yoʻli, direct — toʻgʻridan-toʻgʻri, proto — faqat IPv6 orqali (ularga A berilmaydi), qurilma (eth3, tailscale0) — shu yoʻl orqali.
+cfg:dns_guard.dns64_servers	DNS64 serverlari (faqat IP; standart — ommaviy nat64.net).
+cfg:dns_guard.guard_file	smartdns uchun — AAAA taqiqi fayli (u ham custom.conf da conf-file orqali).
+cfg:dns_guard.metered	Manzilli rejim: limitli yoʻllar (mobil internet) — ular orqali aylanib oʻtish trafigi hisoblanadi.
+cfg:dns_guard.metered_day_mb	Manzilli rejim: limitli yoʻlning kunlik limiti, MB; tugasa — yoʻl yarim tungacha ishlatilmaydi.
+cfg:dns_guard.mode	Provayderda bitta protokol ishlamay qolganda router DNS i mijozlarni ishlayotganiga oʻtkazadi: IPv6 yomon — mijozlarga IPv6 manzillar (AAAA) berilmaydi; IPv4 buzilgan — yuqori DNS vaqtincha DNS64 ga almashtiriladi (faqat IPv4 li saytlar — IPv6 orqali NAT64 bilan). off | observe (faqat jurnal) | active | targeted (manzilli: bitta egasi tarmogʻida yomon protokol, masalan Google da IPv6 — egasining tarmoqlariga u orqali yangi ulanishlar rad etiladi (mijozlar darhol boshqa protokolga oʻtadi) yoki boshqa yoʻl orqali aylanib oʻtiladi; DNS serverga tegilmaydi; butun protokol — umumiy rejim, agar guvohlar ham butun protokolni yomon deb koʻrsa)
+cfg:dns_guard.overlay	«Butun trafik» shlyuzi (overlay): butun LAN interneti oʻtadigan tunnel yoʻlining id si (overlay belgisi, PER-SITE ROUTING dagidek — asosiy marshrut oʻzgarmaydi; tunnel underlay i va router trafigi fizik kanaldan; tunnel tushsa — trafik oʻzi fizik kanalga). "" — oʻchirilgan. Sahifadagi shlyuzlar konstruktorida beriladi.
+cfg:dns_guard.overlay_fail_sec	butun trafik fizik kanalga (keyingi shlyuz). Overlay yoʻlining alohida tez sinovi; 0 — oddiy yoʻllar kabi (~2 daq).
+cfg:dns_guard.persite	Per-Site Routing, doimiy roʻyxat: doim shlyuz orqali oʻtadigan saytlar, tarmoqlar va AS (qoʻlda PBR kabi). off | auto (Per-Site Routing shlyuzi, u tanlanmagan boʻlsa — birinchi ishlaydigan aylanib oʻtish yoʻli) | active (0x100 belgisi) | <yoʻl id si>. Domenlar — subdomenlari bilan (manzillarni dnsmasq nftset oladi, usiz — mijozlarga DNS javoblaridan), IPv4 tarmoqlari va AS (AS45102; prefikslar RIPEstat dan, haftada bir) — barcha portlar; roʻyxatdagi IPv6 — rad etiladi (mijoz IPv4 ga oʻtadi).
+cfg:dns_guard.persite_aaaa	Roʻyxatdagi domenlarga boʻsh IPv6 (AAAA → ::) bilan javob berish, mijozlar shlyuz orqali IPv4 dan foydalansin (dnsmasq kerak).
+cfg:dns_guard.persite_file	Roʻyxat fayli: har qatorda bittadan yoki «;» bilan, # dan keyin izohlar. Sahifadan tahrirlanadi (Sozlamalar → Per-Site Routing).
+cfg:dns_guard.recover_sec	Hammasi normal shundan uzoq, s — DNS avvalgidek.
+cfg:dns_guard.reject_all_v6_score	IPv6 sinovlari (va yoqilgan boʻlsa saytlar metrikalari) shundan past, % — mijozlarning internetga BARCHA yangi IPv6 ulanishlari rad etiladi (mahalliy IPv6 va tunnellarga tegilmaydi); 0 — hech qachon. Faqat juda yomon IPv6 uchun.
+cfg:dns_guard.reject_all_v6_sec	...uzoqroq, s; sinovlar besh daqiqa chegara+20 dan yuqori boʻlsa olib tashlanadi.
+cfg:dns_guard.reject_v6	2.3.43 dan eskirgan, taʼsir qilmaydi: manzilli rejimda boshqa protokolga oʻtkazish — doim egasining tarmoqlariga yangi ulanishlarni rad etish (TCP RST, ICMP), SmartDNS ga tegilmaydi.
+cfg:dns_guard.relay_mbit	Rele orqali yoʻl tezligi cheklovi har bir yoʻnalishda, Mbit/s (0 — cheklovsiz).
+cfg:dns_guard.relays	Qoʻshimcha shlyuzlar — qoʻlda berilgan oʻz tugunlaringiz, standart shlyuz belgisisiz. Masalan, LAN yoki ZeroTier tarmogʻida koʻp qurilma, ular orasida bir nechta shlyuz — ularni shu yerda sozlang. Ular shlyuzlar sozlamalarida, shlyuzlar xaritalarida va «Buzilgan marshrutlarni manzilli aylanib oʻtish» da chiqadi. Format — tugunning «nom@manzil» i, masalan node1@10.147.17.5. Yoʻl @nom deb ataladi; keyin tugunni shlyuz sifatida tanlash mumkin — cgmon ota tarmoq va interfeysni oʻzi aniqlaydi. Shlyuz-tugunda bu tarmoqdan internetga uzatish kerak: OpenWrt/Linux da forwarding ni yoqing (net.ipv4.ip_forward=1), overlay/LAN interfeysidan WAN ga forward va WAN da masquerade (NAT) ga ruxsat bering. Bunday sozlamasiz oddiy routerni LAN tomoni bilan ulang.
+cfg:dns_guard.state_file	Oddiy DNS sozlamalari (tahrirlaringizda yangilanadi) va favqulodda rejim surati.
+cfg:dns_guard.target_base_min	Manzilli rejim: tarmoqning birinchi jarimasi, daq; har keyingisi ikki baravar uzoq (olib tashlashdan oldin — tekshiruv, hali yomon — keyingi bosqich); bir sutka nosozliksiz — bir bosqich pastga.
+cfg:dns_guard.target_max_hours	Manzilli rejim: eng uzun jarima, soat.
+cfg:dns_guard.targets_file	Faqat check_via: proto uchun («mening IP» saytlari faqat IPv6 orqali): SmartDNS uchun fayl (address /domen/#4), custom.conf ga conf-file qatori bilan qoʻshiladi. Jarimalar va aylanib oʻtish unga yozilmaydi (2.3.44 dan).
+cfg:dns_guard.unblock	Per-Site Routing: provayder TLS ini nom (SNI) boʻyicha uzadigan saytlar darhol — tanlangan shlyuz orqali. off | observe | active (per-site VPN, 0x100 belgisi) | <aylanib oʻtish yoʻli id si> (@tugun, qurilma — u orqali). cgmon uzilishni mijozning haqiqiy trafigida tutadi (synrtt), blokni toʻgʻridan-toʻgʻri curl sinovi bilan TASDIQLAYDI (manzilgacha TCP oʻtadi, TLS uziladi, VPN orqali esa ochiladi) va AYNAN mijoz manzillarini (/32) VPN belgisi bilan yoʻnaltiradi; egasining IPv6 i rad etiladi (/48) — brauzer IPv4 ga oʻtadi. Tasdiq soxtalarini ajratadi (telemetriya yopilishda RST yuboradi — DPI ga oʻxshaydi, lekin sinovda HTTP qaytaradi). Yozuv bir sutka yashaydi, keyin qayta oʻrganiladi. observe — faqat aniqlash; active — yoʻnaltiradi. curl va sozlangan VPN kerak.
+cfg:dns_guard.upstream_file	smartdns uchun — yuqori serverlar fayli (custom.conf uni conf-file qatori bilan qoʻshadi).
+cfg:dns_guard.v4_enter_sec	IPv4 buzilgan (WARNING/CRITICAL, IPv6 tirik) shundan uzoq, s — DNS64.
+cfg:dns_guard.v6_enter_sec	IPv6 yomon (IPV6_DEGRADATION tashxisi) shundan uzoq, s — AAAA taqiqi.
+cfg:dns_guard.withdraw_ra	AAAA taqiqi bilan birga IPv6 shlyuzni olib tashlash (mijozlarga IPv6 marshrutni eʼlon qilmaslik) (ra=server li dhcp seksiyalarida odhcpd ra_lifetime=0; keyin avvalgidek): aks holda oʻz DoH i bor qurilmalar (Android «Shaxsiy DNS», Chrome) router DNS ini chetlab yomon IPv6 dan foydalanishda davom etadi.
+cfg:down_detector	==== Down detector ====
+cfg:down_detector.enabled	Down detector: WAN ishlayotganda qaysi saytlar/xizmatlar mijozlarga javob bermayapti (jurnalga).
+cfg:dry_run	Kuzatuv rejimi: limiter hech narsani bloklamaydi, faqat nima qilgan boʻlishini yozadi. Sahifada — «Active» belgisi (teskari).
+cfg:enable_limiter	Yangi ulanishlarning dinamik limiterini yoqish (WAN degradatsiyasida eng agressiv mijoz).
+cfg:exclude_networks	Hisoblashda butunlay eʼtiborsiz qoldiriladigan tarmoqlar (masalan VoIP). Misol: [10.64.0.0/11]
+cfg:flow_watch	==== P2P bloklash detektori ====
+cfg:flow_watch.enabled	Istalgan trafik boʻyicha provayderning P2P (+torrent) bloklash detektori.
+cfg:flow_watch.heavy_mbps	Oqim bundan tez yuboradi — uning manzilini tekshirish.
+cfg:flow_watch.hold_sec	Oxirgi tez yuborishdan keyin qancha sinash, s.
+cfg:flow_watch.latency_add_ms	Kechikish chegarasiga qoʻshimcha, ms.
+cfg:flow_watch.latency_factor	Kechikish medianasi ≥ baza×factor+add — yoʻl yomon.
+cfg:flow_watch.learn_file	Oʻrganilganlar fayli (qayta yuklashdan keyin ham saqlanadi).
+cfg:flow_watch.learn_min_kbit	Quyi chegara: yuborishni bundan past cheklamaslik, kbit/s.
+cfg:flow_watch.learn_mode	Yuborish oʻqituvchisi: off — oʻchirilgan; observe — qaysi tarmoqqa qaysi tezlikda yuborish jazolanishini eslab qoladi va nechagacha cheklagan boʻlishini jurnalga yozadi (oʻzi hech narsani cheklamaydi).
+cfg:flow_watch.loss_only_percent	Kechikish oʻsmasa, yoʻl faqat shunday sinov yoʻqotishlarida yomon, %: normal kechikishda qisman yoʻqotishlar odatda serverning tez-tez ulanishlarni tashlashi (masalan Telegram), provayder emas.
+cfg:flow_watch.loss_percent	Sinov yoʻqotishlari yuqori — yoʻl yomon.
+cfg:flow_watch.max_targets	Bir vaqtda tekshiriladigan manzillar.
+cfg:flow_watch.probe_interval_ms	Manzil sinovlari davri, ms.
+cfg:flow_watch.probe_window_sec	Hukm uchun sinovlar oynasi, s.
+cfg:flow_watch.recover_sec	«Tiklandi» uchun sinov qancha yaxshi boʻlishi kerak, s.
+cfg:flow_watch.stall_percent	Yuborish shu % dan pastga tushdi — «toʻxtadi».
+cfg:flow_watch.stall_sec	Yoʻlni tekshirishdan oldin qancha toʻxtab turishi kerak, s.
+cfg:gate_selector	==== Shlyuz tanlash (bir nechta WAN) ====
+cfg:gate_selector.backups	Ustuvorlik boʻyicha zaxira shlyuz qurilmalari (sahifa yozadi).
+cfg:gate_selector.dry_run	Shlyuz tanlash — faqat kuzatish, almashtirmaslik.
+cfg:gate_selector.enabled	Shlyuz tanlash: bir nechta WAN ni tekshirish va standart marshrutni almashtirish (qayta ishga tushirish kerak). Shlyuzlar oʻzi topiladi (netifd: standart marshrut, wan zonasi); bitta WAN da — uxlaydi. Faqat dry_run: false da almashtiradi — standart holatda faqat kuzatadi.
+cfg:gate_selector.evaluation_interval_sec	Shlyuzlarni qanchalik tez-tez baholash, s.
+cfg:gate_selector.from_alternatives	Sahifadagi yoʻllar konstruktoridan zaxira shlyuzlar (yoʻlning «gate» almashtirgichi): true — shlyuzlar = asosiy (interfaces yoki avtoaniqlashdan 1-ustuvorlik) + backups qurilmalari tartib bilan; tunnellar (tailscale, wg, zt) olinmaydi.
+cfg:gate_selector.interfaces	Shlyuzlar (faqat cgmon.yaml da). Misol:
+cfg:gate_selector.probes.decision_window_sec	Shlyuzni baholash oynasi, s.
+cfg:gate_selector.probes.interval_sec	Shlyuz sinovlari davri, s.
+cfg:gate_selector.probes.ipv4	IPv4 shlyuz sinovlari maqsadlari.
+cfg:gate_selector.probes.ipv6	IPv6 shlyuz sinovlari maqsadlari.
+cfg:gate_selector.repair.auth_fail_pause_sec	PPPoE avtorizatsiya xatosidan keyingi pauza, s.
+cfg:gate_selector.repair.backoff_initial_sec	Urinishlar orasidagi boshlangʻich pauza, s.
+cfg:gate_selector.repair.backoff_max_sec	Maksimal pauza, s.
+cfg:gate_selector.repair.cooldown_sec	Taʼmirlar orasida kamida, s.
+cfg:gate_selector.repair.enabled	Osilib qolgan shlyuz interfeysini qayta ishga tushirish.
+cfg:gate_selector.repair.max_per_window	Oynada shundan koʻp taʼmir emas.
+cfg:gate_selector.repair.method	Qanday qayta ishga tushirish: ubus (netifd) yoki ifup.
+cfg:gate_selector.repair.no_ip_stuck_sec	IP siz koʻtarilgan holat shundan uzoq, s.
+cfg:gate_selector.repair.post_repair_grace_sec	Taʼmirdan keyin kutish, s.
+cfg:gate_selector.repair.setup_stuck_sec	Interfeys oʻrnatishda shundan uzoq «osilgan», s.
+cfg:gate_selector.repair.window_sec	max_per_window uchun oyna, s.
+cfg:gate_selector.switching.cooldown_sec	Bundan tez-tez almashtirmaslik, s.
+cfg:gate_selector.switching.inactive_metric	Nofaol shlyuz marshrutining metrikasi.
+cfg:gate_selector.switching.on_switch	Almashtirishdagi buyruqlar (faqat cgmon.yaml da). Misol: ["/etc/init.d/zerotier restart"]
+cfg:gate_selector.switching.post_switch_grace_sec	Almashtirgandan keyin xulosa chiqarmaslik, s.
+cfg:gate_selector.switching.prefer_primary	Asosiy shlyuz tiklanganda unga qaytish.
+cfg:gate_selector.switching.sync_uci_metric	Metrikalarni UCI ga yozish.
+cfg:gate_selector.thresholds.bad_score	Baho past — shlyuz yomon.
+cfg:gate_selector.thresholds.fail_hold_sec	Uzoqroq yomon — almashtirish, s.
+cfg:gate_selector.thresholds.failback_hold_sec	Asosiyga qaytish uchun yaxshi holat qancha davom etishi kerak, s.
+cfg:gate_selector.thresholds.failback_score	Asosiy shlyuz baho yuqori boʻlganda yana yaroqli.
+cfg:gate_selector.thresholds.margin	Boshqasi shuncha ball yaxshiroq boʻlsa almashtirish.
+cfg:gate_selector.thresholds.ok_score	Baho yuqori — shlyuz yaroqli (0–100).
+cfg:hard_limit	==== Qatʼiy ulanish limitlari ====
+cfg:hard_limit.connlimit	Mijozga tranzit ulanishlar limiti.
+cfg:hard_limit.connlimit_host	Mijozga routerga ulanishlar limiti.
+cfg:hard_limit.dry_run	Qatʼiy limitlar — faqat kuzatish.
+cfg:hard_limit.enabled	Xostga qatʼiy ulanish limitlari (statik, torrent_limit jadvali).
+cfg:hard_limit.except_ports_tcp	Limitsiz TCP portlar. Misol: [53, 80, 443]
+cfg:hard_limit.except_ports_udp	Limitsiz UDP portlar. Misol: [53, 123, 443]
+cfg:hard_limit.forward_ipv4_tcp	IPv4 TCP tranzitini cheklash.
+cfg:hard_limit.forward_ipv4_udp	IPv4 UDP tranzitini cheklash.
+cfg:hard_limit.forward_ipv6_tcp	IPv6 TCP tranzitini cheklash.
+cfg:hard_limit.forward_ipv6_udp	IPv6 UDP tranzitini cheklash.
+cfg:hard_limit.host_ipv4_tcp	Routerning oʻziga IPv4 TCP ulanishlarini cheklash.
+cfg:hard_limit.host_ipv4_udp	… IPv4 UDP.
+cfg:hard_limit.host_ipv6_tcp	… IPv6 TCP.
+cfg:hard_limit.host_ipv6_udp	… IPv6 UDP.
+cfg:hard_limit.interfaces	Qaysi interfeyslar/zonalar uchun.
+cfg:hard_limit.table	Qatʼiy limitlar nftables jadvali.
+cfg:hard_limit.uci_import	Eski UCI blokining sozlamalarini olish, agar boʻlsa.
+cfg:hub	==== Monitoring markazi (bitta routerda) ====
+cfg:hub.clear_sec	Nosozlik shuncha takrorlanmasa yopiladi, s.
+cfg:hub.enabled	Shu routerdagi monitoring markazi: hisobotlarni qabul qiladi, nosozliklarni solishtiradi, Telegram ga yuboradi.
+cfg:hub.journal_file	Barcha routerlarning umumiy jurnali (JSONL).
+cfg:hub.listen	Markazning manzil:porti. Firewall da oching: TCP 7788 (faqat TCP, faqat shu port).
+cfg:hub.min_isps	Umumiy nosozlik — shuncha turli provayder routerlarida degradatsiya.
+cfg:hub.notify_offline	«Router aloqada emas / yana aloqada» ni yuborish.
+cfg:hub.notify_single	Alohida router nosozliklarini ham yuborish.
+cfg:hub.stale_sec	Hisobotsiz uzoqroq — router «aloqada emas», s.
+cfg:hub.state_file	Markaz holati (routerlar, ochiq nosozliklar).
+cfg:hub.telegram	Botlar va qabul qiluvchilar (bir nechta bot, har birida bir nechta chat) — har bir bildirishnoma hammasiga ketadi. Faqat cgmon.yaml da. Misol:
+cfg:hub.telegram_bot_token	(eski format) bitta bot: @BotFather tokeni. Yangisi — quyidagi telegram roʻyxati.
+cfg:hub.telegram_chat_id	Bildirishnomalar uchun chat/guruh ID si.
+cfg:hub.token	Router hisobotlari uchun sir (≥16 belgi, routerlardagi report.token bilan bir xil).
+cfg:interval_sec	Asosiy sikl davri, s: conntrack oʻqish, holat, jurnal. 1 — sahifa har soniyada yangilanadi.
+cfg:isolated_zones	Ajratilgan zonalar (ijarachilar): bu manzillardan sahifa faqat oʻz VLAN qurilmalarini koʻrsatadi, sozlamalarsiz. Misol: [tenants]
+cfg:lan_interfaces	Qoʻshimcha LAN qurilmalari (odatda boʻsh — LAN lan_zones dan olinadi). Misol: [br-lan, vlan24]
+cfg:lan_networks	Qoʻshimcha LAN tarmoqlari (odatda boʻsh — interfeys manzillaridan olinadi). Misol: [192.168.2.0/24]
+cfg:lan_zones	Mijozlari kuzatiladigan firewall zonalari (ularning manzillari, IPv6 bilan birga, oʻzi aniqlanadi). Misol: [lan, tenants, wifi24]
+cfg:lang	cgmon xabarlari tili (jurnal, hodisalar, Telegram, konsol): auto | en | ru | uz | kk | zh. auto — LuCI tili, agar u shu roʻyxatda boʻlsa, aks holda inglizcha. Sahifa uni oʻz tili bilan birga almashtiradi.
+cfg:limits	==== Yangi ulanishlar limiteri ====
+cfg:limits.block_hysteresis_percent	Ulanishlar limitning shu % dan kamayganda blokni olib tashlash.
+cfg:limits.critical	CRITICAL dagi limit.
+cfg:limits.critical_factor	adaptive rejimida CRITICAL dagi limit = joriy ulanishlar × shu.
+cfg:limits.max	Maksimal limit.
+cfg:limits.min	Minimal limit (bundan pastga tushirilmaydi).
+cfg:limits.min_change_interval_sec	Limitni bundan tez-tez oʻzgartirmaslik, s.
+cfg:limits.min_offender_connections	Ulanishlari bundan kam mijozga tegmaslik.
+cfg:limits.mode	Yangi ulanishlar limiti rejimi: adaptive — mijozning joriy ulanishlar sonidan; static — qatʼiy warning/critical.
+cfg:limits.normal	NORMAL dagi limit (0 — limitsiz).
+cfg:limits.recovery_step_percent	Tiklanishda limitni yumshatish qadami, %.
+cfg:limits.warning	WARNING da mijoz ulanishlari limiti (static) yoki quyi chegara (adaptive).
+cfg:limits.warning_factor	adaptive rejimida WARNING dagi limit = joriy ulanishlar × shu.
+cfg:local	==== Router yuklamasi (local pressure) ====
+cfg:local.conntrack_threshold_percent	conntrack jadvali shu % dan koʻp toʻlgan — local pressure.
+cfg:local.core_threshold_percent	Istalgan yadro yuklamasi shu % dan yuqori (0 — tekshirmaslik).
+cfg:local.cpu_threshold_percent	Router CPU yuklamasi yuqori — «local pressure» (muammo WAN da emas, routerda).
+cfg:local.load_per_core	Yadro boshiga load average yuqori — local pressure.
+cfg:local.min_memory_mb	Boʻsh xotira kam, MB — local pressure.
+cfg:local.pressure_duration_sec	Local pressure deb hisoblash uchun yuklama qancha davom etishi kerak, s.
+cfg:log_level	Jurnal batafsilligi: info — oddiy, debug — batafsil (nosozliklarni tuzatish uchun), error — faqat xatolar.
+cfg:nft	==== Limiter nftables i ====
+cfg:nft.refresh_sec	Limiter qoidalarini qanchalik tez-tez yangilash, s.
+cfg:nft.set_timeout_sec	Mijoz bloki toʻplamda qancha turadi, s.
+cfg:nft.table	Limiter nftables jadvali (inet).
+cfg:path_trace.enabled	Aybdorni qidirish: protokol degradatsiyasida (sinovlar 3 daqiqadan uzoq <80%) router har 10 daqiqada sinov va sayt metrikalari maqsadlarigacha TCP 443 ni trassirovka qiladi; barcha yomon marshrutlar bitta tugun/operator orqali, yaxshilari — chetlab oʻtsa, bu joriy hodisalar va insidentlarga yoziladi.
+cfg:paths	==== Fayllar va soket ====
+cfg:paths.metrics_file	Metrikalar (JSONL).
+cfg:paths.runtime	Sahifadan oʻzgartirilgan sozlamalar (shu fayl ustidan).
+cfg:paths.socket	cgmon status/top/... buyruqlari uchun Unix soket
+cfg:paths.status_file	Sahifa uchun holat fayli (JSON).
+cfg:payment	==== Internet toʻlovi eslatmasi (markaz orqali, Telegram) ====
+cfg:payment.amount	Toʻlov summasi (matn, eslatmada koʻrsatiladi).
+cfg:payment.day	Oy kuni (qisqa oyda — oxirgi kun).
+cfg:payment.enabled	Eslatish. report (markazga hisobotlar) va markazda Telegram kerak; aks holda — faqat jurnal va sahifa.
+cfg:payment.interval_days	Necha kunda toʻlash (interval rejimi uchun; 30 kunlik provayderlar ham bor).
+cfg:payment.mode	monthly — har oy day kuni; interval — start_date dan har interval_days kunda.
+cfg:payment.note	Belgi: shaxsiy hisob, tarif (matn).
+cfg:payment.remind_days	Muddatdan shuncha kun oldin eslatish (va toʻlov kuni yana bir marta).
+cfg:payment.remind_hour	Shu soatdan oldin emas.
+cfg:payment.start_date	interval rejimi uchun istalgan toʻlov sanasi, YYYY-MM-DD (oraliqlar undan hisoblanadi).
+cfg:payment.state_file	Qaysi eslatmalar router jurnaliga allaqachon yozilgan.
+cfg:peers	==== Peerlar va WAN oqimlari ====
+cfg:peers.degrade_sec	Degradatsiya deb hisoblash uchun qancha davom etishi kerak, s.
+cfg:peers.list	Yoʻllarni tekshirish uchun peerlar (faqat cgmon.yaml da). Misol:
+cfg:peers.max_latency_ms	Kechikish yuqori — ham degradatsiya (0 — hisobga olmaslik).
+cfg:peers.min_success	Shu % dan past — peergacha yoʻl degradatsiyaga uchragan.
+cfg:peers.peak_window_sec	Oqimlar choʻqqilarini qancha eslab qolish, s.
+cfg:peers.penalty_mbps	Oqim bundan tez — «provayder jazosi ehtimoli».
+cfg:peers.recover_sec	Tiklanish qancha davom etishi kerak, s.
+cfg:peers.recover_success	Shu % dan yuqori — tiklandi.
+cfg:peers.wan_flows_top	Kengaytirilgan monitoringda nechta WAN oqimini koʻrsatish.
+cfg:peers.window_sec	Peer sinovlari statistikasi oynasi, s.
+cfg:probe_interval_sec	TCP WAN sinovlari qanchalik tez-tez (probes.ipv4/ipv6 ga ulanish), s.
+cfg:probe_timeout_sec	Bitta sinov kutish vaqti, s: shu vaqtda javob boʻlmasa — sinov muvaffaqiyatsiz.
+cfg:probes	==== WAN sinovlari ====
+cfg:probes.ipv4	IPv4 TCP sinov maqsadlari (manzil:port). WAN holatini sinovlar belgilaydi — maqsadlar barqaror boʻlishi kerak.
+cfg:probes.ipv6	IPv6 TCP sinov maqsadlari ([manzil]:port). Boʻsh — IPv6 tekshirilmaydi.
+cfg:probes.udp_v4	IPv4 UDP sinov maqsadlari (DNS, port 53).
+cfg:probes.udp_v6	IPv6 UDP sinov maqsadlari (DNS).
+cfg:protected_networks	Himoyalangan tarmoqlar (whitelist kabi, lekin tarmoqlar boʻyicha). Misol: [192.168.1.0/28]
+cfg:qos	==== SQM: kanalning aqlli navbati ====
+cfg:qos.cake_opts	Yuborishdagi cake parametrlari.
+cfg:qos.device	Navbat uchun WAN qurilmasi: auto — standart marshrut qurilmasi (PPPoE, DHCP, zaxira kanal; WAN almashsa navbat oʻzi koʻchadi) yoki aniq, masalan pppoe-wan, wan
+cfg:qos.download_kbit	Qabul tezligi, kbit/s.
+cfg:qos.enabled	SQM: sqm-scripts oʻrniga kanalning aqlli navbati (cake/HTB).
+cfg:qos.flow_buckets	Oqim savatlari soni.
+cfg:qos.flow_cap_down_kbit	Ulanishga yuklash limiti, kbit/s (0 — limitsiz).
+cfg:qos.flow_cap_up_kbit	Ulanishga yuborish limiti, kbit/s (0 — limitsiz).
+cfg:qos.flow_keys_down	Yuklash limiti uchun oqim kalitlari.
+cfg:qos.flow_keys_up	Yuborish limiti uchun oqim kalitlari (tc flow). Misol: nfct-src — qurilmaga.
+cfg:qos.ifb	Qabul uchun IFB (boʻsh — ifb4<qurilma>).
+cfg:qos.ingress_cake_opts	Qabuldagi cake parametrlari.
+cfg:qos.upload_kbit	Kanalning yuborish tezligi, kbit/s (tarifdan biroz past; 0 — sheyping qilmaslik).
+cfg:report	==== Monitoring markaziga hisobotlar ====
+cfg:report.enabled	Maʼlumotlarni monitoring markaziga (boshqa routerdagi hub) yuborish.
+cfg:report.interval_sec	Hisobot kamida shu oraliqda, s (oʻzgarishlarda — darhol).
+cfg:report.name	Markaz uchun router nomi (boʻsh — xost nomi).
+cfg:report.token	Markaz bilan umumiy sir (hub.token kabi), kamida 16 belgi. Yaratish: head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n'
+cfg:report.urls	Yigʻish markazlari (bir nechta boʻlishi mumkin — maʼlumotlar hammasiga ketadi). Hisobotlar shifrlanadi (AES-256-GCM), shuning uchun http:// yetarli. Misol: [http://10.0.0.1:7788/api/v1/report, http://203.0.113.10:7788/api/v1/report]
+cfg:simulation	==== Simulyatsiya (testlar uchun) ====
+cfg:simulation.enabled	Simulyatsiya rejimi (haqiqiy WAN siz testlar). Routerda — false.
+cfg:simulation.ipv4_success	Simulyatsiya: IPv4 sinovlari muvaffaqiyati, %.
+cfg:simulation.ipv6_success	Simulyatsiya: IPv6 sinovlari muvaffaqiyati, %.
+cfg:simulation.top_connections	Simulyatsiya: uning ulanishlari.
+cfg:simulation.top_host	Simulyatsiya: «agressiv» mijoz IP si.
+cfg:special_hosts	Imzoli maxsus xostlar (ip + name), faqat cgmon.yaml da. Misol:
+cfg:startup_grace_sec	Ishga tushgandan keyin necha soniya faqat kuzatish (MONITORING_ONLY tashxisi), xulosa chiqarmasdan.
+cfg:stat_long_window_sec	Uzun statistika oynasi (hisobotlar va tarix uchun), s.
+cfg:stat_window_sec	WAN holati uchun sinovlar statistikasi oynasi, s (shu vaqtdagi muvaffaqiyatlar ulushi).
+cfg:status_top_clients	«top» da eng faol mijozlardan nechtasini koʻrsatish.
+cfg:storage	Oraliq maʼlumotlarni qayerda saqlash (trafik hisobi, pullik trafik, saytlar metrikalari, yuborish oʻqituvchisi, portlar, yigʻish markazi, ishlab chiqaruvchilar keshi, toʻlov eslatmalari): flash — /etc/cgmon: hech narsa yoʻqolmaydi, lekin routerning ichki flash i eskiradi; tmp — /tmp/cgmon/data: flash eskirmaydi, lekin qayta yuklashdan keyin maʼlumotlar oʻchadi; oʻz katalogingiz, masalan /mnt/usb/cgmon (USB-fleshka, disk; faqat /mnt, /media, /opt, /srv, /data) — flash ham butun, maʼlumotlar ham saqlanadi. Tashuvchi ulanmaguncha maʼlumotlar /tmp/cgmon/data ga yoziladi, paydo boʻlganda koʻchadi. Oʻzgartirganda maʼlumotlar yangi joyga koʻchiriladi. Sozlamalar (cgmon.yaml, runtime.json), oʻz bepul tarmoqlar roʻyxatingiz va DNS-himoya holati doim flash da; grafik tarixi — faqat xotirada va /tmp da.
+cfg:thresholds	==== WAN holati chegaralari ====
+cfg:thresholds.critical_enter_success	Muvaffaqiyatlilar shu % dan kam — CRITICAL.
+cfg:thresholds.enter_duration_sec	WARNING/CRITICAL ga oʻtish uchun yomon holat qancha davom etishi kerak, s.
+cfg:thresholds.ipv6_healthy_success	IPv6 (nazorat kanali) muvaffaqiyat shu % dan yuqori boʻlsa sogʻlom hisoblanadi.
+cfg:thresholds.recovery_duration_sec	Tiklanish deb hisoblash uchun yaxshi holat qancha davom etishi kerak, s.
+cfg:thresholds.recovery_success	recovery_duration_sec dan uzoq shu % dan yuqori — RECOVERY/NORMAL.
+cfg:thresholds.warning_enter_success	Muvaffaqiyatli IPv4 sinovlari enter_duration_sec dan uzoq shu % dan kam — WARNING.
+cfg:tunnel_networks	Tunnel tarmoqlari (tailscale, zerotier): ulardagi trafik tashqi hisoblanmaydi. Misol: [100.64.0.0/22]
+cfg:udp_probe_interval_sec	UDP sinovlari qanchalik tez-tez (probes.udp_v4/udp_v6 ga DNS soʻrovi), s.
+cfg:upload_shaper	==== Yuborish sheyperi ====
+cfg:upload_shaper.class_id	Umumiy limit HTB klassi.
+cfg:upload_shaper.device	Yuborish qurilmasi (WAN): auto — qos navbatidagi bilan bir xil (standart marshrut) yoki aniq
+cfg:upload_shaper.enabled	Yuborish sheyperi (provayderning p2p bloklarini chetlab oʻtish): birinchi MB lar tez, keyin sekinroq.
+cfg:upload_shaper.interval_ms	Sheyper davri, ms.
+cfg:upload_shaper.payback_kbit	Bosqichlardan keyin «qarz» ni shu tezlikda uzish (0 — yoʻq).
+cfg:upload_shaper.penalty_cooldown_sec	Provayder jazosidan keyin — tezlashtirishsiz, s.
+cfg:upload_shaper.refill_factor	Zaxira sarfdan necha baravar sekin toʻplanadi.
+cfg:upload_shaper.resume_percent	Qayta tezlashish uchun zaxiraning necha % i kerak.
+cfg:upload_shaper.stages	Bosqichlar (faqat cgmon.yaml da). Misol:
+cfg:upload_shaper.sustained_kbit	Trigger oshgandan keyingi tezlik, kbit/s. Misol: 25000
+cfg:vuln_scan	==== Zaifliklar skaneri ====
+cfg:vuln_scan.isolate	Internetdan izolyatsiya: faqat mahalliy tarmoq va routerga kirish qoldirilgan qurilmalar (kameralar, registratorlar…) MAC lari. «Izolyatsiya» / «Izolyatsiyani olib tashlash» tugmalari — «Xavfsizlik» boʻlimida.
+cfg:vuln_scan.lan	LAN qurilmalarini tekshirish: faqat xavfsiz sinovlar — ochiq portlar va xizmat salomlashuvlari, kirishga urinishsiz.
+cfg:vuln_scan.mode	Xavfsizlik tekshiruvi: barcha paketlar va yadro zaifliklar bazalari bilan solishtiriladi (Debian bahosi bilan OSV.dev, CISA KEV — allaqachon hujum qilinmoqda, FIRST EPSS — hujum ehtimoli; oʻz paketlari uchun OpenWrt byulletenlari), shuningdek router sozlamalari (internetga nima ochiq, SSH, Wi-Fi, UPnP, IPv6) va LAN qurilmalari (xavfli xizmatlar). off | manual (faqat tugma) | weekly (va paketlar oʻzgargandan keyin; pullik trafik hisoblagichi yoqilgan boʻlsa — faqat tugma). Bir tekshiruv taxminan 2–4 MB trafik.
+cfg:vuln_scan.state_file	Oxirgi tekshiruv natijalari (KEV keshi — /tmp/cgmon da).
+cfg:wan	==== WAN ====
+cfg:wan.auto_detect_default_route	Standart marshrut qurilmasini WAN deb hisoblash.
+cfg:wan.collect_router_own_traffic	Routerning oʻz ulanishlarini hisobga olish.
+cfg:wan.interfaces	Mumkin boʻlgan WAN qurilmalari (avtoaniqlashga qoʻshimcha).
+cfg:wan_check	WAN nazorati: active — sinovlar (tavsiya etiladi); hybrid — trafik boʻyicha + 30 s da bir sinov; passive — faqat trafik (tajriba).
+cfg:wan_monitor	==== WAN monitori va hodisalar jurnali ====
+cfg:wan_monitor.down_debounce_sec	Shuncha soniyada koʻtarilmasa, WAN tushgan hisoblanadi.
+cfg:wan_monitor.enabled	WAN ni kuzatish (koʻtarilish/tushish, IP va marshrut oʻzgarishi) va hodisalar jurnalini yuritish.
+cfg:wan_monitor.incidents_file	Hodisalar jurnali (JSONL).
+cfg:wan_monitor.post_up_grace_sec	WAN koʻtarilgandan keyin shuncha soniya xulosa chiqarmaslik (qayta ulanishlar).
+cfg:web	==== status.html sahifasi ====
+cfg:web.embedded	Sahifa (status.html) va uning CGI si cgmon ichiga siqilgan holda joylangan: ishga tushganda /tmp/cgmon/www ga ochiladi, /www da esa simvolik havolalar qoʻyiladi. Flash da birorta ortiqcha fayl yoʻq (2–8 MB li routerlar uchun foydali), sahifa doim cgmon bilan bir xil versiyada. false — /www ga tegmaslik (sahifani oʻzingiz qoʻyasiz).
+cfg:web.password	Sahifadan sozlamalarni oʻzgartirish paroli. Boʻsh — sahifa faqat koʻrsatadi, undan hech narsani oʻzgartirib boʻlmaydi. Shu yerda, ustoz orqali (cgmon --install) yoki LuCI → Services → cgmon da beriladi.
+cfg:whitelist	Limiter hech qachon tegmaydigan mijozlar. Misol: [192.168.1.10, 192.168.1.0/28]
+cfg:witness	==== Guvohlar: IPv4/IPv6 bahosi (hozircha faqat kuzatuv) ====
+cfg:witness.interval_sec	Barcha guvohlarni tekshirish oraligʻi, s.
+cfg:witness.mode	Mijozlar muvaffaqiyatli tcp/443 ulangan tugunlarni router har interval_sec da oʻzi tekshiradi; tugun ishonchliligi oʻrganiladi, protokol bahosi — javob berganlarning tortilgan ulushi (+ qaytganlar uchun). Oddiy tashxis bilan 5 daqiqadan uzoq farq — jurnalga. off | observe
+cfg:witness.per_family	Protokolga guvohlar (32 gacha; /24 yoki /48 tarmoqqa bittadan koʻp emas).
+cfg:witness.state_file	Guvohlar va ularning ishonchliligi (qayta ishga tushishdan keyin ham saqlanadi).
+Интеграция: по адресу роутера теперь открывается cgmon, LuCI — по ссылке на странице	Integratsiya: router manzili endi cgmon ni ochadi, LuCI — sahifadagi havola orqali
+Интеграция: cgmon открывается по именам {}	Integratsiya: cgmon {} nomlari bilan ochiladi
+Интеграция: стартовая страница роутера возвращена (LuCI)	Integratsiya: routerning bosh sahifasi qaytarildi (LuCI)
+dnsmasq не найден — имена роутера не заданы	dnsmasq topilmadi — router nomlari oʻrnatilmadi
+Интеграция: имена роутера убраны из DNS	Integratsiya: router nomlari DNS dan olib tashlandi
+Интеграция: имена роутера в DNS — {}	Integratsiya: DNS dagi router nomlari — {}
+integration.home: {} — luci или cgmon	integration.home: {} — luci yoki cgmon
+integration.names: нужны DNS-имена (router.lan, cgmon.lan) без пробелов и повторов	integration.names: DNS nomlari kerak (router.lan, cgmon.lan), boʻshliqlar va takrorlarsiz
+cfg:integration	==== OpenWrt bilan integratsiya ====
+cfg:integration.home	Router manzilida nima ochiladi (http://192.168.1.1/): luci — odatdagidek OpenWrt sozlamalari; cgmon — cgmon sahifasi (OpenWrt sozlamalari — uning sarlavhasidagi «OpenWrt» havolasi orqali). Avvalgi /www/index.html yonida saqlanadi va luci tanlansa qaytariladi.
+cfg:integration.names	Har doim cgmon ochiladigan router DNS nomlari (masalan router.lan, cgmon.lan) — dnsmasq soʻrov kelgan tarmoqdagi router manzili bilan javob beradi.
+не хватает места на {}: нужно ≈ {} МБ, свободно {} МБ — ничего не обновлено	{} da joy yetmaydi: ≈ {} MB kerak, {} MB boʻsh — hech narsa yangilanmadi

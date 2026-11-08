@@ -63,7 +63,7 @@ fn in_nets(ip: &str, nets: &[String]) -> bool {
 /// Текст события без упоминаний устройств.
 pub fn tenant_text(s: &str) -> String {
     let mut s = s.to_string();
-    for cut in ["; больше всех соединений", "; клиенты:"] {
+    for cut in [tr!("; больше всех соединений"), tr!("; клиенты:")] {
         if let Some(i) = s.find(cut) {
             s.truncate(i);
         }

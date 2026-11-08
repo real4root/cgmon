@@ -17,7 +17,7 @@ impl SpecialHost {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -61,7 +61,7 @@ impl ProbesConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -113,7 +113,7 @@ impl ThresholdsConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -177,7 +177,7 @@ impl LimitsConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -253,7 +253,7 @@ impl LocalConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -308,7 +308,7 @@ impl NftConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -356,7 +356,7 @@ impl PathsConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -407,7 +407,7 @@ impl SimulationConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -459,7 +459,7 @@ impl WANConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -503,7 +503,7 @@ impl CountingConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -544,7 +544,7 @@ impl DNSConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -606,7 +606,7 @@ impl HardLimitConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -695,7 +695,7 @@ impl WANMonitorConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -745,7 +745,7 @@ impl GateIfaceConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -795,7 +795,7 @@ impl GateProbesConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -847,7 +847,7 @@ impl GateThresholdsConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -905,7 +905,7 @@ impl GateSwitchingConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -968,7 +968,7 @@ impl GateRepairConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1047,7 +1047,7 @@ impl GateSelectorConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1055,7 +1055,7 @@ impl GateSelectorConfig {
                 "enabled" => self.enabled = dec_bool(x, &q)?,
                 "dry_run" => self.dry_run = dec_bool(x, &q)?,
                 "evaluation_interval_sec" => self.evaluation_interval_sec = dec_int(x, &q)?,
-                "interfaces" => self.interfaces = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = GateIfaceConfig::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(format!("{}: ожидается список", q)) },
+                "interfaces" => self.interfaces = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = GateIfaceConfig::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(tr!("{}: ожидается список", q)) },
                 "from_alternatives" => self.from_alternatives = dec_bool(x, &q)?,
                 "backups" => self.backups = dec_str_list(x, &q)?,
                 "probes" => self.probes.apply(x, &q)?,
@@ -1113,7 +1113,7 @@ impl AccountingConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1158,7 +1158,7 @@ impl PeerConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1217,12 +1217,12 @@ impl PeersConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
             match k.as_str() {
-                "list" => self.list = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = PeerConfig::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(format!("{}: ожидается список", q)) },
+                "list" => self.list = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = PeerConfig::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(tr!("{}: ожидается список", q)) },
                 "window_sec" => self.window_sec = dec_int(x, &q)?,
                 "min_success" => self.min_success = dec_float(x, &q)?,
                 "degrade_sec" => self.degrade_sec = dec_int(x, &q)?,
@@ -1282,7 +1282,7 @@ impl UploadStage {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1340,7 +1340,7 @@ impl UploadShaperConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1350,7 +1350,7 @@ impl UploadShaperConfig {
                 "class_id" => self.class_id = dec_str(x, &q)?,
                 "sustained_kbit" => self.sustained_kbit = dec_int(x, &q)?,
                 "payback_kbit" => self.payback_kbit = dec_int(x, &q)?,
-                "stages" => self.stages = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = UploadStage::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(format!("{}: ожидается список", q)) },
+                "stages" => self.stages = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = UploadStage::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(tr!("{}: ожидается список", q)) },
                 "refill_factor" => self.refill_factor = dec_float(x, &q)?,
                 "resume_percent" => self.resume_percent = dec_float(x, &q)?,
                 "penalty_cooldown_sec" => self.penalty_cooldown_sec = dec_int(x, &q)?,
@@ -1433,7 +1433,7 @@ impl FlowWatchConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1516,7 +1516,7 @@ impl DownDetectorConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1554,7 +1554,7 @@ impl PathTraceConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1576,6 +1576,98 @@ impl PathTraceConfig {
         let (head, rest) = match path.split_once('.') { Some((h, r)) => (h, Some(r)), None => (path, None) };
         match (head, rest) {
             ("enabled", None) => Some(FieldMut::Bool(&mut self.enabled)),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct IntegrationConfig {
+    /// luci | cgmon — что открывается по адресу роутера
+    pub home: String,
+    /// DNS-имена роутера, по которым открывается cgmon
+    pub names: Vec<String>,
+}
+
+impl IntegrationConfig {
+    pub fn apply(&mut self, v: &Value, p: &str) -> Result<(), String> {
+        let m = match v {
+            Value::Map(m) => m,
+            Value::Null => return Ok(()),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
+        };
+        for (k, x) in m {
+            let q = join(p, k);
+            match k.as_str() {
+                "home" => self.home = dec_str(x, &q)?,
+                "names" => self.names = dec_str_list(x, &q)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn walk<'a>(&'a self, p: &str, f: &mut dyn FnMut(&str, Field<'a>)) {
+        f(&join(p, "home"), Field::Str(&self.home));
+        f(&join(p, "names"), Field::StrList(&self.names));
+    }
+
+    pub fn field_mut(&mut self, path: &str) -> Option<FieldMut<'_>> {
+        let (head, rest) = match path.split_once('.') { Some((h, r)) => (h, Some(r)), None => (path, None) };
+        match (head, rest) {
+            ("home", None) => Some(FieldMut::Str(&mut self.home)),
+            ("names", None) => Some(FieldMut::StrList(&mut self.names)),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct VulnScanConfig {
+    /// off | manual | weekly — проверка пакетов, ядра, настроек и устройств LAN
+    pub mode: String,
+    /// проверять устройства LAN (только безопасные пробы портов и баннеров)
+    pub lan: bool,
+    /// итоги последней проверки
+    pub state_file: String,
+    /// MAC устройств, изолированных от интернета (только LAN)
+    pub isolate: Vec<String>,
+}
+
+impl VulnScanConfig {
+    pub fn apply(&mut self, v: &Value, p: &str) -> Result<(), String> {
+        let m = match v {
+            Value::Map(m) => m,
+            Value::Null => return Ok(()),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
+        };
+        for (k, x) in m {
+            let q = join(p, k);
+            match k.as_str() {
+                "mode" => self.mode = dec_str(x, &q)?,
+                "lan" => self.lan = dec_bool(x, &q)?,
+                "state_file" => self.state_file = dec_str(x, &q)?,
+                "isolate" => self.isolate = dec_str_list(x, &q)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn walk<'a>(&'a self, p: &str, f: &mut dyn FnMut(&str, Field<'a>)) {
+        f(&join(p, "mode"), Field::Str(&self.mode));
+        f(&join(p, "lan"), Field::Bool(&self.lan));
+        f(&join(p, "state_file"), Field::Str(&self.state_file));
+        f(&join(p, "isolate"), Field::StrList(&self.isolate));
+    }
+
+    pub fn field_mut(&mut self, path: &str) -> Option<FieldMut<'_>> {
+        let (head, rest) = match path.split_once('.') { Some((h, r)) => (h, Some(r)), None => (path, None) };
+        match (head, rest) {
+            ("mode", None) => Some(FieldMut::Str(&mut self.mode)),
+            ("lan", None) => Some(FieldMut::Bool(&mut self.lan)),
+            ("state_file", None) => Some(FieldMut::Str(&mut self.state_file)),
+            ("isolate", None) => Some(FieldMut::StrList(&mut self.isolate)),
             _ => None,
         }
     }
@@ -1637,6 +1729,12 @@ pub struct DNSGuardConfig {
     pub reject_all_v6_sec: i64,
     /// обход блокировок по имени (TLS-reset): off | observe | active — cgmon сам ловит заблокированные провайдером сайты и уводит в VPN (метка 0x100)
     pub unblock: String,
+    /// статический список Per-Site Routing: off | auto (гейт Per-Site Routing / первый рабочий путь) | active | <id пути>
+    pub persite: String,
+    /// файл списка (домены, сети, AS — по строке или через ;)
+    pub persite_file: String,
+    /// доменам списка — пустой AAAA (::) в dnsmasq: клиент идёт по IPv4 через гейт
+    pub persite_aaaa: bool,
 }
 
 impl DNSGuardConfig {
@@ -1645,7 +1743,7 @@ impl DNSGuardConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1677,6 +1775,9 @@ impl DNSGuardConfig {
                 "reject_all_v6_score" => self.reject_all_v6_score = dec_int(x, &q)?,
                 "reject_all_v6_sec" => self.reject_all_v6_sec = dec_int(x, &q)?,
                 "unblock" => self.unblock = dec_str(x, &q)?,
+                "persite" => self.persite = dec_str(x, &q)?,
+                "persite_file" => self.persite_file = dec_str(x, &q)?,
+                "persite_aaaa" => self.persite_aaaa = dec_bool(x, &q)?,
                 _ => {}
             }
         }
@@ -1712,6 +1813,9 @@ impl DNSGuardConfig {
         f(&join(p, "reject_all_v6_score"), Field::Int(&self.reject_all_v6_score));
         f(&join(p, "reject_all_v6_sec"), Field::Int(&self.reject_all_v6_sec));
         f(&join(p, "unblock"), Field::Str(&self.unblock));
+        f(&join(p, "persite"), Field::Str(&self.persite));
+        f(&join(p, "persite_file"), Field::Str(&self.persite_file));
+        f(&join(p, "persite_aaaa"), Field::Bool(&self.persite_aaaa));
     }
 
     /// Поле на запись по пути относительно этой структуры.
@@ -1745,6 +1849,9 @@ impl DNSGuardConfig {
             ("reject_all_v6_score", None) => Some(FieldMut::Int(&mut self.reject_all_v6_score)),
             ("reject_all_v6_sec", None) => Some(FieldMut::Int(&mut self.reject_all_v6_sec)),
             ("unblock", None) => Some(FieldMut::Str(&mut self.unblock)),
+            ("persite", None) => Some(FieldMut::Str(&mut self.persite)),
+            ("persite_file", None) => Some(FieldMut::Str(&mut self.persite_file)),
+            ("persite_aaaa", None) => Some(FieldMut::Bool(&mut self.persite_aaaa)),
             _ => None,
         }
     }
@@ -1768,7 +1875,7 @@ impl WitnessConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1833,7 +1940,7 @@ impl PaymentConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1908,7 +2015,7 @@ impl ReportConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -1962,7 +2069,7 @@ impl TelegramTarget {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -2025,7 +2132,7 @@ impl HubConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -2035,7 +2142,7 @@ impl HubConfig {
                 "token" => self.token = dec_str(x, &q)?,
                 "telegram_bot_token" => self.telegram_bot_token = dec_str(x, &q)?,
                 "telegram_chat_id" => self.telegram_chat_id = dec_str(x, &q)?,
-                "telegram" => self.telegram = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = TelegramTarget::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(format!("{}: ожидается список", q)) },
+                "telegram" => self.telegram = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = TelegramTarget::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(tr!("{}: ожидается список", q)) },
                 "stale_sec" => self.stale_sec = dec_int(x, &q)?,
                 "min_isps" => self.min_isps = dec_int(x, &q)?,
                 "clear_sec" => self.clear_sec = dec_int(x, &q)?,
@@ -2109,7 +2216,7 @@ impl BillingConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -2190,7 +2297,7 @@ impl QoSConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -2264,7 +2371,7 @@ impl WebConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -2315,7 +2422,7 @@ impl DeviceIDConfig {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
@@ -2362,6 +2469,8 @@ impl DeviceIDConfig {
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Config {
     pub log_level: String,
+    /// язык сообщений демона: auto | en | ru | uz | kk | zh
+    pub lang: String,
     pub dry_run: bool,
     pub enable_limiter: bool,
     pub startup_grace_sec: i64,
@@ -2404,6 +2513,8 @@ pub struct Config {
     pub down_detector: DownDetectorConfig,
     /// общий виновник деградации (pathtrace.go)
     pub path_trace: PathTraceConfig,
+    pub vuln_scan: VulnScanConfig,
+    pub integration: IntegrationConfig,
     /// DNS-страховка при сбое IPv4/IPv6 (dnsguard.go)
     pub dns_guard: DNSGuardConfig,
     /// свидетели: оценка IPv4/IPv6 баллами (witness.go)
@@ -2430,12 +2541,13 @@ impl Config {
         let m = match v {
             Value::Map(m) => m,
             Value::Null => return Ok(()),
-            _ => return Err(format!("{}: ожидается словарь", if p.is_empty() { "конфиг" } else { p })),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
         };
         for (k, x) in m {
             let q = join(p, k);
             match k.as_str() {
                 "log_level" => self.log_level = dec_str(x, &q)?,
+                "lang" => self.lang = dec_str(x, &q)?,
                 "dry_run" => self.dry_run = dec_bool(x, &q)?,
                 "enable_limiter" => self.enable_limiter = dec_bool(x, &q)?,
                 "startup_grace_sec" => self.startup_grace_sec = dec_int(x, &q)?,
@@ -2456,7 +2568,7 @@ impl Config {
                 "whitelist" => self.whitelist = dec_str_list(x, &q)?,
                 "protected_networks" => self.protected_networks = dec_str_list(x, &q)?,
                 "exclude_networks" => self.exclude_networks = dec_str_list(x, &q)?,
-                "special_hosts" => self.special_hosts = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = SpecialHost::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(format!("{}: ожидается список", q)) },
+                "special_hosts" => self.special_hosts = match x { Value::List(l) => { let mut o = Vec::with_capacity(l.len()); for (i, it) in l.iter().enumerate() { let mut t = SpecialHost::default(); t.apply(it, &format!("{}[{}]", q, i))?; o.push(t); } o } Value::Null => Vec::new(), _ => return Err(tr!("{}: ожидается список", q)) },
                 "probes" => self.probes.apply(x, &q)?,
                 "thresholds" => self.thresholds.apply(x, &q)?,
                 "limits" => self.limits.apply(x, &q)?,
@@ -2476,6 +2588,8 @@ impl Config {
                 "flow_watch" => self.flow_watch.apply(x, &q)?,
                 "down_detector" => self.down_detector.apply(x, &q)?,
                 "path_trace" => self.path_trace.apply(x, &q)?,
+                "vuln_scan" => self.vuln_scan.apply(x, &q)?,
+                "integration" => self.integration.apply(x, &q)?,
                 "dns_guard" => self.dns_guard.apply(x, &q)?,
                 "witness" => self.witness.apply(x, &q)?,
                 "payment" => self.payment.apply(x, &q)?,
@@ -2495,6 +2609,7 @@ impl Config {
     /// Все поля по путям «секция.ключ» (как cfgWalk в Go).
     pub fn walk<'a>(&'a self, p: &str, f: &mut dyn FnMut(&str, Field<'a>)) {
         f(&join(p, "log_level"), Field::Str(&self.log_level));
+        f(&join(p, "lang"), Field::Str(&self.lang));
         f(&join(p, "dry_run"), Field::Bool(&self.dry_run));
         f(&join(p, "enable_limiter"), Field::Bool(&self.enable_limiter));
         f(&join(p, "startup_grace_sec"), Field::Int(&self.startup_grace_sec));
@@ -2535,6 +2650,8 @@ impl Config {
         self.flow_watch.walk(&join(p, "flow_watch"), f);
         self.down_detector.walk(&join(p, "down_detector"), f);
         self.path_trace.walk(&join(p, "path_trace"), f);
+        self.vuln_scan.walk(&join(p, "vuln_scan"), f);
+        self.integration.walk(&join(p, "integration"), f);
         self.dns_guard.walk(&join(p, "dns_guard"), f);
         self.witness.walk(&join(p, "witness"), f);
         self.payment.walk(&join(p, "payment"), f);
@@ -2552,6 +2669,7 @@ impl Config {
         let (head, rest) = match path.split_once('.') { Some((h, r)) => (h, Some(r)), None => (path, None) };
         match (head, rest) {
             ("log_level", None) => Some(FieldMut::Str(&mut self.log_level)),
+            ("lang", None) => Some(FieldMut::Str(&mut self.lang)),
             ("dry_run", None) => Some(FieldMut::Bool(&mut self.dry_run)),
             ("enable_limiter", None) => Some(FieldMut::Bool(&mut self.enable_limiter)),
             ("startup_grace_sec", None) => Some(FieldMut::Int(&mut self.startup_grace_sec)),
@@ -2591,6 +2709,8 @@ impl Config {
             ("flow_watch", Some(r)) => self.flow_watch.field_mut(r),
             ("down_detector", Some(r)) => self.down_detector.field_mut(r),
             ("path_trace", Some(r)) => self.path_trace.field_mut(r),
+            ("vuln_scan", Some(r)) => self.vuln_scan.field_mut(r),
+            ("integration", Some(r)) => self.integration.field_mut(r),
             ("dns_guard", Some(r)) => self.dns_guard.field_mut(r),
             ("witness", Some(r)) => self.witness.field_mut(r),
             ("payment", Some(r)) => self.payment.field_mut(r),

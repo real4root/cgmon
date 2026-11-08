@@ -1,6 +1,6 @@
 # cgmon
 
-**English** · [Русский](README.ru.md)
+**English** · [Русский](README.ru.md) · [Oʻzbekcha](README.uz.md) · [Қазақша](README.kk.md) · [中文](README.zh.md)
 
 A monitor for the internet uplink, conntrack/NAT, devices, switch ports and traffic
 on **OpenWrt / ImmortalWrt** routers — including routers behind carrier-grade NAT —
@@ -29,7 +29,7 @@ changes or removes its own rules:
 
 - **nftables** — its own tables next to the firewall (`inet cgmon` — limiter,
   `inet cgmon_acct` — traffic accounting, `inet cgmon_route` — connection marks
-  for rerouting, `inet cgmon_gw` — gateway maps, `inet cgmon_v6` — per-protocol
+  for rerouting, `inet cgmon_gw` — gateway maps, `inet cgmon_persite` — the Per-Site Routing list, `inet cgmon_v6` — per-protocol
   refusal). Firewall rules are never edited and the firewall is never reloaded;
 - **kernel routing** — `ip rule` entries keyed on connection marks, its own routing
   tables, and `ip route replace` to change the main gateway;
@@ -105,6 +105,13 @@ up its tables and state.
   or rerouted through another link. Penalties grow on repeat offences and are
   lifted early as soon as a check comes back clean; both protocols of one owner are
   never blocked.
+- **Per-Site Routing** — sites, networks and whole AS that always go through a chosen
+  gateway (a tunnel, a VPN node, another router): a list edited on the page in its
+  own window (one per line or separated with `;`), domains with all subdomains
+  (dnsmasq nftset fills the set before the client gets the answer), networks and AS
+  prefixes from RIPEstat; IPv6 of listed sites is refused so clients use IPv4 via
+  the gateway. The dynamic part catches sites whose TLS the ISP resets by name and
+  routes them automatically. If the gateway goes down, the sites go direct.
 - **SQM and an upload shaper**, a detector of ISP penalties for P2P traffic, and a
   limiter of new connections for the greediest client (observe-only by default).
 
@@ -122,9 +129,10 @@ up its tables and state.
   the WAN card, settings applied live without a restart (password-protected, with
   brute-force protection), settings search and plugins (a page block plus settings
   in a file).
-- Interface languages: English and Russian, with partial Uzbek, Kazakh and Chinese;
-  the language is picked from the browser. Journal messages, setting hints and the
-  CLI are currently in Russian.
+- Languages: English, Russian, Uzbek, Kazakh and Chinese — the page, setting hints,
+  journal, events, Telegram messages and the CLI. The page language is picked in the
+  header; changing it also switches the daemon's messages (`lang:` in `cgmon.yaml`,
+  `auto` follows LuCI).
 
 ## Builds: full, lite, nano
 
@@ -146,6 +154,7 @@ untouched.
 | Ports and cables (CRC, link drops, speed), swconfig | ✅ | ✅ | ✅ | — |
 | Gateway selector with switching, gateway maps | ✅ | ✅ | ✅ | — (busybox `ip` is enough) |
 | DNS guard, protocol-wide mode (no AAAA, DNS64, IPv6 gateway withdrawal) | ✅ | ✅ | ✅ | — (dnsmasq, odhcpd) |
+| Per-Site Routing list (domains, networks, AS) | ✅ | ✅ | ✅ | — (dnsmasq-full with nftset) |
 | Collection hub, reports, Telegram, LuCI page | ✅ | ✅ | ✅ | — (uclient-fetch + libustream) |
 | SQM with cake, upload shaper | ✅ | ✅ | ✅ | `tc-tiny`, `kmod-sched-cake`, `kmod-sched-core`, `kmod-ifb` (≈240) |
 | Hard connection limits | ✅ | ✅ | — | `kmod-nft-connlimit` (≈10) |
@@ -276,7 +285,8 @@ and escaped, and the parsers of external data are covered by fuzz-style tests.
 - [docs/users.md](docs/users.md) — what cgmon does, in plain language.
 - `cgmon --help`, `cgmon --help-advanced` — commands, files, ports, examples.
 - [config.reference.yaml](config.reference.yaml) — every option with an explanation
-  (comments in Russian).
+  (comments in Russian; the page and the wizard show them in your language).
+- [CHANGELOG.md](CHANGELOG.md) — version history.
 - [docs/hub.md](docs/hub.md) — the collection hub, TCP port 7788, security, Telegram.
 
 ## Building

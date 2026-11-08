@@ -444,7 +444,23 @@ pub fn parse_tailscale_status(out: &str) -> HashMap<IpAddr, IpAddr> {
 /// Команда с ограничением времени (вывод stdout; None — не успела/ошибка).
 pub fn output_timeout(cmd: &str, args: &[&str], ms: u64) -> Option<String> {
     use std::io::Read;
+    /// больше — обрезается (защита памяти); вывод читается одновременно с работой
+    /// процесса, иначе при выводе больше буфера канала (64 КБ) он ждал бы нас до таймаута
+    const MAX_OUT: u64 = 16 << 20;
     let mut ch = std::process::Command::new(cmd).args(args).stdin(std::process::Stdio::null()).stdout(std::process::Stdio::piped()).stderr(std::process::Stdio::null()).spawn().ok()?;
+    let out = ch.stdout.take()?;
+    let reader = std::thread::Builder::new()
+        .name("out-reader".into())
+        .spawn(move || {
+            let mut b = Vec::new();
+            let mut lim = out.take(MAX_OUT);
+            let _ = lim.read_to_end(&mut b);
+            // остаток (если обрезали) — вычитать, чтобы процесс не встал на записи
+            let mut rest = lim.into_inner();
+            let _ = std::io::copy(&mut rest, &mut std::io::sink());
+            b
+        })
+        .ok()?;
     let t0 = std::time::Instant::now();
     loop {
         match ch.try_wait() {
@@ -452,15 +468,20 @@ pub fn output_timeout(cmd: &str, args: &[&str], ms: u64) -> Option<String> {
             Ok(None) if t0.elapsed().as_millis() as u64 >= ms => {
                 let _ = ch.kill();
                 let _ = ch.wait();
+                let _ = reader.join();
                 return None;
             }
             Ok(None) => std::thread::sleep(std::time::Duration::from_millis(20)),
-            Err(_) => return None,
+            Err(_) => {
+                let _ = ch.kill();
+                let _ = ch.wait();
+                let _ = reader.join();
+                return None;
+            }
         }
     }
-    let mut s = String::new();
-    ch.stdout.take()?.read_to_string(&mut s).ok()?;
-    Some(s)
+    let b = reader.join().ok()?;
+    String::from_utf8(b).ok()
 }
 
 impl FlowWatch {

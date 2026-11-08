@@ -101,6 +101,13 @@ pub fn set(config_path: &str) -> i32 {
     let extras = v.get("extras").and_then(|x| x.as_bool()).unwrap_or(false);
     let l2_on = v.get("l2_on").and_then(|x| x.as_bool()).unwrap_or(false);
     let forget = s("hub_forget");
+    let set_lang = s("set_lang");
+    let vuln_get = v.get("vuln_get").and_then(|x| x.as_bool()).unwrap_or(false);
+    let vuln_scan = v.get("vuln_scan").and_then(|x| x.as_bool()).unwrap_or(false);
+    let vuln_action = s("vuln_action");
+    let page_lang = s("lang");
+    let ps_get = v.get("persite_get").and_then(|x| x.as_bool()).unwrap_or(false);
+    let ps_set = v.get("persite_set").and_then(|x| x.as_str());
     // установка пакетов: true — недостающее для включённых функций, строка — имена через пробел
     let install = match v.get("install") {
         Some(Value::Bool(true)) => Some(String::new()),
@@ -109,11 +116,11 @@ pub fn set(config_path: &str) -> i32 {
         None => None,
     };
     let (nset, ncfg) = (map_len("set"), map_len("config"));
-    if (nset == 0 && ncfg == 0 && !get_config && free.is_empty() && l2o.is_empty() && l2c.is_empty() && !l2_scan && !extras && !l2_on && forget.is_empty() && install.is_none()) || password.len() > 128 || ncfg > 300 {
+    if (nset == 0 && ncfg == 0 && !get_config && free.is_empty() && l2o.is_empty() && l2c.is_empty() && !l2_scan && !extras && !l2_on && forget.is_empty() && install.is_none() && !ps_get && ps_set.is_none() && set_lang.is_empty() && !vuln_get && !vuln_scan && vuln_action.is_empty()) || password.len() > 128 || ncfg > 300 {
         return fail(400, "bad request");
     }
     // большое тело — только загрузка списка, без других настроек
-    if n > MAX_BODY && (free.is_empty() || nset > 0 || ncfg > 0 || get_config) {
+    if n > MAX_BODY && ((free.is_empty() && ps_set.is_none()) || nset > 0 || ncfg > 0 || get_config) {
         return fail(413, "bad length");
     }
     if let Some(Value::Map(m)) = v.get("set") {
@@ -127,7 +134,37 @@ pub fn set(config_path: &str) -> i32 {
         json_str(r, password);
     };
     if get_config {
-        req.push_str("{\"cmd\":\"config_get\"}"); // чтение — без пароля (секретов там нет)
+        // чтение — без пароля (секретов там нет); пояснения — на языке страницы
+        req.push_str("{\"cmd\":\"config_get\",\"lang\":");
+        json_str(&mut req, page_lang);
+        req.push('}');
+    } else if vuln_get {
+        req.push_str("{\"cmd\":\"vuln_get\"}"); // итоги проверки — чтение без пароля
+    } else if vuln_scan {
+        req.push_str("{\"cmd\":\"vuln_scan\"");
+        pw(&mut req);
+        req.push('}');
+    } else if !vuln_action.is_empty() {
+        req.push_str("{\"cmd\":\"vuln_action\",\"text\":");
+        json_str(&mut req, vuln_action);
+        req.push_str(",\"pkgs\":");
+        match v.get("pkgs") {
+            Some(p @ Value::List(_)) => p.to_json(&mut req),
+            _ => req.push_str("[]"),
+        }
+        pw(&mut req);
+        req.push('}');
+    } else if !set_lang.is_empty() {
+        req.push_str("{\"cmd\":\"set_lang\",\"text\":");
+        json_str(&mut req, set_lang);
+        req.push('}');
+    } else if ps_get {
+        req.push_str("{\"cmd\":\"persite_get\"}"); // список Per-Site Routing — чтение без пароля
+    } else if let Some(t) = ps_set {
+        req.push_str("{\"cmd\":\"persite_set\",\"text\":");
+        json_str(&mut req, t);
+        pw(&mut req);
+        req.push('}');
     } else if !forget.is_empty() {
         req.push_str("{\"cmd\":\"hub_forget\",\"text\":");
         json_str(&mut req, forget);

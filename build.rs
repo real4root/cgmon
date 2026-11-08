@@ -7,6 +7,7 @@ fn main() {
     // (файл в репозитории, путь под /www, права)
     let files = [
         ("www/status.html", "status.html", 0o644),
+        ("www/persite.html", "persite.html", 0o644),
         ("www/cgi-bin/api_status", "cgi-bin/api_status", 0o755),
         ("www/cgi-bin/api_router", "cgi-bin/api_router", 0o755),
         ("www/cgi-bin/api_set", "cgi-bin/api_set", 0o755),
@@ -32,4 +33,22 @@ fn main() {
     }
     code += "];\n";
     std::fs::write(format!("{out}/webfiles.rs"), code).unwrap();
+
+    // переводы сообщений демона (src/i18n.rs): i18n/<язык>.tsv, сжатые
+    let mut cat = String::from("pub static CATALOGS: &[(&str, &[u8])] = &[\n");
+    println!("cargo:rerun-if-changed=i18n");
+    for lang in ["en", "uz", "kk", "zh"] {
+        let src = format!("i18n/{lang}.tsv");
+        println!("cargo:rerun-if-changed={src}");
+        if !std::path::Path::new(&src).exists() {
+            continue;
+        }
+        let o = std::process::Command::new("gzip").args(["-9", "-n", "-c", &src]).output().expect("build.rs: нужен gzip");
+        assert!(o.status.success(), "build.rs: gzip {src}");
+        let gz = format!("{out}/i18n_{lang}.gz");
+        std::fs::File::create(&gz).unwrap().write_all(&o.stdout).unwrap();
+        cat += &format!("    ({lang:?}, include_bytes!({gz:?})),\n");
+    }
+    cat += "];\n";
+    std::fs::write(format!("{out}/i18n.rs"), cat).unwrap();
 }

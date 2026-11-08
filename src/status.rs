@@ -90,7 +90,7 @@ pub fn build(d: &mut Daemon, unix: i64) {
     let (v4, v6, u4, u6) = (rounded(&d.v4), rounded(&d.v6), rounded(&d.udp4), rounded(&d.udp6));
     let lm = d.local_m.clone();
     let pressure = if d.extended { d.local.pressure_reason.clone() } else { String::new() };
-    let _sp = crate::prof::scope("st: события/инциденты");
+    let _sp = crate::prof::scope(tr!("st: события/инциденты"));
     // события и инциденты меняются редко: JSON пересобирается раз в 5 с
     // (страница опрашивает раз в секунду) или сразу после нового события
     let now_ms = crate::evloop::now_ms();
@@ -121,7 +121,7 @@ pub fn build(d: &mut Daemon, unix: i64) {
         d.st_cache = Cache { at: now_ms.max(1), ext: d.extended, ev: evj.b, inc: incj.b, diag: diagj.b, ndiag, ..std::mem::take(&mut d.st_cache) };
     }
     drop(_sp);
-    let _sp = crate::prof::scope("st: клиенты (имена, JSON)");
+    let _sp = crate::prof::scope(tr!("st: клиенты (имена, JSON)"));
     // клиенты
     let empty = Snapshot::default();
     let snap = d.snap.take();
@@ -158,7 +158,7 @@ pub fn build(d: &mut Daemon, unix: i64) {
     pj.key("router_own").int(p.router_own).key("router_own_at").str(&time_or_zero(p.router_own_at));
     pj.key("top_client_ip").str(&p.top_client_ip).key("top_client_wan").int(p.top_client_wan).key("top_client_at").str(&time_or_zero(p.top_client_at)).end_obj();
     drop(_sp);
-    let _sp = crate::prof::scope("st: топология/прочее");
+    let _sp = crate::prof::scope(tr!("st: топология/прочее"));
     let mut tj = crate::json::J::new();
     tj.arr();
     for t in &d.topo.tracked {
@@ -186,13 +186,21 @@ pub fn build(d: &mut Daemon, unix: i64) {
     let has_pt = d.pathc.open_json(&mut ptj);
     let mut ublj = crate::json::J::new();
     d.unblock.status_json(&mut ublj);
+    let mut vsj = crate::json::J::new();
+    d.vuln.status_json(&mut vsj, &d.cfg.vuln_scan.mode);
+    let mut psj = crate::json::J::new();
+    {
+        let on = d.cfg.dns_guard.persite != "off" && !d.cfg.dns_guard.persite.is_empty();
+        let (_, gname) = d.persite_gate();
+        d.persite.status_json(&mut psj, on, &gname);
+    }
     // имя активного шлюза Per-Site Routing и шлюза сайтов проверки (до d.out())
     let unblock_gate: String = {
         let g = &d.cfg.dns_guard.unblock;
         if g == "off" || g == "observe" || g.is_empty() {
             String::new()
         } else if g == "active" || g == "vpn" {
-            "per-site VPN".into()
+            "VPN (table 53)".into()
         } else {
             d.dg.as_ref().and_then(|dg| dg.gate_display(g)).unwrap_or_else(|| g.clone())
         }
@@ -215,7 +223,7 @@ pub fn build(d: &mut Daemon, unix: i64) {
         }
     }
     drop(_sp);
-    let _sp = crate::prof::scope("st: runtime/настройки");
+    let _sp = crate::prof::scope(tr!("st: runtime/настройки"));
     let mut rtj = crate::json::J::new();
     d.rt.status_json(&cfg, unix, &mut rtj);
     let dry_run = d.effective_dry_run();
@@ -334,7 +342,7 @@ pub fn build(d: &mut Daemon, unix: i64) {
     }
     let l2_left = if !d.cfg.devices.l2_watch && now_ms < d.l2_until { (d.l2_until - now_ms) / 1000 } else { 0 };
     drop(_sp);
-    let _sp = crate::prof::scope("st: запись JSON");
+    let _sp = crate::prof::scope(tr!("st: запись JSON"));
     let phyj = d.phy.on().then(|| {
         let mut x = crate::json::J::new();
         d.phy.status_json(&mut x);
@@ -346,6 +354,8 @@ pub fn build(d: &mut Daemon, unix: i64) {
         x
     });
     let sc = std::mem::take(&mut d.st_cache);
+    let lang_auto = d.cfg.lang.is_empty() || d.cfg.lang == "auto";
+    let (ig_home, ig_names, ig_err) = (d.cfg.integration.home.clone(), crate::integration::clean_names(&d.cfg.integration.names), d.integr.err.clone());
     let j = d.out();
     j.obj();
     j.key("time").str(&util::rfc3339(sec, ns));
@@ -353,6 +363,13 @@ pub fn build(d: &mut Daemon, unix: i64) {
     j.key("state").str(phase);
     j.key("diagnosis").str(diag);
     j.key("router_name").str(if router.is_empty() { "router" } else { &router });
+    j.key("lang").str(crate::i18n::code());
+    j.key("lang_auto").bool(lang_auto);
+    j.key("integration").obj().key("home").str(&ig_home).key("names").arr();
+    for n in &ig_names {
+        j.str(n);
+    }
+    j.end_arr().key("err").str(&ig_err).end_obj();
     j.key("router_hour_down").uint(rh.0).key("router_hour_up").uint(rh.1);
     j.key("router_day_down").uint(rd.0).key("router_day_up").uint(rd.1);
     j.key("acct").raw(&accj.b);
@@ -443,6 +460,12 @@ pub fn build(d: &mut Daemon, unix: i64) {
     }
     if !ublj.b.is_empty() {
         j.key("unblock").raw(&ublj.b);
+    }
+    if !vsj.b.is_empty() {
+        j.key("vuln").raw(&vsj.b);
+    }
+    if !psj.b.is_empty() {
+        j.key("persite").raw(&psj.b);
     }
     if !unblock_gate.is_empty() {
         j.key("unblock_gate").str(&unblock_gate);

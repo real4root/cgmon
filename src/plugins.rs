@@ -58,7 +58,7 @@ impl Plugins {
                 }
                 let Ok(text) = std::fs::read_to_string(&path) else { continue };
                 let Some(p) = parse_header(&text) else {
-                    crate::log_err!("plugins: {}: нет строки «// cgmon-plugin: name=…»", path.display());
+                    crate::log_err!("{}", tr!("plugins: {}: нет строки «// cgmon-plugin: name=…»", path.display()));
                     continue;
                 };
                 if !crate::util::readonly() {
@@ -77,7 +77,7 @@ impl Plugins {
         found.sort_by(|a, b| a.name.cmp(&b.name));
         if found != self.list {
             let names: Vec<&str> = found.iter().map(|p| p.name.as_str()).collect();
-            crate::log_info!("plugins: {}", if names.is_empty() { "нет".to_string() } else { names.join(", ") });
+            crate::log_info!("plugins: {}", if names.is_empty() { tr!("нет").to_string() } else { names.join(", ") });
             // убранный плагин — убрать и со страницы
             if !crate::util::readonly() {
                 for old in &self.list {

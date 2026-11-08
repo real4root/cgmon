@@ -185,9 +185,9 @@ fn pct(v: f64) -> String {
 
 fn gate_score(s: &str) -> String {
     if s == "-1" {
-        "нет".into()
+        tr!("нет").into()
     } else {
-        format!("{s} из 100")
+        tr!("{} из 100", s)
     }
 }
 
@@ -200,28 +200,28 @@ pub fn describe(inc: &mut Incident, name: Option<&NameFn>) {
     inc.text.clear();
     match inc.typ.as_str() {
         "degradation" => {
-            let verb = if inc.open { "не проходят" } else { "не проходили" };
-            let mut t = format!("Новые соединения IPv4 {verb}");
+            let verb = if inc.open { tr!("не проходят") } else { tr!("не проходили") };
+            let mut t = tr!("Новые соединения IPv4 {}", verb);
             let mut d = Vec::new();
             if inc.min_v4 >= 0.0 && inc.min_v4 < 90.0 {
-                d.push(format!("успешных проб до {}", pct(inc.min_v4)));
+                d.push(tr!("успешных проб до {}", pct(inc.min_v4)));
                 if inc.min_v6 >= 90.0 {
-                    d.push("IPv6 работал — сбой у провайдера на IPv4 (CGNAT)".into());
+                    d.push(tr!("IPv6 работал — сбой у провайдера на IPv4 (CGNAT)").into());
                 } else if inc.min_v6 >= 0.0 {
-                    d.push(format!("IPv6 тоже: {}", pct(inc.min_v6)));
+                    d.push(tr!("IPv6 тоже: {}", pct(inc.min_v6)));
                 }
             }
             if !d.is_empty() {
                 t += &format!(" ({})", d.join("; "));
             }
             if inc.post {
-                t += " — сразу после возврата связи: лавина переподключений";
+                t += tr!(" — сразу после возврата связи: лавина переподключений");
             }
             // лимит провайдера считает все соединения, пользователю важны полезные
             if inc.peak_wan > 0 {
-                t += &format!("; соединений в пике: всего {}", inc.peak_wan);
+                t += &tr!("; соединений в пике: всего {}", inc.peak_wan);
                 if inc.peak_useful > 0 && inc.peak_useful < inc.peak_wan {
-                    t += &format!(", полезных {} (остальное — пробы cgmon)", inc.peak_useful);
+                    t += &tr!(", полезных {} (остальное — пробы cgmon)", inc.peak_useful);
                 }
             }
             if !inc.peak_top.is_empty() && inc.peak_top_wan > 0 {
@@ -232,13 +232,13 @@ pub fn describe(inc: &mut Incident, name: Option<&NameFn>) {
                         who = format!("{} ({})", n, inc.peak_top);
                     }
                 }
-                t += &format!("; больше всех соединений у {} — {}", who, inc.peak_top_wan);
+                t += &tr!("; больше всех соединений у {} — {}", who, inc.peak_top_wan);
             }
             inc.text = t;
         }
-        "outage" => inc.text = if inc.open { "Интернета нет: WAN не работает".into() } else { "Интернета не было: WAN не работал".into() },
+        "outage" => inc.text = if inc.open { tr!("Интернета нет: WAN не работает").into() } else { tr!("Интернета не было: WAN не работал").into() },
         "local_pressure" => {
-            inc.text = "Роутер перегружен".into();
+            inc.text = tr!("Роутер перегружен").into();
             if !ctx.is_empty() && ctx != "router local pressure" {
                 inc.text += &format!(": {ctx}");
             }
@@ -249,7 +249,7 @@ pub fn describe(inc: &mut Incident, name: Option<&NameFn>) {
             if f.len() == 3 && !f[0].is_empty() {
                 if let (Some(a), Some(b)) = (f[1].strip_prefix("s4="), f[2].strip_prefix("s6=")) {
                     if a.trim_start_matches('-').parse::<u64>().is_ok() && b.trim_start_matches('-').parse::<u64>().is_ok() {
-                        inc.text = format!("Канал {} работает плохо: качество IPv4 {}, IPv6 {}", f[0], gate_score(a), gate_score(b));
+                        inc.text = tr!("Канал {} работает плохо: качество IPv4 {}, IPv6 {}", f[0], gate_score(a), gate_score(b));
                     }
                 }
             }
@@ -261,10 +261,10 @@ pub fn describe(inc: &mut Incident, name: Option<&NameFn>) {
                 if f.len() == 4 && f[1] == "->" && f[3].starts_with('(') && f[3].ends_with(')') {
                     let (a, b, why) = (f[0], f[2], &f[3][1..f[3].len() - 1]);
                     inc.text = match why {
-                        "failback" => format!("Возврат на основной канал {b} (с {a})"),
-                        "link_down" => format!("Переключение на канал {b}: канал {a} потерял связь"),
-                        "degraded" => format!("Переключение на канал {b}: канал {a} работал плохо"),
-                        _ => format!("Переключение на канал {b} (с {a}, {why})"),
+                        "failback" => tr!("Возврат на основной канал {} (с {})", b, a),
+                        "link_down" => tr!("Переключение на канал {}: канал {} потерял связь", b, a),
+                        "degraded" => tr!("Переключение на канал {}: канал {} работал плохо", b, a),
+                        _ => tr!("Переключение на канал {} (с {}, {})", b, a, why),
                     };
                 }
             }
@@ -273,13 +273,13 @@ pub fn describe(inc: &mut Incident, name: Option<&NameFn>) {
             if let Some(i) = ctx.find("DEFAULT WAN IFACE ") {
                 let f: Vec<&str> = ctx[i + 18..].split(' ').collect();
                 if f.len() >= 3 && f[1] == "->" {
-                    inc.text = format!("Интернет теперь идёт через {} (было {})", f[2], f[0]);
+                    inc.text = tr!("Интернет теперь идёт через {} (было {})", f[2], f[0]);
                 }
             } else if let Some(i) = ctx.find("NEW IP (") {
                 let rest = &ctx[i + 8..];
                 if let Some(c) = rest.find(") ON INTERFACE ") {
                     let iface = rest[c + 15..].split(' ').next().unwrap_or("");
-                    inc.text = format!("Новый внешний IP: {} ({})", &rest[..c], iface);
+                    inc.text = tr!("Новый внешний IP: {} ({})", &rest[..c], iface);
                 }
             }
         }
@@ -290,17 +290,17 @@ pub fn describe(inc: &mut Incident, name: Option<&NameFn>) {
     }
     let cb = inc.closed_by.as_str();
     inc.result = if inc.open {
-        "идёт сейчас".into()
+        tr!("идёт сейчас").into()
     } else if cb == "event" || cb.is_empty() {
         String::new()
     } else if cb.starts_with("recovered") {
-        "восстановилось".into()
+        tr!("восстановилось").into()
     } else if cb == "wan up" {
-        "интернет вернулся".into()
+        tr!("интернет вернулся").into()
     } else if cb == "local pressure gone" {
-        "нагрузка спала".into()
+        tr!("нагрузка спала").into()
     } else if cb == "cgmon restart" {
-        "cgmon перезапущен".into()
+        tr!("cgmon перезапущен").into()
     } else {
         cb.into()
     };
@@ -554,7 +554,7 @@ impl Journal {
                 (&mut dd, 40)
             } else if diag_type(&inc.typ) {
                 (&mut diag, 40)
-            } else if inc.typ == "route_guard" || (inc.typ == "dns_guard" && (inc.text.starts_with("DNS-страховка (адресно)") || inc.context.starts_with("DNS-страховка (адресно)"))) {
+            } else if inc.typ == "route_guard" || (inc.typ == "dns_guard" && (inc.text.starts_with(tr!("DNS-страховка (адресно)")) || inc.context.starts_with(tr!("DNS-страховка (адресно)")) || inc.text.starts_with("DNS-страховка (адресно)"))) {
                 continue;
             } else {
                 (&mut main, 60)

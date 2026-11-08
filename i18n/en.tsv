@@ -1,0 +1,835 @@
+# cgmon — en: source (ru)<TAB>translation; \n = newline. tools/i18n.py check
+\# cgmon: бесплатные сети, загружено со страницы\n{}\n	\# cgmon: free networks, uploaded from the page\n{}\n
+нет uclient-fetch, wget или curl	no uclient-fetch, wget or curl
+создаётся, когда лимитер впервые ограничивает клиента (в dry-run — никогда)	created when the limiter first restricts a client (never in dry-run)
+учёт трафика выключен (accounting.enabled)	traffic accounting is off (accounting.enabled)
+жёсткие лимиты выключены (hard_limit.enabled)	hard limits are off (hard_limit.enabled)
+обход маршрутом не используется (dns_guard.alternatives)	reroute is not used (dns_guard.alternatives)
+отказ в IPv6 не действует	IPv6 refusal is not active
+доступ к пойманным устройствам не открыт	no access to caught devices is open
+\# таблица {1}\n{0}\n	\# table {1}\n{0}\n
+\# таблица {}: нет — {}\n	\# table {}: none — {}\n
+в hub.telegram нет получателей	hub.telegram has no recipients
+✅ <b>cgmon {}</b>: проверка уведомлений с {} — сообщения центра сбора будут приходить сюда.	✅ <b>cgmon {}</b>: notification test from {} — hub messages will arrive here.
+бот {} → {}	bot {} → {}
+{}: отправлено	{}: sent
+{}: ошибка: {}	{}: error: {}
+Недостающее пакетами не ставится (см. пояснения выше).	Missing items are not installable as packages (see the notes above).
+Установить {}? Будут скачаны списки пакетов и сами пакеты. [y/N]: 	Install {}? Package lists and the packages will be downloaded. [y/N]: 
+Отменено.	Cancelled.
+Перезапуск не обязателен: cgmon подхватит пакеты в течение минуты (QoS — при следующей сверке).	No restart needed: cgmon picks up the packages within a minute (QoS — at the next check).
+Ошибка: {}	Error: {}
+kB (threads — штук)	kB (threads — count)
+{}: ожидается true/false, а не {}	{}: expected true/false, not {}
+{}: ожидается true/false	{}: expected true/false
+{}: ожидается целое, а не {}	{}: expected an integer, not {}
+{}: ожидается число, а не {}	{}: expected a number, not {}
+{}: ожидается число	{}: expected a number
+{}: ожидается строка	{}: expected a string
+{}: ожидается список	{}: expected a list
+{}: ожидается словарь	{}: expected a map
+config.reference.yaml: встроенный справочник не разбирается	config.reference.yaml: the built-in reference does not parse
+config.reference.yaml: встроенный справочник не применяется	config.reference.yaml: the built-in reference does not apply
+конфиг	config
+{}: путь сокета слишком длинный	{}: socket path is too long
+config (+слой страницы)	config (+page layer)
+acct (учёт трафика)	acct (traffic accounting)
+resolver (имена)	resolver (names)
+init (прочее)	init (other)
+WAN: нет связи с провайдером	WAN: no connection to the ISP
+Интернет через резервный канал {}	Internet via the backup link {}
+Массовые сбои соединений к сайтам — вероятна беда маршрутов провайдера	Mass failures of connections to sites — likely an ISP routing problem
+DNS-страховка в общем режиме: {}	DNS guard in global mode: {}
+IPv6 совсем плохой: клиентам отказ во всём IPv6, работают по IPv4	IPv6 is really bad: all IPv6 refused for clients, they work over IPv4
+Роутер перегружен: {}	Router overloaded: {}
+Мало памяти: {} МБ доступно	Low memory: {} MB available
+Температура SoC {:.0}°C — перегрев, возможен троттлинг	SoC temperature {:.0}°C — overheating, throttling is possible
+Температура SoC {:.0}°C — горячо	SoC temperature {:.0}°C — hot
+Не хватает пакетов для включённых функций: {}	Packages missing for enabled features: {}
+Обход:	Reroute:
+DNS-страховка (адресно)	DNS guard (targeted)
+dns (резолвер)	dns (resolver)
+clients (пики)	clients (peaks)
+status (сборка JSON)	status (JSON build)
+conntrack (чтение)	conntrack (read)
+clients (динамика)	clients (dynamics)
+light: пробы/нагрузка/wan	light: probes/load/wan
+phy (порты)	phy (ports)
+Массовые сбои	Mass failures
+dns_guard (+обход)	dns_guard (+reroute)
+проверка уже идёт	a check is already running
+Per-Site Routing: список изменён со страницы — {} доменов, {} сетей, {} AS	Per-Site Routing: list changed from the page — {} domains, {} networks, {} AS
+deps: установка со страницы: {}	deps: install from the page: {}
+убран со страницы	removed from the page
+нет ответа	no response
+соединения (conntrack)	connections (conntrack)
+правила nftables	nftables rules
+жёсткие лимиты соединений (hard_limit)	hard connection limits (hard_limit)
+шейпер отдачи (upload_shaper)	upload shaper (upload_shaper)
+{}: приём	{}: receive
+выбор шлюза (gate_selector)	gateway selection (gate_selector)
+адресная DNS-страховка (dns_guard.mode: targeted)	targeted DNS guard (dns_guard.mode: targeted)
+обход маршрутом (dns_guard.alternatives)	reroute (dns_guard.alternatives)
+проверка загрузки через путь обхода	download check through the reroute path
+обход через свои роутеры (dns_guard.relays)	reroute via your own routers (dns_guard.relays)
+провайдер для отчётов	ISP for reports
+список TAS-IX	TAS-IX list
+производители по MAC	vendors by MAC
+ip из busybox не умеет таблицы > 255 и fwmark с маской	busybox ip cannot handle tables > 255 or fwmark with a mask
+или wget, или uclient-fetch + libustream-*ssl	or wget, or uclient-fetch + libustream-*ssl
+ядро без conntrack/procfs: нужна другая сборка прошивки (kmod-nf-conntrack, CONFIG_NF_CONNTRACK_PROCFS)	kernel without conntrack/procfs: a different firmware build is needed (kmod-nf-conntrack, CONFIG_NF_CONNTRACK_PROCFS)
+Зависимости: всё на месте ({} проверено для включённых функций).	Dependencies: everything is in place ({} checked for enabled features).
+Не хватает ({} из {}):	Missing ({} of {}):
+  {} {} пакет {} → {}	  {} {} package {} → {}
+Установить: {2} update && {0} {1}   (или: cgmon deps --install)	Install: {2} update && {0} {1}   (or: cgmon deps --install)
+Пакеты: {} (менеджер пакетов не найден)	Packages: {} (no package manager found)
+Устанавливать нечего.	Nothing to install.
+после установки всё ещё не хватает {}	still missing after install: {}
+Готово: все зависимости на месте.	Done: all dependencies are in place.
+в сборке cgmon {} пакеты не ставятся: только то, что есть в прошивке	the cgmon {} build does not install packages: only what the firmware has
+пакет {} не ставится со страницы	package {} cannot be installed from the page
+устанавливать нечего	nothing to install
+нет ни apk, ни opkg	neither apk nor opkg
+мало места: свободно {1} КБ, нужно ≈{0} КБ	not enough space: {1} KB free, ≈{0} KB needed
+установка уже идёт	installation is already running
+deps: установлено {}{}	deps: installed {}{}
+deps: установка {} не удалась: {}	deps: installing {} failed: {}
+установка: {} (модули ядра есть только под ядро вашей сборки — на snapshot их может не быть)	installation: {} (kernel modules exist only for your build's kernel — on a snapshot they may be missing)
+deps: нет {} {} ({}) — нужно для: {}	deps: missing {} {} ({}) — needed for: {}
+deps: установить: cgmon deps --install  (пакеты: {})	deps: install: cgmon deps --install  (packages: {})
+deps: все зависимости на месте	deps: all dependencies are in place
+камера	camera
+телефон/планшет	phone/tablet
+ТВ/приставка	TV/set-top box
+компьютер	computer
+сетевое	network
+колонка	speaker
+приставка/ПК	console/PC
+*Телефон/планшет (частный MAC)	*Phone/tablet (private MAC)
+нет маршрута	no route
+сейчас основной	main now
+лимит на сегодня исчерпан	daily limit reached
+ещё не проверен	not checked yet
+путь не работает	path does not work
+не настроен	not configured
+Обход: {} стал основным каналом — для обхода не используется	Reroute: {} became the main link — not used for rerouting
+Обход: путь {} пропал (нет маршрута) — его сети перепроверяются	Reroute: path {} is gone (no route) — its networks are being rechecked
+Обход: не удалось настроить маршруты: {}	Reroute: failed to set up routes: {}
+Обход: путь {} не работает (проверка через него без ответа) — его сети перепроверяются	Reroute: path {} does not work (no answer through it) — its networks are being rechecked
+Обход: путь {} снова работает ({:.0} мс)	Reroute: path {} works again ({:.0} ms)
+Обход: {} — лимит трафика на сегодня исчерпан ({} МБ), путь не используется до полуночи	Reroute: {} — daily traffic limit reached ({} MB), the path is not used until midnight
+{} мин	{} min
+{} ч	{} h
+{} и ещё {}	{} and {} more
+напрямую по {2} ответили {0} из {1}	directly over {2}: {0} of {1} answered
+ ({:.0} мс)	 ({:.0} ms)
+{4}, через {0} — {1} из {2} ({3:.0} мс)	{4}, via {0} — {1} of {2} ({3:.0} ms)
+; пропущены: {}	; skipped: {}
+по {2} медленно: {0:.0} мс против {1:.0} мс по {3}	slow over {2}: {0:.0} ms vs {1:.0} ms over {3}
+по {6} ответили {0} из {1}{2}, по {7} — {3} из {4}{5}	over {6}: {0} of {1} answered{2}, over {7} — {3} of {4}{5}
+адресов нет	no addresses
+не быстрее	not faster
+тоже плохо	also bad
+{} — соединения есть, но загрузка {} замирает на {} КБ	{} — connections open, but the {} download stalls at {} KB
+{} — ответили {} из {}	{} — {} of {} answered
+Обход: {} — {}, обход через {} снят (был {})	Reroute: {} — {}, reroute via {} removed (lasted {})
+DNS-страховка (адресно): {} — {}, отказ по {} снят (был {}; при повторе в ближайшие сутки — {})	DNS guard (targeted): {} — {}, refusal over {} removed (lasted {}; if it repeats within a day — {})
+DNS-страховка (адресно): {} — по {} снова в норме ({}), отказ по {} снят — оба протокола сразу не штрафуются	DNS guard (targeted): {} — {} is fine again ({}), refusal over {} removed — both protocols are never penalized at once
+Обход: {} — новые соединения по {} идут через {} на {}, {} (штраф {}; сетей: {}, домены: {})	Reroute: {} — new connections over {} go via {} for {}, {} (penalty {}; networks: {}, domains: {})
+DNS-страховка (адресно): {0} — новые соединения по {4} к его сетям отклоняются, клиенты сразу уходят на {5}; на {1}, {2} (штраф {3}; сетей: {6})	DNS guard (targeted): {0} — new connections over {4} to its networks are refused, clients switch to {5} at once; for {1}, {2} (penalty {3}; networks: {6})
+Обход: {} — по {} всё ещё плохо, теперь через {} ещё {} ({}; штраф {})	Reroute: {} — still bad over {}, now via {} for another {} ({}; penalty {})
+DNS-страховка (адресно): {} — по {} всё ещё плохо, вместо обхода через {} соединения по {} отклоняются ещё {} (штраф {})	DNS guard (targeted): {} — still bad over {}, instead of rerouting via {} connections over {} are refused for another {} (penalty {})
+Обход: {} — по {} всё ещё плохо ({}), через {} ещё {} (штраф {})	Reroute: {} — still bad over {} ({}), via {} for another {} (penalty {})
+DNS-страховка (адресно): {} — по {} всё ещё плохо ({}), отказ по {} ещё {} (штраф {})	DNS guard (targeted): {} — still bad over {} ({}), refusal over {} for another {} (penalty {})
+по {1} снова в норме ({0})	fine again over {1} ({0})
+путь {} больше не годится ({}), других альтернатив нет	path {} no longer fits ({}), no other alternatives
+проверить по {} не удалось (адресов нет)	could not check over {} (no addresses)
+\# cgmon dns_guard: проверочные сайты «мой IP» (файл пишет cgmon; штрафы и обход — в nft, не здесь)\n	\# cgmon dns_guard: «my IP» check sites (written by cgmon; penalties and reroutes are in nft, not here)\n
+\# проверка: сайты «мой IP» только по IPv6\n	\# check: «my IP» sites over IPv6 only\n
+адресный режим: {}	targeted mode: {}
+DNS-страховка (адресно): не удалось записать {}: {}	DNS guard (targeted): failed to write {}: {}
+проверка «мой IP» только по IPv6 (check_via: proto) работает только со SmartDNS; сейчас {}	the IPv6-only «my IP» check (check_via: proto) works only with SmartDNS; now {}
+в custom.conf SmartDNS нет строки «conf-file {}» — адресные запреты не действуют	SmartDNS custom.conf has no «conf-file {}» line — targeted refusals do not work
+не задан targets_file	targets_file is not set
+, метрики по сайтам {:.0}	, per-site metrics {:.0}
+IPv6: клиентам отказ во всех новых IPv6-соединениях в интернет — пробы IPv6 {0:.0}%{1} (порог {3:.0}) дольше {2}; клиенты сразу уходят на IPv4	IPv6: clients are refused all new IPv6 connections to the internet — IPv6 probes {0:.0}%{1} (threshold {3:.0}) for longer than {2}; clients switch to IPv4 at once
+IPv6: отказ во всех IPv6-соединениях снят — пробы IPv6 {:.0}%{} (действовал {})	IPv6: refusal of all IPv6 connections removed — IPv6 probes {:.0}%{} (lasted {})
+DHCP: IPv6 шлюз отключен (клиентам не раздаётся IPv6-маршрут) из-за деградации IPv6 провайдера	DHCP: IPv6 gateway disabled (clients get no IPv6 route) due to ISP IPv6 degradation
+DHCP: IPv6 шлюз снова включен	DHCP: IPv6 gateway enabled again
+\n# cgmon dns_guard: у провайдера плохой IPv6 — без AAAA\nforce-AAAA-SOA yes\n	\n# cgmon dns_guard: ISP IPv6 is bad — no AAAA\nforce-AAAA-SOA yes\n
+\# cgmon dns_guard: у провайдера сломан IPv4 — DNS64 (обычные серверы вернутся сами)\n	\# cgmon dns_guard: ISP IPv4 is broken — DNS64 (normal servers come back by themselves)\n
+SmartDNS работает, но в его custom.conf нет строк «conf-file {}» и «conf-file {}» (вышестоящие серверы — в первом файле); пока через dnsmasq — при DNS64 запросы пойдут мимо SmartDNS	SmartDNS is running, but its custom.conf lacks the lines «conf-file {}» and «conf-file {}» (upstream servers are in the first file); using dnsmasq for now — with DNS64 queries will bypass SmartDNS
+DNS: клиентам отдаем только IPv4 адрес, у провайдера деградация IPv6	DNS: clients get IPv4 addresses only, ISP IPv6 is degraded
+DNS: клиентам отдаем IPv6 адреса через DNS64, у провайдера деградация IPv4	DNS: clients get IPv6 addresses via DNS64, ISP IPv4 is degraded
+DNS: обычные настройки восстановлены	DNS: normal settings restored
+DNS-страховка: {}	DNS guard: {}
+DNS-страховка: при старте DNS в аварийном режиме ({}) — обычные настройки вернутся, когда провайдер будет в норме	DNS guard: DNS was in emergency mode at start ({}) — normal settings return when the ISP is fine
+{} (действует с {})	{} (active since {})
+dns guard: настройки DNS изменены — сохранены как обычные	dns guard: DNS settings changed — saved as normal
+DNS-страховка: настройки DNS изменены вручную во время аварийного режима — приняты как обычные	DNS guard: DNS settings were changed by hand during emergency mode — accepted as normal
+DNS-страховка (наблюдение): сделал бы — {}	DNS guard (observe): would do — {}
+DNS-страховка: не удалось переключить ({}): {}	DNS guard: failed to switch ({}): {}
+ (проверка: DNS отвечает как «{}»)	 (check: DNS answers as «{}»)
+DNS-страховка не помогла: после переключения стал плохим {} — обычные настройки DNS, этот режим не включится ещё 1h0m0s	DNS guard did not help: after switching {} went bad — normal DNS settings, this mode stays off for 1h0m0s
+DNS-страховка (наблюдение): {}	DNS guard (observe): {}
+DNS-страховка: не удалось вернуть обычные настройки: {}	DNS guard: failed to restore normal settings: {}
+IPv6 (без IPv4)	IPv6 (no IPv4)
+напрямую	direct
+IPv4 и IPv6	IPv4 and IPv6
+отвечает медленно по {1} — медиана рукопожатия {0:.0} мс	slow over {1} — median handshake {0:.0} ms
+не отвечает по {2} — {0} из {1} соединений без ответа за 5 мин	not responding over {2} — {0} of {1} connections unanswered in 5 min
+; адреса {}	; addresses {}
+; клиенты: {}	; clients: {}
+роутер	router
+{}: снова в норме по {} (сбой {})	{}: is fine again over {} (failure {})
+Массовые сбои соединений по {} — {:.0}% из {} без ответа за 2 мин, направлений: {} (пробы WAN в норме — вероятна частичная беда маршрутов провайдера)	Mass failures of connections over {} — {:.0}% of {} unanswered in 2 min, destinations: {} (WAN probes are fine — likely partial ISP routing trouble)
+Массовые сбои соединений по {} закончились	Mass failures of connections over {} are over
+Шлюз {}: работает ({} мс)	Gateway {}: works ({} ms)
+Шлюз {}: не отвечает	Gateway {}: not responding
+основной маршрут (все шлюзы карты не отвечают)	main route (all gateways of the map are down)
+без интернета (все шлюзы не отвечают, kill)	no internet (all gateways are down, kill)
+через {}	via {}
+Карта шлюзов «{}»: {}	Gateway map «{}»: {}
+cgmon {} — монитор WAN, conntrack/NAT и устройств для OpenWrt/ImmortalWrt\n\nИспользование:\n  cgmon [команда] [-config ФАЙЛ]\n\nОсновные команды:\n  daemon               запуск демона (по умолчанию; обычно — служба /etc/init.d/cgmon)\n  status               состояние WAN, пробы, нагрузка\n  top                  самые активные устройства\n  sites                направления tcp/443 за 5 мин: имена, ответы, клиенты\n  trace <ip>...        TCP-трассировка (443) и общий виновник плохих маршрутов\n  config-test          проверить конфиг и выйти\n  deps [--install]     хватает ли пакетов (kmod-*, tc, curl…) для включённых функций\n\nУстановка и настройка:\n  --install            мастер: выбор — минимальная, обычная или подробная настройка\n  --install-min        минимальная: только пароль страницы, остальное — по умолчанию\n  --install-basic      обычная: основное, чего нет на странице (центр сбора, Telegram, шлюзы…)\n  --advanced-install   подробная: все параметры по разделам\n  --uninstall          снять службу и убрать страницу из /www (конфиг и данные остаются)\n\nФлаги:\n  -config ФАЙЛ         конфиг (по умолчанию /etc/cgmon/cgmon.yaml)\n  --help-advanced      подробная справка (все команды, файлы, порты, примеры)\n  -v, --version        версия\n\nСтраница: http://<роутер>/status.html   Конфиг: /etc/cgmon/cgmon.yaml\n	cgmon {} — WAN, conntrack/NAT and device monitor for OpenWrt/ImmortalWrt\n\nUsage:\n  cgmon [command] [-config FILE]\n\nMain commands:\n  daemon               run the daemon (default; usually the /etc/init.d/cgmon service)\n  status               WAN state, probes, load\n  top                  the most active devices\n  sites                tcp/443 destinations in 5 min: names, answers, clients\n  trace <ip>...        TCP traceroute (443) and the common culprit of bad routes\n  config-test          check the config and exit\n  deps [--install]     are the packages (kmod-*, tc, curl…) for enabled features present\n\nInstallation and setup:\n  --install            wizard: choose minimal, basic or detailed setup\n  --install-min        minimal: only the page password, everything else by default\n  --install-basic      basic: the essentials not on the page (hub, Telegram, gateways…)\n  --advanced-install   detailed: all parameters by section\n  --uninstall          remove the service and the page from /www (config and data stay)\n\nFlags:\n  -config FILE         config (default /etc/cgmon/cgmon.yaml)\n  --help-advanced      detailed help (all commands, files, ports, examples)\n  -v, --version        version\n\nPage: http://<router>/status.html   Config: /etc/cgmon/cgmon.yaml\n
+CGMON(8)                         cgmon {}\n\nИМЯ\n    cgmon — монитор внешнего канала, conntrack/NAT, устройств и трафика для\n    роутеров OpenWrt/ImmortalWrt за CGNAT; центр сбора сбоев с нескольких роутеров.\n\nИСПОЛЬЗОВАНИЕ\n    cgmon [daemon|run] [-config ФАЙЛ]\n    cgmon КОМАНДА [-config ФАЙЛ]\n    cgmon --install | --install-min | --install-basic | --advanced-install [-config ФАЙЛ]\n\nОПИСАНИЕ\n    Демон каждую секунду–пять секунд читает conntrack и счётчики nftables,\n    проверяет WAN пробами (TCP 443 к 1.1.1.1/8.8.8.8…), ведёт журнал\n    инцидентов, учитывает трафик устройств, может ограничивать новые\n    соединения самого агрессивного клиента, вести очередь канала (SQM),\n    шейпер отдачи, детекторы блокировок P2P и недоступных сервисов, отправлять\n    состояние на центры сбора и сам быть центром (с уведомлениями в Telegram).\n    Веб-страница status.html показывает всё это и меняет настройки без\n    перезапуска.\n    Сам cgmon трафик не маршрутизирует: пакеты пересылает ядро, а cgmon\n    по ситуации меняет правила — свои таблицы nftables (fw4 не трогает),\n    ip rule и таблицы маршрутов (обход, выбор шлюза), tc (SQM), SmartDNS/\n    dnsmasq (DNS-страховка, nftset для обхода). Каналы обхода — уже\n    поднятые запасной WAN, tailscale exit node, роутеры в ZeroTier.\n    Один процесс, один основной поток (epoll); долгие действия (перезапуск\n    SmartDNS, Telegram, проверки путей) — в коротких рабочих потоках.\n\nКОМАНДЫ\n    daemon, run       запуск демона (под procd: /etc/init.d/cgmon start)\n    status            состояние: фаза WAN (NORMAL/WARNING/CRITICAL/RECOVERY),\n                      диагноз, пробы IPv4/IPv6/UDP, conntrack, нагрузка\n    top               устройства с наибольшим числом соединений\n    probes            результаты последних проб (JSON)\n    sites             направления tcp/443 за 5 минут: сервис, ответы/провалы,\n                      медиана рукопожатия, адреса, клиенты (down detector)\n    trace <ip> [ip...]  TCP-трассировка (SYN на 443 с hop limit 1..20) до адресов\n                      и разбор: узел/оператор, через который идут все плохие\n                      маршруты и не идёт ни один хороший (path_trace)\n    nft-status        таблицы nftables cgmon\n    ports             порты: кабель, скорость, дуплекс, сеть (JSON)\n    config-test       прочитать и проверить конфиг; код 0 — в порядке\n                      (в stderr — недостающие пакеты)\n    deps              какие пакеты и модули ядра нужны включённым функциям и\n                      каких нет (код 1 — чего-то не хватает)\n    deps --install [-y]\n                      поставить недостающее через apk (OpenWrt 25+) или opkg;\n                      без -y спрашивает подтверждение\n    heap              память демона (RSS, данные, потоки)\n    disable           выключить активные действия до перезапуска\n    telegram-test     пробное сообщение всем получателям центра (hub.telegram)\n\nУСТАНОВКА И НАСТРОЙКА\n    Всё, что меняется на странице (пробы, лимитер, QoS, DNS-страховка, оплата,\n    cgfinder…), мастер не спрашивает в минимальном и обычном вариантах —\n    остаются значения по умолчанию, настраивается потом на странице.\n    --install-min     только пароль страницы (Enter — сгенерировать) — и\n                      установка службы. Хватает, чтобы роутер заработал.\n    --install-basic   пароль; отправка на центр сбора (адрес, общий секрет);\n                      этот ли роутер центр (секрет, бот и чаты Telegram, порт);\n                      учёт трафика; выбор шлюза; QoS/шейпер — устройство.\n    --advanced-install\n                      все параметры по разделам с пояснением;\n                      Enter — оставить значение, цифра — выбрать вариант,\n                      «!» — оставить раздел, «?» — пояснение, «q» — выход без\n                      сохранения.\n    --install         спросить, какой из трёх вариантов.\n    Во всех вариантах: бекап старого файла, запись cgmon.yaml (существующий\n    файл правится на месте — комментарии сохраняются; новый — из справочного\n    с пояснениями), проверка пакетов, установка службы и запуск.\n\nФЛАГИ\n    -config ФАЙЛ, --config ФАЙЛ\n                      путь к конфигу (в любом месте командной строки)\n    -h, --help        краткая справка\n    --help-advanced   эта справка\n    -v, --version     версия\n\nКОНФИГ\n    Поиск: -config → $CGMON_CONFIG → /etc/cgmon/cgmon.yaml → /etc/cgmon.yaml →\n    /opt/cgmon/cgmon.yaml → /etc/config/cgmon.yaml → встроенные значения.\n    Все параметры с пояснениями — config.reference.yaml (он же — основа мастера).\n    Изменения со страницы хранятся в /etc/cgmon/runtime.json поверх cgmon.yaml\n    (сам cgmon.yaml не переписывается). Секреты (web.password, report.token,\n    hub.*) задаются только в cgmon.yaml — права файла 0600.\n\nФАЙЛЫ\n    /opt/cgmon/cgmon                     бинарник\n    /etc/init.d/cgmon                    служба procd\n    /etc/cgmon/cgmon.yaml                конфиг\n    /etc/cgmon/runtime.json              настройки со страницы\n    /var/run/cgmon.sock                  сокет команд (status, top, …)\n    /var/run/cgmon.status.json           состояние для страницы\n    /tmp/cgmon/                          все временные файлы (журналы, учёт, история графика)\n    /tmp/cgmon/www/                      страница и CGI из бинарника; в /www — ссылки\n    /tmp/cgmon/incidents.jsonl           журнал инцидентов\n    /etc/cgmon/acct_state.json           учёт трафика (переживает перезагрузку)\n    /etc/cgmon/hub_state.json            центр сбора: роутеры и сбои\n    /tmp/cgmon/hub.jsonl                 центр сбора: общий журнал\n    /www/status.html, /www/cgi-bin/api_* веб-страница и её CGI\n\nЦЕНТР СБОРА (hub) И ОТПРАВКА (report)\n    Каждый роутер (report.enabled) раз в минуту и при любом изменении шлёт на\n    центры из report.urls: состояние WAN, пробы, открытые инциденты, сбои\n    сервисов и своего провайдера (AS внешнего IP). Центров может быть\n    несколько — данные уходят во все.\n    Центр (hub.enabled, галочка «Главный центр сбора») сопоставляет отчёты и\n    шлёт в Telegram (hub.telegram: несколько ботов, у каждого несколько чатов —\n    уведомление уходит всем): общий сбой внешнего канала (деградация у роутеров ≥2\n    разных провайдеров), сбой одного провайдера, сервис не отвечает у многих,\n    роутер не на связи; восстановление — с длительностью.\n\n    Порт: TCP 7788 (hub.listen). Для центра в интернете открыть в firewall\n    только его: входящий TCP 7788 на WAN.\n\n    Безопасность: каждый отчёт шифруется и подписывается AES-256-GCM ключом из\n    общего секрета (report.token = hub.token, ≥16 символов) — секрет по сети не\n    передаётся, прочитать/подделать отчёт нельзя. Повтор перехваченного пакета\n    отвергается (метка времени ±5 мин, одноразовые номера). Ограничения:\n    64 соединения, 8 с одного IP, 120 запросов в минуту с IP, 10 с на запрос,\n    тело ≤64 КБ, ≤500 роутеров. На любую ошибку — одинаковый 403. Подробное\n    состояние центра наружу не отдаётся (только 127.0.0.1 и страница центра).\n    Часы роутеров должны идти верно (NTP): расхождение >5 мин — отчёт отвергнут.\n    Секрет общий: утечка с любого роутера позволяет подделывать отчёты —\n    при подозрении смените его везде.\n\nПЕРЕМЕННЫЕ ОКРУЖЕНИЯ\n    CGMON_CONFIG      путь к конфигу\n    NO_COLOR          без цвета в выводе команд\n    CGMON_READONLY=1  ничего не менять в системе (сверка рядом с другим демоном)\n\nКОДЫ ВЫХОДА\n    0 — успех; 1 — ошибка (конфиг, демон не запущен, отказ мастера); 2 — неверные\n    аргументы.\n\nПРИМЕРЫ\n    Первая установка (только пароль):\n        scp -O cgmon root@router:/tmp/ && ssh root@router /tmp/cgmon --install-min\n    Проверить конфиг после правки:\n        cgmon config-test && /etc/init.d/cgmon restart\n    Что сейчас с WAN и кто грузит:\n        cgmon status; cgmon top\n    Какие сайты не отвечают клиентам:\n        cgmon sites\n    Ключ для центра сбора (одинаковый на центре и роутерах):\n        head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n'\n\nЗАВИСИМОСТИ\n    Всегда: nftables (nft), conntrack (/proc/net/nf_conntrack).\n    qos / upload_shaper:  tc-tiny, kmod-sched-core (htb, fq_codel, flow,\n                          ingress, mirred), kmod-sched-cake, kmod-ifb (приём)\n    hard_limit:           kmod-nft-connlimit\n    gate_selector:        ip-full\n    dns_guard (обход через другой путь): ip-full; curl — проверка\n                          загрузки через путь (wget не умеет); relays — ZeroTier\n    HTTPS (Telegram, отчёты, TAS-IX, производители): curl, wget\n                          или uclient-fetch + libustream-*ssl\n    Демон проверяет это раз в минуту: в журнал — «deps: нет …», на странице —\n    предупреждение. Установка: cgmon deps --install.\n\nДИАГНОСТИКА\n    logread | grep cgmon                 журнал демона\n    cgmon status                         фаза и диагноз\n    MONITORING_ONLY первые startup_grace_sec после запуска — норма.\n    Страница не обновляется — проверьте /var/run/cgmon.status.json и\n    /etc/init.d/cgmon status. Отчёты не доходят до центра — на роутере\n    страница «Настройки» показывает ошибку по каждому центру; на центре —\n    logread | grep hub.\n	CGMON(8)                         cgmon {}\n\nNAME\n    cgmon — monitor of the external link, conntrack/NAT, devices and traffic for\n    OpenWrt/ImmortalWrt routers behind CGNAT; a hub collecting failures from several routers.\n\nUSAGE\n    cgmon [daemon|run] [-config FILE]\n    cgmon COMMAND [-config FILE]\n    cgmon --install | --install-min | --install-basic | --advanced-install [-config FILE]\n\nDESCRIPTION\n    Every one to five seconds the daemon reads conntrack and nftables counters,\n    checks the WAN with probes (TCP 443 to 1.1.1.1/8.8.8.8…), keeps an incident\n    journal, accounts device traffic, can limit new connections of the most\n    aggressive client, run a link queue (SQM), an upload shaper, detectors of\n    P2P blocking and unreachable services, send its state to collection hubs and\n    be a hub itself (with Telegram notifications).\n    The status.html web page shows all of it and changes settings without a\n    restart.\n    cgmon does not route traffic itself: the kernel forwards packets, and cgmon\n    changes the rules as needed — its own nftables tables (fw4 is not touched),\n    ip rule and route tables (reroute, gateway selection), tc (SQM), SmartDNS/\n    dnsmasq (DNS guard, nftset for reroutes). Reroute channels are links that are\n    already up: a backup WAN, a tailscale exit node, routers in ZeroTier.\n    One process, one main thread (epoll); long actions (SmartDNS restart,\n    Telegram, path checks) run in short worker threads.\n\nCOMMANDS\n    daemon, run       run the daemon (under procd: /etc/init.d/cgmon start)\n    status            state: WAN phase (NORMAL/WARNING/CRITICAL/RECOVERY),\n                      diagnosis, IPv4/IPv6/UDP probes, conntrack, load\n    top               devices with the most connections\n    probes            results of the latest probes (JSON)\n    sites             tcp/443 destinations in 5 minutes: service, answers/failures,\n                      median handshake, addresses, clients (down detector)\n    trace <ip> [ip...]  TCP traceroute (SYN to 443 with hop limit 1..20) to the addresses\n                      and analysis: the node/operator all bad routes go through\n                      and no good one does (path_trace)\n    nft-status        cgmon nftables tables\n    ports             ports: cable, speed, duplex, network (JSON)\n    config-test       read and check the config; exit code 0 — fine\n                      (missing packages go to stderr)\n    deps              which packages and kernel modules enabled features need and\n                      which are missing (exit code 1 — something is missing)\n    deps --install [-y]\n                      install what is missing via apk (OpenWrt 25+) or opkg;\n                      without -y asks for confirmation\n    heap              daemon memory (RSS, data, threads)\n    disable           turn off active actions until restart\n    telegram-test     test message to all hub recipients (hub.telegram)\n\nINSTALLATION AND SETUP\n    Everything that can be changed on the page (probes, limiter, QoS, DNS guard,\n    payment, cgfinder…) is not asked by the minimal and basic wizards —\n    defaults stay and are tuned later on the page.\n    --install-min     only the page password (Enter — generate) — and the\n                      service install. Enough for the router to work.\n    --install-basic   password; reporting to a hub (address, shared secret);\n                      whether this router is a hub (secret, Telegram bot and chats, port);\n                      traffic accounting; gateway selection; QoS/shaper — device.\n    --advanced-install\n                      all parameters by section with explanations;\n                      Enter — keep the value, a digit — choose an option,\n                      «!» — keep the section, «?» — explanation, «q» — quit without\n                      saving.\n    --install         ask which of the three.\n    In all of them: a backup of the old file, cgmon.yaml is written (an existing\n    file is edited in place — comments are kept; a new one comes from the\n    reference with explanations), packages are checked, the service is installed and started.\n\nFLAGS\n    -config FILE, --config FILE\n                      path to the config (anywhere on the command line)\n    -h, --help        short help\n    --help-advanced   this help\n    -v, --version     version\n\nCONFIG\n    Lookup: -config → $CGMON_CONFIG → /etc/cgmon/cgmon.yaml → /etc/cgmon.yaml →\n    /opt/cgmon/cgmon.yaml → /etc/config/cgmon.yaml → built-in values.\n    All parameters with explanations — config.reference.yaml (also the wizard's base).\n    Changes from the page are kept in /etc/cgmon/runtime.json on top of cgmon.yaml\n    (cgmon.yaml itself is not rewritten). Secrets (web.password, report.token,\n    hub.*) are set only in cgmon.yaml — file mode 0600.\n\nFILES\n    /opt/cgmon/cgmon                     binary\n    /etc/init.d/cgmon                    procd service\n    /etc/cgmon/cgmon.yaml                config\n    /etc/cgmon/runtime.json              settings from the page\n    /var/run/cgmon.sock                  command socket (status, top, …)\n    /var/run/cgmon.status.json           state for the page\n    /tmp/cgmon/                          all temporary files (journals, accounting, chart history)\n    /tmp/cgmon/www/                      page and CGI from the binary; links in /www\n    /tmp/cgmon/incidents.jsonl           incident journal\n    /etc/cgmon/acct_state.json           traffic accounting (survives reboot)\n    /etc/cgmon/hub_state.json            hub: routers and failures\n    /tmp/cgmon/hub.jsonl                 hub: common journal\n    /www/status.html, /www/cgi-bin/api_* web page and its CGI\n\nHUB AND REPORTING (report)\n    Every router (report.enabled) once a minute and on any change sends to the\n    hubs in report.urls: WAN state, probes, open incidents, service failures\n    and its ISP (AS of the external IP). There can be several hubs —\n    data goes to all of them.\n    The hub (hub.enabled, the «Main collection hub» checkbox) correlates reports and\n    sends to Telegram (hub.telegram: several bots, each with several chats —\n    a notification goes to all): a common external link failure (degradation at routers of ≥2\n    different ISPs), a single-ISP failure, a service down for many,\n    a router offline; recovery — with duration.\n\n    Port: TCP 7788 (hub.listen). For a hub on the internet open only it in the\n    firewall: inbound TCP 7788 on WAN.\n\n    Security: every report is encrypted and signed with AES-256-GCM using a key from\n    the shared secret (report.token = hub.token, ≥16 characters) — the secret never goes\n    over the network, a report cannot be read or forged. A replayed packet\n    is rejected (timestamp ±5 min, nonces). Limits:\n    64 connections, 8 per IP, 120 requests per minute per IP, 10 s per request,\n    body ≤64 KB, ≤500 routers. Any error — the same 403. The detailed\n    hub state is not served outside (only 127.0.0.1 and the hub page).\n    Router clocks must be right (NTP): a skew >5 min — the report is rejected.\n    The secret is shared: a leak from any router allows forging reports —\n    if in doubt, change it everywhere.\n\nENVIRONMENT\n    CGMON_CONFIG      path to the config\n    CGMON_LANG        language of messages (en, ru, uz, kk, zh)\n    NO_COLOR          no color in command output\n    CGMON_READONLY=1  change nothing in the system (comparison next to another daemon)\n\nEXIT CODES\n    0 — success; 1 — error (config, daemon not running, wizard refused); 2 — bad\n    arguments.\n\nEXAMPLES\n    First install (password only):\n        scp -O cgmon root@router:/tmp/ && ssh root@router /tmp/cgmon --install-min\n    Check the config after editing:\n        cgmon config-test && /etc/init.d/cgmon restart\n    What is up with the WAN and who loads it:\n        cgmon status; cgmon top\n    Which sites do not answer clients:\n        cgmon sites\n    A key for the hub (the same on the hub and the routers):\n        head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n'\n\nDEPENDENCIES\n    Always: nftables (nft), conntrack (/proc/net/nf_conntrack).\n    qos / upload_shaper:  tc-tiny, kmod-sched-core (htb, fq_codel, flow,\n                          ingress, mirred), kmod-sched-cake, kmod-ifb (ingress)\n    hard_limit:           kmod-nft-connlimit\n    gate_selector:        ip-full\n    dns_guard (reroute via another path): ip-full; curl — download check\n                          through the path (wget cannot); relays — ZeroTier\n    HTTPS (Telegram, reports, TAS-IX, vendors): curl, wget\n                          or uclient-fetch + libustream-*ssl\n    The daemon checks this once a minute: the journal gets «deps: missing …», the page —\n    a warning. Install: cgmon deps --install.\n\nDIAGNOSTICS\n    logread | grep cgmon                 daemon journal\n    cgmon status                         phase and diagnosis\n    MONITORING_ONLY during the first startup_grace_sec after start is normal.\n    The page does not update — check /var/run/cgmon.status.json and\n    /etc/init.d/cgmon status. Reports do not reach the hub — on the router\n    the «Settings» page shows the error for each hub; on the hub —\n    logread | grep hub.\n
+{} ч {} мин	{} h {} min
+{} мин {} с	{} min {} s
+{} с	{} s
+провайдер {}	ISP {}
+нет curl, uclient-fetch или wget	no curl, uclient-fetch or wget
+{}: нужен адрес:порт	{}: address:port needed
+{}: порт	{}: port
+{}: адрес	{}: address
+✅ <b>{}</b>: прошло — {}	✅ <b>{}</b>: resolved — {}
+🗑 <b>{}</b> убран с центра ({})	🗑 <b>{}</b> removed from the hub ({})
+🟢 <b>{}</b> снова на связи (не было {})	🟢 <b>{}</b> is back online (was away {})
+⚫ <b>{}</b> не на связи с {} (последнее состояние: {}, провайдер {})	⚫ <b>{}</b> offline since {} (last state: {}, ISP {})
+не на связи 30 дней	offline for 30 days
+не отвечает или отвечает медленно	not responding or slow
+отвечает медленно	slow
+не отвечает	not responding
+ по {}	 over {}
+🔴 <b>Общий сбой внешнего канала</b>\nНовые соединения не проходят у {0} из {2} роутеров, провайдеры: {1}.\nПохоже на сбой магистрали/внешнего канала, а не у отдельных роутеров.\n	🔴 <b>Common external link failure</b>\nNew connections fail at {0} of {2} routers, ISPs: {1}.\nLooks like a backbone/external link failure, not individual routers.\n
+🟠 <b>Сбой у провайдера {}</b>\nДеградация у {} роутеров этого провайдера, у остальных провайдеров всё в порядке.\n	🟠 <b>Failure at ISP {}</b>\nDegradation at {} routers of this ISP, the other ISPs are fine.\n
+🟡 <b>{0} {1}</b> у {2} из {4} роутеров: {3}; их WAN в норме.\n	🟡 <b>{0} {1}</b> at {2} of {4} routers: {3}; their WAN is fine.\n
+Провайдеры разные ({}) — похоже, сбой самого сервиса.	Different ISPs ({}) — looks like the service itself is down.
+Все у одного провайдера ({}) — похоже, проблема провайдера с этим сервисом.	All at one ISP ({}) — looks like the ISP has a problem with this service.
+🟠 <b>Сбой на роутере {}</b>\n	🟠 <b>Failure at router {}</b>\n
+WAN не работает	WAN is down
+пробы IPv4 {:.0}%	IPv4 probes {:.0}%
+🟢 <b>Внешний канал восстановлен</b>\nСбой длился {4} ({5}), затронуто роутеров: {0}, провайдеров: {1} ({2}). Худшие пробы IPv4: {3:.0}%.	🟢 <b>External link restored</b>\nThe failure lasted {4} ({5}), routers affected: {0}, ISPs: {1} ({2}). Worst IPv4 probes: {3:.0}%.
+🟢 <b>Провайдер {0} восстановился</b> — сбой {2} ({3}), роутеров: {1}.	🟢 <b>ISP {0} recovered</b> — failure {2} ({3}), routers: {1}.
+🟢 <b>{}</b> снова отвечает — сбой {} ({}).	🟢 <b>{}</b> responds again — failure {} ({}).
+🟢 <b>{}</b>: восстановилось — сбой {} ({}).	🟢 <b>{}</b>: recovered — failure {} ({}).
+нет	none
+{} из 100	{} of 100
+не проходят	fail
+не проходили	failed
+Новые соединения IPv4 {}	New IPv4 connections {}
+успешных проб до {}	successful probes down to {}
+IPv6 работал — сбой у провайдера на IPv4 (CGNAT)	IPv6 worked — the ISP's IPv4 (CGNAT) failed
+IPv6 тоже: {}	IPv6 too: {}
+ — сразу после возврата связи: лавина переподключений	 — right after the link came back: an avalanche of reconnects
+; соединений в пике: всего {}	; connections at peak: {} total
+, полезных {} (остальное — пробы cgmon)	, useful {} (the rest are cgmon probes)
+; больше всех соединений у {} — {}	; the most connections: {} — {}
+Интернета нет: WAN не работает	No internet: WAN is down
+Интернета не было: WAN не работал	There was no internet: WAN was down
+Роутер перегружен	Router overloaded
+Канал {} работает плохо: качество IPv4 {}, IPv6 {}	Link {} works badly: IPv4 quality {}, IPv6 {}
+Возврат на основной канал {} (с {})	Back to the main link {} (from {})
+Переключение на канал {}: канал {} потерял связь	Switched to link {}: link {} lost connection
+Переключение на канал {}: канал {} работал плохо	Switched to link {}: link {} worked badly
+Переключение на канал {} (с {}, {})	Switched to link {} (from {}, {})
+Интернет теперь идёт через {} (было {})	Internet now goes via {} (was {})
+Новый внешний IP: {} ({})	New external IP: {} ({})
+идёт сейчас	ongoing
+восстановилось	recovered
+интернет вернулся	internet is back
+нагрузка спала	load dropped
+cgmon перезапущен	cgmon restarted
+; больше всех соединений	; the most connections
+; клиенты:	; clients:
+cgfinder выключен	cgfinder is off
+нужен IPv4-адрес	an IPv4 address is needed
+{} не из частных сетей — доступ не открываю	{} is not from private networks — not opening access
+{} нет среди пойманных устройств	{} is not among the caught devices
+открыто уже {} доступа — закройте лишний	{} accesses are already open — close one
+сеть {} уже открыта на {}	network {} is already open on {}
+не подобрать адрес роутеру в сети {}	cannot find an address for the router in network {}
+сеть {} уже используется на роутере ({}) — доступ не открываю	network {} is already used on the router ({}) — not opening access
+доступ к {} не открыт	access to {} is not open
+скан уже идёт или был меньше 30 с назад	a scan is already running or ran less than 30 s ago
+{}/{} на {}	{}/{} on {}
+маршруты не прочитать	cannot read routes
+storage: {} — flash, tmp или свой каталог (/mnt/usb/cgmon)	storage: {} — flash, tmp or your own directory (/mnt/usb/cgmon)
+dns_guard.dns64_servers: {} — нужен IP-адрес	dns_guard.dns64_servers: {} — an IP address is needed
+dns_guard: путь {} — нужно имя устройства (eth3, tailscale0) или proto	dns_guard: path {} — a device name (eth3, tailscale0) or proto is needed
+dns_guard.overlay: путь {} — нужно имя устройства или @реле	dns_guard.overlay: path {} — a device name or @relay is needed
+vuln_scan.isolate: {} — нужен MAC-адрес (aa:bb:cc:dd:ee:ff)	vuln_scan.isolate: {} — a MAC address is needed (aa:bb:cc:dd:ee:ff)
+dns_guard.persite: {} — off, auto, active или путь (@узел, устройство)	dns_guard.persite: {} — off, auto, active or a path (@node, device)
+lang: {} — auto, en, ru, uz, kk или zh	lang: {} — auto, en, ru, uz, kk or zh
+dns_guard.check_domains: {} — нужен домен (ipleak.net)	dns_guard.check_domains: {} — a domain is needed (ipleak.net)
+dns_guard.check_via: {} — пусто, direct, proto или устройство	dns_guard.check_via: {} — empty, direct, proto or a device
+dns_guard.relays: {} — нужно имя@адрес узла (node1@10.147.17.5, частный IPv4)	dns_guard.relays: {} — name@address of a node is needed (node1@10.147.17.5, private IPv4)
+dns_guard.relays: не больше {} узлов	dns_guard.relays: no more than {} nodes
+dns_guard.check_domains: не больше 10 сайтов	dns_guard.check_domains: no more than 10 sites
+dns_guard.alternatives: не больше {} путей	dns_guard.alternatives: no more than {} paths
+payment.mode: monthly или interval	payment.mode: monthly or interval
+payment.start_date: нужна дата ГГГГ-ММ-ДД	payment.start_date: a date YYYY-MM-DD is needed
+payment.amount/note: недопустимые символы	payment.amount/note: invalid characters
+цель пробы {}: нужен адрес:порт (IPv6 — [адрес]:порт)	probe target {}: address:port needed (IPv6 — [address]:port)
+цель пробы IPv4 {} — не IPv4	IPv4 probe target {} — not IPv4
+цель пробы IPv6 {} — не IPv6	IPv6 probe target {} — not IPv6
+нужна хотя бы одна цель пробы IPv4	at least one IPv4 probe target is needed
+telegram: неверный токен бота (нужен вид 123456:ABC…)	telegram: invalid bot token (format 123456:ABC…)
+telegram: неверный chat id {} (число, -100… или @канал)	telegram: invalid chat id {} (a number, -100… or @channel)
+центр сбора: задайте hub.token в cgmon.yaml (не короче 16 символов)	hub: set hub.token in cgmon.yaml (at least 16 characters)
+отправка на центр: задайте report.token в cgmon.yaml (не короче 16 символов)	reporting to a hub: set report.token in cgmon.yaml (at least 16 characters)
+отправка на центр: нет адреса центра	reporting to a hub: no hub address
+адрес центра {}: нужен http://адрес:порт/api/v1/report (данные шифруются сами)	hub address {}: http://address:port/api/v1/report is needed (data is encrypted anyway)
+список бесплатных сетей: нужна ссылка http(s)://… или file (загруженный файл)	free networks list: an http(s)://… link or file (an uploaded file) is needed
+сеть {}: нужен CIDR	network {}: a CIDR is needed
+укажите домен: cgmon blockcheck ozodlik.org	specify a domain: cgmon blockcheck ozodlik.org
+открывается	opens
+TCP есть, TLS рвётся (блок по имени)	TCP works, TLS breaks (block by name)
+нет TCP	no TCP
+{1}: адресов IPv4 {0}	{1}: IPv4 addresses {0}
+  напрямую IPv4: {}	  direct IPv4: {}
+  напрямую IPv6: {}	  direct IPv6: {}
+  через VPN:     {}	  via VPN:     {}
+ИТОГ: заблокирован, рабочего пути не нашлось	RESULT: blocked, no working path found
+ИТОГ: не заблокирован	RESULT: not blocked
+ИТОГ: заблокирован по IPv4, открывается по IPv6 — обход не нужен	RESULT: blocked over IPv4, opens over IPv6 — no reroute needed
+ИТОГ: заблокирован по имени — открывается через VPN (dns_guard.unblock: active уведёт туда)	RESULT: blocked by name — opens via VPN (dns_guard.unblock: active will route it there)
+ПЛОХО	BAD
+хорошо	good
+== {} {} AS{}: дошло {}/{} — {}	== {} {} AS{}: reached {}/{} — {}
+\nобщего виновника нет (нужно ≥2 плохих цели разных владельцев и ≥1 хорошая)	\nno common culprit (≥2 bad targets of different owners and ≥1 good one are needed)
+{}: общий виновник — {}	{}: common culprit — {}
+{}: общий виновник — стык {} → {}	{}: common culprit — junction {} → {}
+. Через него идут все плохие маршруты ({}), хорошие ({}) — в обход	. All bad routes go through it ({}), the good ones ({}) avoid it
+; развилка после {}	; fork after {}
+; TCP-соединения дальше этого места почти не проходят	; TCP connections hardly get past this point
+path trace {}: общего виновника нет ({} целей)	path trace {}: no common culprit ({} targets)
+{}: общий виновник больше не виден — {}	{}: the common culprit is no longer seen — {}
+{}: деградация прошла, общий виновник снят — {}	{}: degradation is over, the common culprit is cleared — {}
+{}: общий виновник плохих маршрутов — {}	{}: common culprit of bad routes — {}
+, сумма: {}	, amount: {}
+💳 Сегодня день оплаты интернета{}	💳 Today is the internet payment day{}
+💳 Оплата интернета через {} дн. — до {}.{}.{}{}	💳 Internet payment in {} days — by {}.{}.{}{}
+список слишком большой (больше {} КБ)	the list is too large (more than {} KB)
+Per-Site Routing: AS{} — {} сетей IPv4, {} IPv6 (RIPEstat)	Per-Site Routing: AS{} — {} IPv4 networks, {} IPv6 (RIPEstat)
+Per-Site Routing: AS{} — не удалось получить сети: {}	Per-Site Routing: AS{} — failed to get networks: {}
+Per-Site Routing: гейт недоступен — сайты из списка идут напрямую	Per-Site Routing: gate unavailable — listed sites go direct
+Per-Site Routing: сайты из списка идут через гейт ({} доменов, {} сетей)	Per-Site Routing: listed sites go via the gate ({} domains, {} networks)
+dnsmasq: не удалось перезапустить	dnsmasq: restart failed
+Per-Site Routing: список доменов передан dnsmasq ({}), dnsmasq перезапускается	Per-Site Routing: domain list handed to dnsmasq ({}), dnsmasq is restarting
+RIPEstat не ответил	RIPEstat did not answer
+RIPEstat: непонятный ответ	RIPEstat: unexpected answer
+кадр	frame
+длина	length
+пропущено	missed
+несущая	carrier
+выравнивание	alignment
+короткие	runt
+обрывки	fragments
+переполнение	overflow
+длинные	too long
+поздние коллизии	late collisions
+отсрочки	deferrals
+сброс по коллизиям	collision aborts
+недогрузка	underrun
+нет линка	no link
+{} Мбит/с{}	{} Mbit/s{}
+, полудуплекс	, half duplex
+{:.1} млн	{:.1} M
+{:.1} тыс.	{:.1} k
+ (1 на {} кадров)	 (1 in {} frames)
+{1} порт {2}{0}	{1} port {2}{0}
+Порт {2}: с загрузки роутера ({0}) ошибок: {3}; сейчас {1}	Port {2}: since the router booted ({0}) errors: {3}; now {1}
+Порт {1}: линк пропал (был {0})	Port {1}: link lost (was {0})
+ через {}	 after {}
+Порт {1}: линк появился{2} — {0}	Port {1}: link up{2} — {0}
+Порт {3}: {0} → {1}{2}	Port {3}: {0} → {1}{2}
+ — так бывает при плохом кабеле или разъёме	 — this happens with a bad cable or connector
+Порт {2}: линк мигал {0} раз за {1} с	Port {2}: link flapped {0} times in {1} s
+за {}	in {}
+с прошлого опроса	since the last poll
+Порт {1}: ошибки кадров {2}: {3} ({0})	Port {1}: frame errors {2}: {3} ({0})
+Порт {}: {}	Port {}: {}
+Порт {0}: {2} ошибок CRC за сутки{1} — кабель или разъём повреждены, ещё немного — и связи не будет	Port {0}: {2} CRC errors in 24 h{1} — the cable or connector is damaged, the link may soon fail completely
+Порт {0}: {2} ошибок CRC за сутки{1} — кабель или разъём под подозрением	Port {0}: {2} CRC errors in 24 h{1} — the cable or connector is suspect
+кабель или разъём повреждены, ещё немного — и связи не будет	the cable or connector is damaged, the link may soon fail completely
+кабель или разъём под подозрением	the cable or connector is suspect
+ и {} обрыв(ов) линка	 and {} link drop(s)
+Порт {}: {} ошибок CRC{}{} с загрузки роутера, новых пока нет — {}	Port {}: {} CRC errors{}{} since the router booted, none new yet — {}
+Порт {}: {} обрыв(ов) линка за час	Port {}: {} link drop(s) in an hour
+Порт {}: {} обрыв(ов) линка за сутки	Port {}: {} link drop(s) in 24 h
+Порт {}: {} ошибок кадров за час	Port {}: {} frame errors in an hour
+работает на {} Мбит/с, а {} было {}	runs at {} Mbit/s, while {} it was {}
+{} — устройство на другом конце кабеля теперь объявляет только до {}: обычно так оно само понижает скорость после сбоев на кабеле (downshift)	{} — the device at the other end of the cable now advertises only up to {}: usually it lowers the speed itself after cable faults (downshift)
+{}, и обе стороны по-прежнему умеют {} — почти всегда кабель или разъём (для гигабита нужны все 4 пары)	{}, and both sides can still do {} — almost always the cable or connector (gigabit needs all 4 pairs)
+{} — кабель, разъём или устройство на другом конце кабеля	{} — the cable, the connector or the device at the other end of the cable
+ZeroTier запущен; свою сеть подключите: zerotier-cli join <номер сети> (или LuCI → VPN → ZeroTier)	ZeroTier is running; join your network: zerotier-cli join <network id> (or LuCI → VPN → ZeroTier)
+\# cgmon: настройки SmartDNS (как на рабочем роутере, без личного)\nspeed-check-mode none\ndualstack-ip-selection no\nprefetch-domain yes\nserve-expired no\ncache-size 4096\ncache-persist no\nconf-file {}\nconf-file {}\nconf-file {}\n	\# cgmon: SmartDNS settings (as on a working router, nothing personal)\nspeed-check-mode none\ndualstack-ip-selection no\nprefetch-domain yes\nserve-expired no\ncache-size 4096\ncache-persist no\nconf-file {}\nconf-file {}\nconf-file {}\n
+SmartDNS уже настроен — его настройки не трогаю	SmartDNS is already configured — its settings are left alone
+SmartDNS: {} уже есть — настройки не трогаю	SmartDNS: {} already exists — settings are left alone
+SmartDNS поставлен, но не отвечает — DNS роутера не переключал	SmartDNS is installed but does not answer — router DNS was not switched
+SmartDNS: шифрованный DNS (Cloudflare, Google, Яндекс), dnsmasq → 127.0.0.1#{}; прежние серверы — /etc/cgmon/dnsmasq-before-smartdns.txt	SmartDNS: encrypted DNS (Cloudflare, Google, Yandex), dnsmasq → 127.0.0.1#{}; previous servers — /etc/cgmon/dnsmasq-before-smartdns.txt
+SmartDNS: через него DNS роутера не заработал — вернул как было	SmartDNS: router DNS did not work through it — reverted
+plugins: {}: нет строки «// cgmon-plugin: name=…»	plugins: {}: no «// cgmon-plugin: name=…» line
+workers (потоки)	workers (threads)
+loop (вне областей)	loop (outside scopes)
+{"error":"сборка без --features prof"}	{"error":"built without --features prof"}
+пароль страницы не задан — настройки только для просмотра; задайте пароль: LuCI → Службы → cgmon (или web.password в cgmon.yaml)	the page password is not set — settings are read-only; set a password: LuCI → Services → cgmon (or web.password in cgmon.yaml)
+runtime: {}: не объект (ignored)	runtime: {}: not an object (ignored)
+скорость после триггера должна быть ниже начальной	the speed after the trigger must be below the initial one
+лимит начальной скорости выше Upload канала	the initial speed limit is above the link Upload
+скорость после триггера должна быть ниже Upload канала	the speed after the trigger must be below the link Upload
+лимит отдачи на соединение выше Upload канала	the per-connection upload limit is above the link Upload
+лимит загрузки на соединение выше Download канала	the per-connection download limit is above the link Download
+st: события/инциденты	st: events/incidents
+st: клиенты (имена, JSON)	st: clients (names, JSON)
+st: топология/прочее	st: topology/other
+st: runtime/настройки	st: runtime/settings
+st: запись JSON	st: JSON write
+{} на внутренней памяти роутера (носитель не смонтирован?)	{} on the router's internal flash (storage not mounted?)
+{}: носитель не смонтирован	{}: storage not mounted
+{} — данные пока в {}	{} — data is in {} for now
+{}: файл был в кодировке {} — переписан в UTF-8 (оригинал: {})	{}: the file was in {} encoding — rewritten as UTF-8 (original: {})
+Проверка «мой IP»: {} идёт через VPN (сайт покажет адрес туннеля)	«My IP» check: {} goes via VPN (the site will show the tunnel address)
+направлен через туннель (напрямую не открывался)	routed via the tunnel (did not open directly)
+направил бы через туннель (режим наблюдения)	would route via the tunnel (observe mode)
+открывается по IPv6 напрямую — туннель не нужен	opens directly over IPv6 — no tunnel needed
+через туннель тоже не открылся	did not open via the tunnel either
+Per-Site Routing: {} снова открывается напрямую — убран из туннеля	Per-Site Routing: {} opens directly again — removed from the tunnel
+учитель отдачи: общее наказание — встали отдачи на {} адреса при общей отдаче {:.1} Мбит/с (раз: {}); подсказка шейперу: постоянная скорость не выше {:.1} Мбит/с	upload learner: global penalty — uploads to {} addresses stalled at a total upload of {:.1} Mbit/s (times: {}); hint for the shaper: sustained speed no higher than {:.1} Mbit/s
+; без наказания бывало до {:.1} Мбит/с	; without penalty it reached {:.1} Mbit/s
+учитель отдачи: {1} — наказание на {2:.1} Мбит/с (раз: {0}{3}); в активном режиме ограничил бы до {4:.1} Мбит/с	upload learner: {1} — penalty at {2:.1} Mbit/s (times: {0}{3}); in active mode it would cap at {4:.1} Mbit/s
+json: лишнее после значения (позиция {})	json: extra data after the value (position {})
+json: {} (позиция {})	json: {} (position {})
+неизвестное слово	unknown word
+слишком глубоко	too deep
+неожиданный конец	unexpected end
+ожидается ключ	key expected
+ожидается :	: expected
+ожидается , или }	, or } expected
+ожидается , или ]	, or ] expected
+плохое число	bad number
+неожиданный символ	unexpected character
+короткий \\u	short \\u
+json: плохой \\u	json: bad \\u
+json: не UTF-8	json: not UTF-8
+обрыв строки	unterminated string
+плохое экранирование	bad escape
+yaml: строка {}: плохая строка в кавычках	yaml: line {}: bad quoted string
+yaml: строка {}: незакрытая скобка (многострочные [ ] не поддерживаются)	yaml: line {}: unclosed bracket (multi-line [ ] are not supported)
+yaml: строка {}: ожидается ключ: значение	yaml: line {}: key: value expected
+yaml: строка {}: табуляция в отступе	yaml: line {}: tab in indentation
+yaml: строка {}: неожиданный отступ	yaml: line {}: unexpected indentation
+yaml: строка {}: якоря и теги не поддерживаются	yaml: line {}: anchors and tags are not supported
+yaml: строка {}: ожидается «ключ: значение»	yaml: line {}: «key: value» expected
+Сканер уязвимостей: обновлено — {}	Vulnerability scanner: updated — {}
+Сканер уязвимостей: обновить не удалось — {}	Vulnerability scanner: update failed — {}
+Сканер уязвимостей: проверка завершена — критических {}, серьёзных {}, всего находок {}	Vulnerability scanner: check finished — critical {}, serious {}, findings total {}
+обновление уже идёт	an update is already running
+Изоляция: {} отрезано от интернета — только локальная сеть	Isolation: {} is cut off from the internet — local network only
+Изоляция снята: {} снова выходит в интернет	Isolation lifted: {} can reach the internet again
+Изоляция: не удалось применить правила nft: {}	Isolation: failed to apply nft rules: {}
+cgmon {} — уже последняя версия	cgmon {} is already the latest version
+в SHA256SUMS нет {}	SHA256SUMS has no {}
+{}: контрольная сумма не совпала	{}: checksum mismatch
+новый бинарник не запускается на этом роутере	the new binary does not run on this router
+нечего обновлять	nothing to update
+gzip -dc: ошибка	gzip -dc: error
+служба остановлена и снята: {}	service stopped and removed: {}
+ссылок страницы убрано: {}; /tmp/cgmon очищен	page links removed: {}; /tmp/cgmon cleared
+остались (удалите сами, если не нужны): /opt/cgmon (бинарник), /etc/cgmon (настройки и данные)	left in place (delete them yourself if not needed): /opt/cgmon (binary), /etc/cgmon (settings and data)
+сайты отвечают, а диагноз — деградация {}	sites answer, but the diagnosis is {} degradation
+сайты не отвечают, а диагноз этого сбоя не видит	sites do not answer, but the diagnosis does not see this failure
+Метрики по сайтам: {} — оценка снова совпадает с диагнозом (балл {:.0}, ответили {} из {})	Per-site metrics: {} — the score agrees with the diagnosis again (score {:.0}, {} of {} answered)
+Метрики по сайтам: {} — {} (балл {:.0}, ответили {} из {})	Per-site metrics: {} — {} (score {:.0}, {} of {} answered)
+обычный журнал	normal journal
+подробный (отладка)	detailed (debugging)
+только ошибки	errors only
+активные пробы (рекомендуется)	active probes (recommended)
+трафик + проба раз в 30 с	traffic + a probe every 30 s
+только трафик (эксперимент)	traffic only (experimental)
+от текущих соединений клиента	from the client's current connections
+фиксированные warning/critical	fixed warning/critical
+выключена	off
+наблюдение (только журнал)	observe (journal only)
+активно: весь протокол	active: the whole protocol
+адресно: только сети с плохим протоколом (SmartDNS)	targeted: only networks with a bad protocol (SmartDNS)
+только соединения в интернет	only connections to the internet
+внутри LAN	inside the LAN
+все	all
+через netifd (ubus)	via netifd (ubus)
+командой ifup	with the ifup command
+да	yes
+{}\n  1) да  2) нет  [Enter = {}]: 	{}\n  1) yes  2) no  [Enter = {}]: 
+пусто	empty
+сгенерировать	generate
+оставить текущий	keep the current one
+  сгенерирован: {}  (запишите)	  generated: {}  (write it down)
+  {}: {} — оставлено как было	  {}: {} — left as it was
+Уведомления в Telegram: сейчас получателей {}. Новый бот (токен от @BotFather, Enter — оставить как есть)	Telegram notifications: {} recipients now. A new bot (token from @BotFather, Enter — leave as is)
+Уведомления в Telegram: токен бота от @BotFather (Enter — без Telegram)	Telegram notifications: bot token from @BotFather (Enter — no Telegram)
+  ID чатов через запятую (личка — число, группа -100…, канал @имя): 	  Chat IDs separated by commas (private — a number, group -100…, channel @name): 
+  без чатов — Telegram не настроен	  no chats — Telegram is not configured
+Текущий {} не читается ({}) — начинаем со значений по умолчанию.	The current {} cannot be read ({}) — starting from the defaults.
+\ncgmon {} — мастер установки ({})	\ncgmon {} — setup wizard ({})
+Значения по умолчанию в вопросах — из текущего файла.	Defaults in the questions come from the current file.
+Вариант настройки (всё, что есть на странице, можно поменять потом там):\n  1) минимальная — только пароль страницы\n  2) обычная — плюс центр сбора, Telegram, учёт трафика, выбор шлюза\n  3) подробная — все параметры по разделам	Setup variant (everything on the page can be changed there later):\n  1) minimal — only the page password\n  2) basic — plus the hub, Telegram, traffic accounting, gateway selection\n  3) detailed — all parameters by section
+  выбор [Enter = 1]: 	  choice [Enter = 1]: 
+\nВвод закончился — выхожу без сохранения.	\nInput ended — quitting without saving.
+\nПароль на изменение настроек со страницы status.html.	\nPassword for changing settings from the status.html page.
+Пароль	Password
+  недопустимые символы — оставлено как было	  invalid characters — left as it was
+\n==== Центр сбора: отправка ====	\n==== Hub: reporting ====
+Отправлять состояние этого роутера на центр сбора?	Send this router's state to a hub?
+Адреса центров (http://адрес:7788/api/v1/report, через запятую)	Hub addresses (http://address:7788/api/v1/report, comma separated)
+  нужны адреса http:// — оставлено как было	  http:// addresses are needed — left as it was
+Общий секрет центра (тот же, что hub.token на центре, ≥16 знаков)	Hub shared secret (the same as hub.token on the hub, ≥16 characters)
+\n==== Центр сбора: этот роутер ====	\n==== Hub: this router ====
+Этот роутер — центр сбора (принимает отчёты, шлёт в Telegram)?	Is this router a hub (receives reports, sends to Telegram)?
+Общий секрет центра (≥16 знаков; роутеры шлют с ним же)	Hub shared secret (≥16 characters; routers send with the same one)
+Порт центра (адрес:порт)	Hub port (address:port)
+\n==== Прочее (нет на странице) ====	\n==== Other (not on the page) ====
+Учёт трафика устройств (счётчики nftables)?	Device traffic accounting (nftables counters)?
+Резервный канал: проверять несколько WAN и переключать маршрут (gate selector)?	Backup link: check several WANs and switch the route (gate selector)?
+{} ({}, приоритет {})	{} ({}, priority {})
+  шлюзы зоны wan: {}	  wan zone gateways: {}
+не найдены — задайте gate_selector.interfaces в cgmon.yaml	not found — set gate_selector.interfaces in cgmon.yaml
+  пока в режиме наблюдения (gate_selector.dry_run) — переключать начнёт после снятия на странице «Все настройки»	  in observe mode for now (gate_selector.dry_run) — it starts switching once that is turned off on the «All settings» page
+Enter — оставить значение, цифра — выбрать вариант, «!» — оставить весь раздел, «?» — пояснение, «q» — выйти без сохранения.	Enter — keep the value, a digit — choose an option, «!» — keep the whole section, «?» — explanation, «q» — quit without saving.
+\n==== Раздел: {} ====	\n==== Section: {} ====
+общие	general
+\n{} — сложный список, настраивается в cgmon.yaml:\n  {}	\n{} — a complex list, set in cgmon.yaml:\n  {}
+  1) да  2) нет  [Enter = {}]: 	  1) yes  2) no  [Enter = {}]: 
+  выбор [Enter = {}]: 	  choice [Enter = {}]: 
+<сгенерировать>	<generate>
+<оставить текущий>	<keep the current one>
+Выйти без сохранения? 1) да  2) нет [2]: 	Quit without saving? 1) yes  2) no [2]: 
+  Путь: {}, тип: {}, сейчас: {}	  Path: {}, type: {}, now: {}
+  сгенерирован: {} (запишите — нужен на всех роутерах/центрах)	  generated: {} (write it down — needed on all routers/hubs)
+\nВнимание: {}	\nWarning: {}
+1) сохранить всё равно  2) выйти без сохранения [2]: 	1) save anyway  2) quit without saving [2]: 
+Ничего не записано.	Nothing written.
+\n==== Итог: изменений {} ====	\n==== Summary: {} changes ====
+  {}: задан	  {}: set
+  hub.telegram: задан	  hub.telegram: set
+Записать в [Enter = {}]: 	Write to [Enter = {}]: 
+\# cgmon.yaml — записан мастером cgmon {}, {}-{}-{} {}:{}.\n# Пояснения ко всем настройкам: cgmon --help-advanced, config.reference.yaml.\n	\# cgmon.yaml — written by the cgmon {} wizard, {}-{}-{} {}:{}.\n# Explanations for all settings: cgmon --help-advanced, config.reference.yaml.\n
+Старый файл сохранён: {}	Old file saved: {}
+Ошибка записи: {}	Write error: {}
+Записанный файл не читается: {}	The written file cannot be read: {}
+Записано: {} (права 0600 — в файле секреты)	Written: {} (mode 0600 — the file holds secrets)
+Пакеты: 1) установить сейчас  2) пропустить (функции без них работать не будут) [2]: 	Packages: 1) install now  2) skip (features will not work without them) [2]: 
+Не удалось: {}	Failed: {}
+Служба: 1) установить/обновить и (пере)запустить  2) только записать конфиг [{}]: 	Service: 1) install/update and (re)start  2) only write the config [{}]: 
+Бинарник: {}	Binary: {}
+Служба: /etc/init.d/cgmon	Service: /etc/init.d/cgmon
+Готово: cgmon запущен. Проверка: cgmon status; страница: http://<роутер>/status.html	Done: cgmon is running. Check: cgmon status; page: http://<router>/status.html
+cfg:accounting	==== Per-device traffic accounting ====
+cfg:accounting.enabled	Per-device traffic accounting (per hour/day) — the nft inet cgmon_acct table (needs a restart).
+cfg:accounting.refresh_sec	How often to read counters, s (1 — for the charts on the page).
+cfg:accounting.window_sec	Speed/history window, s.
+cfg:billing	==== Billed traffic (everything except free networks) ====
+cfg:billing.daily_limit_mb	Warn when billed traffic per day exceeds, MB (0 — no).
+cfg:billing.enabled	The billed traffic counter (everything except the ISP's free networks) is on by default; it is also toggled by a checkbox on the page.
+cfg:billing.month_start_day	First day of the billing month.
+cfg:billing.monthly_limit_mb	… per billing month, MB.
+cfg:billing.refresh_hours	Refresh the list every so many hours.
+cfg:billing.state_file	Per-day/month counters.
+cfg:billing.tasix_file	Where the list is kept (downloaded or uploaded).
+cfg:billing.tasix_url	Free networks list: an http(s) link to text (one network per line, IPv4/IPv6, # — comment) or file — only your own file uploaded from the page (not downloaded). Default — TAS-IX (Uzbekistan).
+cfg:client_retention_sec	How many seconds a device stays in the «Active devices» table after its last activity.
+cfg:counting	==== Connection counting ====
+cfg:counting.mode	What counts as a client's connections: lan_to_wan — internet only; lan_only — inside the LAN; all — everything.
+cfg:devices	==== Device names ====
+cfg:devices.l2_probe	Every 10 minutes wake silent devices: ARP sweep of your subnets (up to /22), broadcast ping, ONVIF, SSDP, SADP.
+cfg:devices.l2_watch	Device catcher (like IP Scan in MikroTik): listen to ARP/NDP on the LAN and show devices with an address outside your subnets (an old camera with a static IP).
+cfg:devices.probe	Learn device names: reverse DNS, mDNS, NetBIOS, listening to mDNS/SSDP.
+cfg:devices.vendor_cache	Vendor cache.
+cfg:devices.vendor_lookup	Vendor by MAC (online, cached).
+cfg:devices.vendor_url	MAC vendor service.
+cfg:dns	==== Reverse DNS ====
+cfg:dns.cache_ttl_sec	Reverse DNS cache, s.
+cfg:dns.resolve	Reverse DNS for external addresses in reports (slower).
+cfg:dns.static	Static names IP → name, only in cgmon.yaml. Example: 192.168.1.50: tv
+cfg:dns.timeout_ms	Reverse DNS timeout, ms.
+cfg:dns_guard	==== DNS guard ====
+cfg:dns_guard.alternatives	Targeted mode: where to move a network with a bad protocol, in order (the first usable): proto — the other protocol via DNS; a device (eth3, tailscale0) — new IPv4 connections to the owner's networks via this path, if the path is alive and the owner answers through it. The order is easier to change on the page.
+cfg:dns_guard.backend	Where to switch: auto — SmartDNS if it serves DNS and its custom.conf includes upstream_file and guard_file (then ad blocking stays even with DNS64), otherwise dnsmasq | smartdns | dnsmasq.
+cfg:dns_guard.cache_file	For smartdns — the on-disk cache, deleted on a switch.
+cfg:dns_guard.check_domains	Targeted mode: «my IP» sites always go (IPv4) via the first working reroute path — open one in a browser to see where the internet sees you from; IPv6 they show direct (reroute is IPv4 only).
+cfg:dns_guard.check_via	What to send the check sites through: "" — the first working reroute path, direct — directly, proto — IPv6 only (they get no A records), a device (eth3, tailscale0) — via this path.
+cfg:dns_guard.dns64_servers	DNS64 servers (IP only; default — the public nat64.net).
+cfg:dns_guard.guard_file	For smartdns — the no-AAAA file (also via conf-file in custom.conf).
+cfg:dns_guard.metered	Targeted mode: metered paths (mobile internet) — reroute traffic through them is counted.
+cfg:dns_guard.metered_day_mb	Targeted mode: daily limit of a metered path, MB; when used up the path is not used until midnight.
+cfg:dns_guard.mode	When the ISP fails on one protocol, the router's DNS moves clients to the working one: IPv6 bad — clients get no IPv6 addresses (AAAA); IPv4 broken — upstream DNS is temporarily replaced with DNS64 (IPv4-only sites via NAT64 over IPv6). off | observe (journal only) | active | targeted (per network: a bad protocol at one owner's networks, e.g. IPv6 at Google — new connections over it to the owner's networks are refused (clients switch to the other protocol at once) or rerouted via another path; the DNS server is untouched; the whole protocol — global mode, if the witnesses also see the whole protocol as bad)
+cfg:dns_guard.overlay	The «all traffic» gateway (overlay): id of the tunnel path all LAN internet goes through (an overlay mark, as in PER-SITE ROUTING — the main route is unchanged; the tunnel underlay and router traffic go over the physical link; if the tunnel goes down, traffic falls back to the physical link by itself). "" — off. Set in the gateway configurator on the page.
+cfg:dns_guard.overlay_fail_sec	all traffic to the physical link (the next gateway). A fast separate probe of the overlay path; 0 — like ordinary paths (~2 min).
+cfg:dns_guard.persite	Per-Site Routing, permanent list: sites, networks and AS that always go via the gate (like manual PBR). off | auto (the Per-Site Routing gate, or if none is chosen — the first working reroute path) | active (mark 0x100) | <path id>. Domains — with subdomains (addresses via dnsmasq nftset, without it — from DNS answers to clients), IPv4 networks and AS (AS45102; prefixes from RIPEstat, weekly) — all ports; listed IPv6 — refused (the client falls back to IPv4).
+cfg:dns_guard.persite_aaaa	Answer listed domains with an empty IPv6 (AAAA → ::) so clients go over IPv4 via the gate (needs dnsmasq).
+cfg:dns_guard.persite_file	List file: one per line or separated with «;», comments after #. Edited from the page (Settings → Per-Site Routing).
+cfg:dns_guard.recover_sec	All fine for longer than, s — DNS back as it was.
+cfg:dns_guard.reject_all_v6_score	IPv6 probes (and per-site metrics, if on) below, % — refuse ALL new client IPv6 connections to the internet (local IPv6 and tunnels untouched); 0 — never. Only for really bad IPv6.
+cfg:dns_guard.reject_all_v6_sec	...for longer than, s; lifted when probes stay above threshold+20 for five minutes.
+cfg:dns_guard.reject_v6	Obsolete since 2.3.43, has no effect: in targeted mode moving to the other protocol is always a refusal of new connections to the owner's networks (TCP RST, ICMP), SmartDNS is untouched.
+cfg:dns_guard.relay_mbit	Speed limit of a path via a relay in each direction, Mbit/s (0 — no limit).
+cfg:dns_guard.relays	Extra gateways — your own nodes set by hand, without a default-gateway mark. E.g. a LAN or ZeroTier network with many devices, several of them gateways — set them here. They appear in the gateway settings, gateway maps and «Targeted reroute of broken routes». Format «name@address» of the node, e.g. node1@10.147.17.5. The path is called @name; then the node can be chosen as a gate — cgmon finds the parent network and interface itself. The gateway node must forward traffic from this network to the internet: on OpenWrt/Linux enable forwarding (net.ipv4.ip_forward=1), allow forward from the overlay/LAN interface to WAN and masquerade (NAT) on WAN. An ordinary router without such settings — connect it by its LAN side.
+cfg:dns_guard.state_file	Snapshot of normal DNS settings (updated on your edits) and of emergency mode.
+cfg:dns_guard.target_base_min	Targeted mode: a network's first penalty, min; each next one twice as long (before lifting — a check; still bad — the next step); a day without failures — one step down.
+cfg:dns_guard.target_max_hours	Targeted mode: the longest penalty, h.
+cfg:dns_guard.targets_file	Only for check_via: proto («my IP» sites over IPv6 only): a SmartDNS file (address /domain/#4), included in custom.conf with a conf-file line. Penalties and reroutes are not written there (since 2.3.44).
+cfg:dns_guard.unblock	Per-Site Routing: sites whose TLS the ISP resets by name (SNI), on the fly — via the chosen gate. off | observe | active (per-site VPN, mark 0x100) | <reroute path id> (@node, device — route via it). cgmon catches the reset in real client traffic (synrtt), CONFIRMS the block with a direct curl probe (TCP to the address works, TLS breaks, via VPN it opens) and routes EXACTLY the client's addresses (/32) with the VPN mark; the owner's IPv6 is refused (/48) — the browser falls back to IPv4. The confirmation filters false positives (telemetry sends RST on close — looks like DPI, but answers HTTP on a probe). An entry lives a day, then is re-learned. observe — detection only; active — routes. Needs curl and a configured VPN.
+cfg:dns_guard.upstream_file	For smartdns — the upstream servers file (custom.conf includes it with a conf-file line).
+cfg:dns_guard.v4_enter_sec	IPv4 broken (WARNING/CRITICAL, IPv6 alive) for longer than, s — DNS64.
+cfg:dns_guard.v6_enter_sec	IPv6 bad (IPV6_DEGRADATION diagnosis) for longer than, s — no AAAA.
+cfg:dns_guard.withdraw_ra	Together with the AAAA block, withdraw the IPv6 gateway (stop advertising the IPv6 route to clients) (odhcpd ra_lifetime=0 in dhcp sections with ra=server; restored afterwards): otherwise devices with their own DoH (Android «Private DNS», Chrome) keep using the bad IPv6 bypassing the router's DNS.
+cfg:down_detector	==== Down detector ====
+cfg:down_detector.enabled	Down detector: which sites/services do not answer clients while the WAN is alive (to the journal).
+cfg:dry_run	Observe mode: the limiter blocks nothing, it only logs what it would do. On the page — the «Active» checkbox (inverted).
+cfg:enable_limiter	Allow the dynamic limiter of new connections (the most aggressive client during WAN degradation).
+cfg:exclude_networks	Networks fully ignored when counting (e.g. VoIP). Example: [10.64.0.0/11]
+cfg:flow_watch	==== P2P block detector ====
+cfg:flow_watch.enabled	ISP P2P (+torrent) block detector, on any traffic.
+cfg:flow_watch.heavy_mbps	A flow uploads faster — check its address.
+cfg:flow_watch.hold_sec	How long to keep probing after the last fast upload, s.
+cfg:flow_watch.latency_add_ms	Addition to the latency threshold, ms.
+cfg:flow_watch.latency_factor	Median latency ≥ base×factor+add — the path is bad.
+cfg:flow_watch.learn_file	File of what was learned (survives reboot).
+cfg:flow_watch.learn_min_kbit	Floor: never cap upload below this, kbit/s.
+cfg:flow_watch.learn_mode	Upload learner: off — disabled; observe — remembers at what speed upload to which network gets punished and logs what it would cap at (caps nothing itself).
+cfg:flow_watch.loss_only_percent	Without latency growth the path is bad only with this much probe loss, %: partial loss with normal latency is usually a server dropping frequent connects (e.g. Telegram), not the ISP.
+cfg:flow_watch.loss_percent	Probe loss above — the path is bad.
+cfg:flow_watch.max_targets	Addresses checked at the same time.
+cfg:flow_watch.probe_interval_ms	Address probe period, ms.
+cfg:flow_watch.probe_window_sec	Probe window for a verdict, s.
+cfg:flow_watch.recover_sec	How long the probe must be good to count as «recovered», s.
+cfg:flow_watch.stall_percent	Upload dropped below this % — «stalled».
+cfg:flow_watch.stall_sec	How long it must stall before the path is probed, s.
+cfg:gate_selector	==== Gateway selection (several WANs) ====
+cfg:gate_selector.backups	Backup gateway devices by priority (written by the page).
+cfg:gate_selector.dry_run	Gateway selection — observe only, do not switch.
+cfg:gate_selector.enabled	Gateway selection: check several WANs and switch the default route (needs a restart). Gateways are found automatically (netifd: default route, wan zone); with one WAN it sleeps. It switches only with dry_run: false — by default it only observes.
+cfg:gate_selector.evaluation_interval_sec	How often to evaluate gateways, s.
+cfg:gate_selector.from_alternatives	Backup gateways from the path configurator on the page (the «gate» switch of a path): true — gateways = the main one (priority 1 from interfaces or auto-detection) + backups devices in order; tunnels (tailscale, wg, zt) are not taken.
+cfg:gate_selector.interfaces	Gateways (only in cgmon.yaml). Example:
+cfg:gate_selector.probes.decision_window_sec	Gateway evaluation window, s.
+cfg:gate_selector.probes.interval_sec	Gateway probe period, s.
+cfg:gate_selector.probes.ipv4	IPv4 gateway probe targets.
+cfg:gate_selector.probes.ipv6	IPv6 gateway probe targets.
+cfg:gate_selector.repair.auth_fail_pause_sec	Pause after a PPPoE authentication error, s.
+cfg:gate_selector.repair.backoff_initial_sec	Initial pause between attempts, s.
+cfg:gate_selector.repair.backoff_max_sec	Maximal pause, s.
+cfg:gate_selector.repair.cooldown_sec	At least this between repairs, s.
+cfg:gate_selector.repair.enabled	Restart a stuck gateway interface.
+cfg:gate_selector.repair.max_per_window	No more repairs per window.
+cfg:gate_selector.repair.method	How to restart: ubus (netifd) or ifup.
+cfg:gate_selector.repair.no_ip_stuck_sec	Up without an IP for longer than, s.
+cfg:gate_selector.repair.post_repair_grace_sec	Wait after a repair, s.
+cfg:gate_selector.repair.setup_stuck_sec	Interface «stuck» in setup for longer than, s.
+cfg:gate_selector.repair.window_sec	Window for max_per_window, s.
+cfg:gate_selector.switching.cooldown_sec	Do not switch more often than, s.
+cfg:gate_selector.switching.inactive_metric	Route metric of an inactive gateway.
+cfg:gate_selector.switching.on_switch	Commands on switch (only in cgmon.yaml). Example: ["/etc/init.d/zerotier restart"]
+cfg:gate_selector.switching.post_switch_grace_sec	Draw no conclusions after a switch, s.
+cfg:gate_selector.switching.prefer_primary	Return to the main gateway when it recovers.
+cfg:gate_selector.switching.sync_uci_metric	Write metrics to UCI.
+cfg:gate_selector.thresholds.bad_score	Score below — the gateway is bad.
+cfg:gate_selector.thresholds.fail_hold_sec	Bad for longer — switch, s.
+cfg:gate_selector.thresholds.failback_hold_sec	How long good must last to return to the main one, s.
+cfg:gate_selector.thresholds.failback_score	The main gateway is fine again with a score above.
+cfg:gate_selector.thresholds.margin	Switch if another one is better by this many points.
+cfg:gate_selector.thresholds.ok_score	Score above — the gateway is fine (0–100).
+cfg:hard_limit	==== Hard connection limits ====
+cfg:hard_limit.connlimit	Forwarded connection limit per client.
+cfg:hard_limit.connlimit_host	Limit of connections to the router per client.
+cfg:hard_limit.dry_run	Hard limits — observe only.
+cfg:hard_limit.enabled	Hard per-host connection limits (static, the torrent_limit table).
+cfg:hard_limit.except_ports_tcp	TCP ports without a limit. Example: [53, 80, 443]
+cfg:hard_limit.except_ports_udp	UDP ports without a limit. Example: [53, 123, 443]
+cfg:hard_limit.forward_ipv4_tcp	Limit forwarded IPv4 TCP.
+cfg:hard_limit.forward_ipv4_udp	Limit forwarded IPv4 UDP.
+cfg:hard_limit.forward_ipv6_tcp	Limit forwarded IPv6 TCP.
+cfg:hard_limit.forward_ipv6_udp	Limit forwarded IPv6 UDP.
+cfg:hard_limit.host_ipv4_tcp	Limit connections to the router itself, IPv4 TCP.
+cfg:hard_limit.host_ipv4_udp	… IPv4 UDP.
+cfg:hard_limit.host_ipv6_tcp	… IPv6 TCP.
+cfg:hard_limit.host_ipv6_udp	… IPv6 UDP.
+cfg:hard_limit.interfaces	For which interfaces/zones.
+cfg:hard_limit.table	Hard limits nftables table.
+cfg:hard_limit.uci_import	Pick up the settings of the old UCI block, if present.
+cfg:hub	==== Monitoring hub (on one router) ====
+cfg:hub.clear_sec	A failure is closed if it did not repeat for this long, s.
+cfg:hub.enabled	Monitoring hub on this router: receives reports, correlates failures, sends to Telegram.
+cfg:hub.journal_file	Common journal of all routers (JSONL).
+cfg:hub.listen	Hub address:port. Open in the firewall: TCP 7788 (TCP only, this port only).
+cfg:hub.min_isps	A common failure — degradation at routers of this many different ISPs.
+cfg:hub.notify_offline	Send «router offline / back online».
+cfg:hub.notify_single	Also send failures of a single router.
+cfg:hub.stale_sec	No reports for longer — the router is «offline», s.
+cfg:hub.state_file	Hub state (routers, open failures).
+cfg:hub.telegram	Bots and recipients (several bots, each with several chats) — every notification goes to all. Only in cgmon.yaml. Example:
+cfg:hub.telegram_bot_token	(old format) one bot: token from @BotFather. New — the telegram list below.
+cfg:hub.telegram_chat_id	Chat/group ID for notifications.
+cfg:hub.token	Secret for router reports (≥16 characters, the same as report.token on the routers).
+cfg:interval_sec	Main loop period, s: reading conntrack, status, journal. 1 — the page updates every second.
+cfg:isolated_zones	Isolated zones (tenants): from these addresses the page shows only devices of their own VLAN, no settings. Example: [tenants]
+cfg:lan_interfaces	Extra LAN devices (usually empty — LAN is taken from lan_zones). Example: [br-lan, vlan24]
+cfg:lan_networks	Extra LAN networks (usually empty — taken from interface addresses). Example: [192.168.2.0/24]
+cfg:lan_zones	Firewall zones whose clients are monitored (their addresses, IPv6 included, are picked up automatically). Example: [lan, tenants, wifi24]
+cfg:lang	Language of cgmon messages (journal, events, Telegram, console): auto | en | ru | uz | kk | zh. auto — the LuCI language if it is on this list, otherwise English. The page switches it together with its own language.
+cfg:limits	==== New connection limiter ====
+cfg:limits.block_hysteresis_percent	Lift the block when connections drop below this % of the limit.
+cfg:limits.critical	Limit in CRITICAL.
+cfg:limits.critical_factor	In adaptive mode the CRITICAL limit = current connections × this.
+cfg:limits.max	Maximal limit.
+cfg:limits.min	Minimal limit (never lower).
+cfg:limits.min_change_interval_sec	Do not change the limit more often than, s.
+cfg:limits.min_offender_connections	Do not touch a client with fewer connections.
+cfg:limits.mode	New connection limit mode: adaptive — from the client's current connection count; static — fixed warning/critical.
+cfg:limits.normal	Limit in NORMAL (0 — no limit).
+cfg:limits.recovery_step_percent	Limit relaxation step during recovery, %.
+cfg:limits.warning	Client connection limit in WARNING (static) or the lower bound (adaptive).
+cfg:limits.warning_factor	In adaptive mode the WARNING limit = current connections × this.
+cfg:local	==== Router load (local pressure) ====
+cfg:local.conntrack_threshold_percent	conntrack table fill above this % — local pressure.
+cfg:local.core_threshold_percent	Load of any core above this % (0 — do not check).
+cfg:local.cpu_threshold_percent	Router CPU load above — «local pressure» (a router problem, not WAN).
+cfg:local.load_per_core	Load average per core above — local pressure.
+cfg:local.min_memory_mb	Free memory below, MB — local pressure.
+cfg:local.pressure_duration_sec	How long the load must last to count as local pressure, s.
+cfg:log_level	Journal verbosity: info — normal, debug — detailed (for debugging), error — errors only.
+cfg:nft	==== Limiter nftables ====
+cfg:nft.refresh_sec	How often to refresh limiter rules, s.
+cfg:nft.set_timeout_sec	How long a client block stays in the set, s.
+cfg:nft.table	Limiter nftables table (inet).
+cfg:path_trace.enabled	Culprit search: on protocol degradation (probes <80% for longer than 3 min) the router traces TCP 443 to probe and per-site metric targets every 10 min; if all bad routes go through one node/operator and the good ones avoid it, this goes to current events and incidents.
+cfg:paths	==== Files and socket ====
+cfg:paths.metrics_file	Metrics (JSONL).
+cfg:paths.runtime	Settings changed from the page (on top of this file).
+cfg:paths.socket	Unix socket for cgmon status/top/... commands
+cfg:paths.status_file	Status file (JSON) for the page.
+cfg:payment	==== Internet payment reminder (via the hub, Telegram) ====
+cfg:payment.amount	Payment amount (text, shown in the reminder).
+cfg:payment.day	Day of the month (in a short month — the last day).
+cfg:payment.enabled	Remind. Needs report (reports to the hub) and Telegram on the hub; otherwise — only the journal and the page.
+cfg:payment.interval_days	Pay every so many days (for mode interval; some ISPs use 30 days).
+cfg:payment.mode	monthly — every month on day day; interval — every interval_days days from start_date.
+cfg:payment.note	Note: account number, plan (text).
+cfg:payment.remind_days	Remind this many days before the due date (and once more on the day).
+cfg:payment.remind_hour	Not earlier than this hour.
+cfg:payment.start_date	Date of any payment for mode interval, YYYY-MM-DD (intervals are counted from it).
+cfg:payment.state_file	Which reminders are already in the router journal.
+cfg:peers	==== Peers and WAN flows ====
+cfg:peers.degrade_sec	How long it must last to count as degradation, s.
+cfg:peers.list	Peers for path checks (only in cgmon.yaml). Example:
+cfg:peers.max_latency_ms	Latency above — also degradation (0 — ignore).
+cfg:peers.min_success	Below this % — the path to the peer is degraded.
+cfg:peers.peak_window_sec	How long to remember flow peaks, s.
+cfg:peers.penalty_mbps	A flow faster than this — «probable ISP penalty».
+cfg:peers.recover_sec	How long recovery must last, s.
+cfg:peers.recover_success	Above this % — recovered.
+cfg:peers.wan_flows_top	How many WAN flows to show in extended monitoring.
+cfg:peers.window_sec	Peer probe statistics window, s.
+cfg:probe_interval_sec	How often to run TCP WAN probes (connect to probes.ipv4/ipv6), s.
+cfg:probe_timeout_sec	Timeout of one probe, s: no answer within it — the probe failed.
+cfg:probes	==== WAN probes ====
+cfg:probes.ipv4	IPv4 TCP probe targets (address:port). The WAN state is decided by probes — targets must be stable.
+cfg:probes.ipv6	IPv6 TCP probe targets ([address]:port). Empty — IPv6 is not checked.
+cfg:probes.udp_v4	IPv4 UDP probe targets (DNS, port 53).
+cfg:probes.udp_v6	IPv6 UDP probe targets (DNS).
+cfg:protected_networks	Protected networks (like whitelist, but by network). Example: [192.168.1.0/28]
+cfg:qos	==== SQM: smart link queue ====
+cfg:qos.cake_opts	cake options for upload.
+cfg:qos.device	WAN device for the queue: auto — the default route device (PPPoE, DHCP, backup link; the queue moves by itself when the WAN changes) or explicitly, e.g. pppoe-wan, wan
+cfg:qos.download_kbit	Download speed, kbit/s.
+cfg:qos.enabled	SQM: smart link queue (cake/HTB) instead of sqm-scripts.
+cfg:qos.flow_buckets	Number of flow buckets.
+cfg:qos.flow_cap_down_kbit	Per-connection download limit, kbit/s (0 — no limit).
+cfg:qos.flow_cap_up_kbit	Per-connection upload limit, kbit/s (0 — no limit).
+cfg:qos.flow_keys_down	Flow keys for the download limit.
+cfg:qos.flow_keys_up	Flow keys for the upload limit (tc flow). Example: nfct-src — per device.
+cfg:qos.ifb	IFB for ingress (empty — ifb4<device>).
+cfg:qos.ingress_cake_opts	cake options for download.
+cfg:qos.upload_kbit	Link upload speed, kbit/s (slightly below the plan; 0 — do not shape).
+cfg:report	==== Reports to the monitoring hub ====
+cfg:report.enabled	Send data to the monitoring hub (a hub on another router).
+cfg:report.interval_sec	Report at least every, s (on changes — at once).
+cfg:report.name	Router name for the hub (empty — the host name).
+cfg:report.token	Shared secret with the hub (as hub.token), at least 16 characters. Generate: head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \\n'
+cfg:report.urls	Collection hubs (several are fine — data goes to all). Reports are encrypted (AES-256-GCM), so http:// is enough. Example: [http://10.0.0.1:7788/api/v1/report, http://203.0.113.10:7788/api/v1/report]
+cfg:simulation	==== Simulation (for tests) ====
+cfg:simulation.enabled	Simulation mode (tests without a real WAN). On a router — false.
+cfg:simulation.ipv4_success	Simulation: IPv4 probe success, %.
+cfg:simulation.ipv6_success	Simulation: IPv6 probe success, %.
+cfg:simulation.top_connections	Simulation: its connections.
+cfg:simulation.top_host	Simulation: IP of the «aggressive» client.
+cfg:special_hosts	Special hosts with a label (ip + name), only in cgmon.yaml. Example:
+cfg:startup_grace_sec	How many seconds after start to only observe (MONITORING_ONLY diagnosis) without drawing conclusions.
+cfg:stat_long_window_sec	Long statistics window (for reports and history), s.
+cfg:stat_window_sec	Probe statistics window for the WAN state, s (share of successes over this time).
+cfg:status_top_clients	How many of the most active clients to show in «top».
+cfg:storage	Where to keep intermediate data (traffic accounting, billed traffic, per-site metrics, upload learner, ports, collection hub, vendor cache, payment reminders): flash — /etc/cgmon: nothing is lost, but the router's built-in flash wears out; tmp — /tmp/cgmon/data: no flash wear, but data is deleted after a reboot; your own directory, e.g. /mnt/usb/cgmon (USB stick, disk; only /mnt, /media, /opt, /srv, /data) — the flash is spared and data survives reboots. While the medium is not mounted, data goes to /tmp/cgmon/data (not the internal flash) and moves once it appears. On a change the data is copied to the new place. Settings (cgmon.yaml, runtime.json), your own free-network list and the DNS guard state always stay on flash; the chart history lives only in memory and /tmp.
+cfg:thresholds	==== WAN state thresholds ====
+cfg:thresholds.critical_enter_success	Successful below this % — CRITICAL.
+cfg:thresholds.enter_duration_sec	How long bad must last to enter WARNING/CRITICAL, s.
+cfg:thresholds.ipv6_healthy_success	IPv6 (the control channel) counts as healthy when success is above this %.
+cfg:thresholds.recovery_duration_sec	How long good must last to count as recovery, s.
+cfg:thresholds.recovery_success	Above this % for longer than recovery_duration_sec — RECOVERY/NORMAL.
+cfg:thresholds.warning_enter_success	Successful IPv4 probes below this % for longer than enter_duration_sec — WARNING.
+cfg:tunnel_networks	Tunnel networks (tailscale, zerotier): traffic to them is not counted as external. Example: [100.64.0.0/22]
+cfg:udp_probe_interval_sec	How often to run UDP probes (a DNS query to probes.udp_v4/udp_v6), s.
+cfg:upload_shaper	==== Upload shaper ====
+cfg:upload_shaper.class_id	HTB class of the overall limit.
+cfg:upload_shaper.device	Upload device (WAN): auto — the same as the qos queue (default route), or explicitly
+cfg:upload_shaper.enabled	Upload shaper (bypassing ISP p2p blocking): the first MB go fast, then slower.
+cfg:upload_shaper.interval_ms	Shaper period, ms.
+cfg:upload_shaper.payback_kbit	After the stages — pay off the «debt» at this speed (0 — no).
+cfg:upload_shaper.penalty_cooldown_sec	After an ISP penalty — no speed-up, s.
+cfg:upload_shaper.refill_factor	How many times slower the reserve refills than it is spent.
+cfg:upload_shaper.resume_percent	What % of the reserve is needed to speed up again.
+cfg:upload_shaper.stages	Stages (only in cgmon.yaml). Example:
+cfg:upload_shaper.sustained_kbit	Speed after the trigger is exceeded, kbit/s. Example: 25000
+cfg:vuln_scan	==== Vulnerability scanner ====
+cfg:vuln_scan.isolate	Isolation from the internet: MACs of devices (cameras, DVRs…) that keep access only to the local network and the router. «Isolate» / «Lift isolation» buttons are in the «Security» section.
+cfg:vuln_scan.lan	Check LAN devices: safe probes only — open ports and service banners, no login attempts.
+cfg:vuln_scan.mode	Security check: all packages and the kernel are checked against vulnerability databases (OSV.dev with the Debian assessment, CISA KEV — already exploited, FIRST EPSS — exploit probability; OpenWrt advisories for its own packages), plus router settings (what is open to the internet, SSH, Wi-Fi, UPnP, IPv6) and LAN devices (dangerous services). off | manual (button only) | weekly (and after package changes; with the billed-traffic counter on — button only). One check is about 2–4 MB of traffic.
+cfg:vuln_scan.state_file	Results of the last check (the KEV cache is in /tmp/cgmon).
+cfg:wan	==== WAN ====
+cfg:wan.auto_detect_default_route	Treat the default route device as WAN.
+cfg:wan.collect_router_own_traffic	Count the router's own connections.
+cfg:wan.interfaces	Possible WAN devices (in addition to auto-detection).
+cfg:wan_check	WAN check: active — probes (recommended); hybrid — by traffic + a probe every 30 s; passive — traffic only (experimental).
+cfg:wan_monitor	==== WAN monitor and incident journal ====
+cfg:wan_monitor.down_debounce_sec	The WAN counts as down if it did not come up within this many seconds.
+cfg:wan_monitor.enabled	Watch the WAN (up/down, IP and route changes) and keep the incident journal.
+cfg:wan_monitor.incidents_file	Incident journal (JSONL).
+cfg:wan_monitor.post_up_grace_sec	After the WAN comes up, draw no conclusions for this many seconds (reconnects).
+cfg:web	==== The status.html page ====
+cfg:web.embedded	The page (status.html) and its CGI are built into cgmon compressed: on start they are unpacked to /tmp/cgmon/www, and symlinks are placed in /www. Not a single extra file on flash (useful for routers with 2–8 MB), the page is always the same version as cgmon. false — do not touch /www (you place the page yourself).
+cfg:web.password	Password for changing settings from the page. Empty — the page only shows, nothing can be changed from it. Set here, by the wizard (cgmon --install) or in LuCI → Services → cgmon.
+cfg:whitelist	Clients the limiter never touches. Example: [192.168.1.10, 192.168.1.0/28]
+cfg:witness	==== Witnesses: IPv4/IPv6 score (observe only for now) ====
+cfg:witness.interval_sec	Check all witnesses every, s.
+cfg:witness.mode	Nodes clients had successful tcp/443 connections with are checked by the router itself every interval_sec; node reliability is learned, the protocol score is the weighted share of answers (+ for returning ones). A mismatch with the normal diagnosis for longer than 5 min goes to the journal. off | observe
+cfg:witness.per_family	Witnesses per protocol (up to 32; at most one per /24 or /48 network).
+cfg:witness.state_file	Witnesses and their reliability (survive restarts).
+Интеграция: по адресу роутера теперь открывается cgmon, LuCI — по ссылке на странице	Integration: the router address now opens cgmon, LuCI is a link on the page
+Интеграция: cgmon открывается по именам {}	Integration: cgmon opens at the names {}
+Интеграция: стартовая страница роутера возвращена (LuCI)	Integration: the router start page is restored (LuCI)
+dnsmasq не найден — имена роутера не заданы	dnsmasq not found — router names are not set
+Интеграция: имена роутера убраны из DNS	Integration: router names removed from DNS
+Интеграция: имена роутера в DNS — {}	Integration: router names in DNS — {}
+integration.home: {} — luci или cgmon	integration.home: {} — luci or cgmon
+integration.names: нужны DNS-имена (router.lan, cgmon.lan) без пробелов и повторов	integration.names: DNS names are needed (router.lan, cgmon.lan), no spaces or duplicates
+cfg:integration	==== OpenWrt integration ====
+cfg:integration.home	What opens at the router address (http://192.168.1.1/): luci — OpenWrt settings as usual; cgmon — the cgmon page (OpenWrt settings via the «OpenWrt» link in its header). The previous /www/index.html is kept next to it and restored when luci is chosen.
+cfg:integration.names	DNS names of the router that always open cgmon (e.g. router.lan, cgmon.lan) — dnsmasq answers with the router address in the network the question came from.
+не хватает места на {}: нужно ≈ {} МБ, свободно {} МБ — ничего не обновлено	not enough space on {}: ≈ {} MB needed, {} MB free — nothing was updated

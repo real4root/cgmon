@@ -156,7 +156,9 @@ pub fn apply_key(cur: &mut Settings, ext_at: &mut i64, now: i64, k: &str, v: &Va
 }
 
 /// Пароль страницы не задан — изменения со страницы запрещены.
-pub const NO_PASSWORD: &str = "пароль страницы не задан — настройки только для просмотра; задайте пароль: LuCI → Службы → cgmon (или web.password в cgmon.yaml)";
+pub fn no_password() -> &'static str {
+    tr!("пароль страницы не задан — настройки только для просмотра; задайте пароль: LuCI → Службы → cgmon (или web.password в cgmon.yaml)")
+}
 
 pub struct Runtime {
     pub path: String,
@@ -204,7 +206,7 @@ impl Runtime {
                         r.saved.push((k, v));
                     }
                 }
-                Ok(_) => crate::log_err!("runtime: {}: не объект (ignored)", r.path),
+                Ok(_) => crate::log_err!("{}", tr!("runtime: {}: не объект (ignored)", r.path)),
                 Err(e) => crate::log_err!("runtime: {}: {} (ignored)", r.path, e),
             }
         }
@@ -217,7 +219,7 @@ impl Runtime {
     fn pass_ok(&mut self, cfg: &Config, password: &str, now: i64) -> Result<(), String> {
         // без пароля страница только показывает: менять нечем и некому
         if cfg.web.password.is_empty() {
-            return Err(NO_PASSWORD.into());
+            return Err(no_password().into());
         }
         {
             recent(&mut self.fails, now, FAIL_WINDOW);
@@ -252,6 +254,23 @@ impl Runtime {
     pub fn set(&mut self, cfg: &Config, m: &[(String, Value)], cm: &[(String, Value)], password: &str, now: i64) -> Result<(), String> {
         self.pass_ok(cfg, password, now)?;
         self.rate(now)?;
+        self.set_inner(cfg, m, cm, now)
+    }
+
+    /// Язык сообщений демона — со страницы без пароля (не секрет и ничего не ломает):
+    /// иначе журнал и события остаются на языке по умолчанию, пока не введён пароль.
+    pub fn set_lang(&mut self, cfg: &Config, code: &str, now: i64) -> Result<(), String> {
+        if crate::i18n::id(code).is_none() {
+            return Err("bad language".into());
+        }
+        if cfg.lang == code {
+            return Ok(());
+        }
+        self.rate(now)?;
+        self.set_inner(cfg, &[], &[("lang".to_string(), Value::Str(code.to_string()))], now)
+    }
+
+    fn set_inner(&mut self, cfg: &Config, m: &[(String, Value)], cm: &[(String, Value)], now: i64) -> Result<(), String> {
         if m.iter().any(|(k, _)| !KEYS.contains(&k.as_str())) {
             return Err("unknown setting".into());
         }
@@ -265,18 +284,18 @@ impl Runtime {
             return Err("upload_shaper is not configured".into());
         }
         if us.enabled && cur.burst_mb > 0.0 && cur.burst_kbit > 0 && cur.burst_kbit <= cur.sustained_kbit {
-            return Err("скорость после триггера должна быть ниже начальной".into());
+            return Err(tr!("скорость после триггера должна быть ниже начальной").into());
         }
         if cfg.qos.enabled {
             let (up, down) = (cur.qos_upload_kbit, cur.qos_download_kbit);
             if us.enabled && up > 0 && cur.burst_kbit > up {
-                return Err("лимит начальной скорости выше Upload канала".into());
+                return Err(tr!("лимит начальной скорости выше Upload канала").into());
             } else if us.enabled && up > 0 && cur.sustained_kbit >= up {
-                return Err("скорость после триггера должна быть ниже Upload канала".into());
+                return Err(tr!("скорость после триггера должна быть ниже Upload канала").into());
             } else if up > 0 && cur.qos_flow_cap_kbit > up {
-                return Err("лимит отдачи на соединение выше Upload канала".into());
+                return Err(tr!("лимит отдачи на соединение выше Upload канала").into());
             } else if down > 0 && cur.qos_flow_cap_down_kbit > down {
-                return Err("лимит загрузки на соединение выше Download канала".into());
+                return Err(tr!("лимит загрузки на соединение выше Download канала").into());
             }
         }
         if ["qos_on", "qos_upload_kbit", "qos_download_kbit", "qos_flow_cap_kbit", "qos_flow_cap_down_kbit"].iter().any(|k| has(k)) && !cfg.qos.enabled {
@@ -452,8 +471,8 @@ mod tests {
         let mut nc = c.clone();
         nc.web.password.clear();
         let mut r4 = Runtime::new(&nc, nc.clone(), Vec::new(), 3000);
-        assert_eq!(r4.set(&nc, &m, &[], "", 3000), Err(NO_PASSWORD.into()));
-        assert_eq!(r4.check_password(&nc, "", 3000), Err(NO_PASSWORD.into()));
+        assert_eq!(r4.set(&nc, &m, &[], "", 3000), Err(no_password().into()));
+        assert_eq!(r4.check_password(&nc, "", 3000), Err(no_password().into()));
         let _ = std::fs::remove_dir_all(&dir);
     }
 

@@ -33,7 +33,7 @@ pub fn name() -> &'static str {
     }
 }
 
-/// «2.6.30» или «2.6.30 lite» — для журнала, центра сбора, --version.
+/// «2.6.31» или «2.6.31 lite» — для журнала, центра сбора, --version.
 pub fn version() -> String {
     match name() {
         "full" => crate::VERSION.to_string(),

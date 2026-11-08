@@ -36,7 +36,7 @@ pub fn yes_no(q: &str) -> bool {
     let _ = std::io::stdout().flush();
     let mut s = String::new();
     let _ = std::io::stdin().read_line(&mut s);
-    matches!(s.trim().to_lowercase().as_str(), "y" | "yes" | "д" | "да" | "1")
+    matches!(s.trim().to_lowercase().as_str(), "y" | "yes" | "д" | "да" | "ha" | "h" | "иә" | "и" | "是" | "1") // i18n: no
 }
 
 fn rand_hex(n: usize) -> String {
@@ -147,7 +147,7 @@ impl W<'_> {
     /// да/нет; None — конец ввода.
     fn yn(&mut self, q: &str, def: bool) -> Option<bool> {
         let d = if def { 1 } else { 2 };
-        match self.ask(&format!("{q}\n  1) да  2) нет  [Enter = {d}]: ")) {
+        match self.ask(&tr!("{}\n  1) да  2) нет  [Enter = {}]: ", q, d)) {
             Ans::Eof => None,
             Ans::Text(a) if a.is_empty() => Some(def),
             Ans::Text(a) => Some(a == "1" || a.eq_ignore_ascii_case("y") || a == "да"),
@@ -173,7 +173,7 @@ impl W<'_> {
             _ if !cur.is_empty() => Some(cur.to_string()),
             _ => {
                 let s = gen();
-                self.say(&format!("  сгенерирован: {s}  (запишите)"));
+                self.say(&tr!("  сгенерирован: {}  (запишите)", s));
                 Some(s)
             }
         }
@@ -183,7 +183,7 @@ impl W<'_> {
         match crate::livecfg::set_any(cfg, path, &v) {
             Ok(()) => true,
             Err(e) => {
-                self.say(&format!("  {path}: {e} — оставлено как было"));
+                self.say(&tr!("  {}: {} — оставлено как было", path, e));
                 false
             }
         }
@@ -192,7 +192,7 @@ impl W<'_> {
     /// Получатели Telegram центра: бот и чаты (одним блоком).
     fn telegram(&mut self, cfg: &Config) -> Option<()> {
         let n = crate::livecfg::telegram_dests(&cfg.hub).len();
-        let q = if n > 0 { format!("Уведомления в Telegram: сейчас получателей {n}. Новый бот (токен от @BotFather, Enter — оставить как есть)") } else { "Уведомления в Telegram: токен бота от @BotFather (Enter — без Telegram)".into() };
+        let q = if n > 0 { tr!("Уведомления в Telegram: сейчас получателей {}. Новый бот (токен от @BotFather, Enter — оставить как есть)", n) } else { tr!("Уведомления в Telegram: токен бота от @BotFather (Enter — без Telegram)").into() };
         let bot = match self.ask(&format!("{q}: ")) {
             Ans::Eof => return None,
             Ans::Text(a) => a,
@@ -200,13 +200,13 @@ impl W<'_> {
         if bot.is_empty() {
             return Some(());
         }
-        let chats = match self.ask("  ID чатов через запятую (личка — число, группа -100…, канал @имя): ") {
+        let chats = match self.ask(tr!("  ID чатов через запятую (личка — число, группа -100…, канал @имя): ")) {
             Ans::Eof => return None,
             Ans::Text(a) => a,
         };
         let ids: Vec<String> = chats.split(|c| c == ',' || c == ' ').filter(|x| !x.is_empty()).map(|x| format!("\"{x}\"")).collect();
         if ids.is_empty() {
-            self.say("  без чатов — Telegram не настроен");
+            self.say(tr!("  без чатов — Telegram не настроен"));
             return Some(());
         }
         self.tg = Some(vec![format!("- bot_token: \"{bot}\""), format!("  chat_ids: [{}]", ids.join(", "))]);
@@ -231,25 +231,25 @@ pub fn run_io(inp: &mut dyn BufRead, out: &mut dyn Write, path: &str, mode: Opti
         match config::load(path) {
             Ok(c) => {
                 cfg = c;
-                text = std::fs::read_to_string(path).unwrap_or(text);
+                text = crate::textenc::read_normalized(path).unwrap_or(text);
             }
             Err(e) => {
-                let _ = writeln!(out, "Текущий {path} не читается ({e}) — начинаем со значений по умолчанию.");
+                let _ = writeln!(out, "{}", tr!("Текущий {} не читается ({}) — начинаем со значений по умолчанию.", path, e));
             }
         }
     }
     cfg.normalize();
     let orig = cfg.clone();
-    let mut w = W { inp, out, hints: crate::livecfg::hints(config::REFERENCE), tg: None };
-    w.say(&format!("\ncgmon {} — мастер установки ({path})", crate::VERSION));
+    let mut w = W { inp, out, hints: crate::i18n::localize_hints(crate::livecfg::hints(config::REFERENCE)), tg: None };
+    w.say(&tr!("\ncgmon {} — мастер установки ({})", crate::VERSION, path));
     if existing {
-        w.say("Значения по умолчанию в вопросах — из текущего файла.");
+        w.say(tr!("Значения по умолчанию в вопросах — из текущего файла."));
     }
     let mode = match mode {
         Some(m) => m,
         None => {
-            w.say("Вариант настройки (всё, что есть на странице, можно поменять потом там):\n  1) минимальная — только пароль страницы\n  2) обычная — плюс центр сбора, Telegram, учёт трафика, выбор шлюза\n  3) подробная — все параметры по разделам");
-            match w.ask("  выбор [Enter = 1]: ") {
+            w.say(tr!("Вариант настройки (всё, что есть на странице, можно поменять потом там):\n  1) минимальная — только пароль страницы\n  2) обычная — плюс центр сбора, Telegram, учёт трафика, выбор шлюза\n  3) подробная — все параметры по разделам"));
+            match w.ask(tr!("  выбор [Enter = 1]: ")) {
                 Ans::Eof => return 1,
                 Ans::Text(a) => match a.as_str() {
                     "2" => Mode::Basic,
@@ -264,17 +264,17 @@ pub fn run_io(inp: &mut dyn BufRead, out: &mut dyn Write, path: &str, mode: Opti
         Mode::Full => ask_full(&mut w, &mut cfg),
     };
     let Some(()) = ok else {
-        w.say("\nВвод закончился — выхожу без сохранения.");
+        w.say(tr!("\nВвод закончился — выхожу без сохранения."));
         return 1;
     };
     finish(&mut w, cfg, orig, text, path, existing, on_router)
 }
 
 fn ask_password(w: &mut W, cfg: &mut Config) -> Option<()> {
-    w.say("\nПароль на изменение настроек со страницы status.html.");
-    let p = w.secret("Пароль", &cfg.web.password.clone(), rand_password)?;
+    w.say(tr!("\nПароль на изменение настроек со страницы status.html."));
+    let p = w.secret(tr!("Пароль"), &cfg.web.password.clone(), rand_password)?;
     if p.chars().any(|c| c.is_control()) {
-        w.say("  недопустимые символы — оставлено как было");
+        w.say(tr!("  недопустимые символы — оставлено как было"));
     } else {
         cfg.web.password = p;
     }
@@ -287,47 +287,47 @@ fn ask_short(w: &mut W, cfg: &mut Config, basic: bool) -> Option<()> {
         return Some(());
     }
     // отправка на центр сбора
-    w.say("\n==== Центр сбора: отправка ====");
-    let rep = w.yn("Отправлять состояние этого роутера на центр сбора?", cfg.report.enabled)?;
+    w.say(tr!("\n==== Центр сбора: отправка ===="));
+    let rep = w.yn(tr!("Отправлять состояние этого роутера на центр сбора?"), cfg.report.enabled)?;
     cfg.report.enabled = rep;
     if rep {
         let cur = crate::report::urls(&cfg.report).join(", ");
-        let u = w.line("Адреса центров (http://адрес:7788/api/v1/report, через запятую)", &cur)?;
+        let u = w.line(tr!("Адреса центров (http://адрес:7788/api/v1/report, через запятую)"), &cur)?;
         let list: Vec<String> = u.split(|c| c == ',' || c == ' ').filter(|x| !x.is_empty()).map(String::from).collect();
         if list.iter().all(|x| x.starts_with("http://")) {
             cfg.report.urls = list;
             cfg.report.url.clear();
         } else {
-            w.say("  нужны адреса http:// — оставлено как было");
+            w.say(tr!("  нужны адреса http:// — оставлено как было"));
         }
-        cfg.report.token = w.secret("Общий секрет центра (тот же, что hub.token на центре, ≥16 знаков)", &cfg.report.token.clone(), || rand_hex(24))?;
+        cfg.report.token = w.secret(tr!("Общий секрет центра (тот же, что hub.token на центре, ≥16 знаков)"), &cfg.report.token.clone(), || rand_hex(24))?;
     }
     // этот роутер — центр
-    w.say("\n==== Центр сбора: этот роутер ====");
-    let hub = w.yn("Этот роутер — центр сбора (принимает отчёты, шлёт в Telegram)?", cfg.hub.enabled)?;
+    w.say(tr!("\n==== Центр сбора: этот роутер ===="));
+    let hub = w.yn(tr!("Этот роутер — центр сбора (принимает отчёты, шлёт в Telegram)?"), cfg.hub.enabled)?;
     cfg.hub.enabled = hub;
     if hub {
         let def = if cfg.hub.token.is_empty() { cfg.report.token.clone() } else { cfg.hub.token.clone() };
-        cfg.hub.token = w.secret("Общий секрет центра (≥16 знаков; роутеры шлют с ним же)", &def, || rand_hex(24))?;
-        let l = w.line("Порт центра (адрес:порт)", &cfg.hub.listen.clone())?;
+        cfg.hub.token = w.secret(tr!("Общий секрет центра (≥16 знаков; роутеры шлют с ним же)"), &def, || rand_hex(24))?;
+        let l = w.line(tr!("Порт центра (адрес:порт)"), &cfg.hub.listen.clone())?;
         cfg.hub.listen = l;
         w.telegram(cfg)?;
     }
-    w.say("\n==== Прочее (нет на странице) ====");
-    cfg.accounting.enabled = w.yn("Учёт трафика устройств (счётчики nftables)?", cfg.accounting.enabled)?;
-    let gs = w.yn("Резервный канал: проверять несколько WAN и переключать маршрут (gate selector)?", cfg.gate_selector.enabled)?;
+    w.say(tr!("\n==== Прочее (нет на странице) ===="));
+    cfg.accounting.enabled = w.yn(tr!("Учёт трафика устройств (счётчики nftables)?"), cfg.accounting.enabled)?;
+    let gs = w.yn(tr!("Резервный канал: проверять несколько WAN и переключать маршрут (gate selector)?"), cfg.gate_selector.enabled)?;
     cfg.gate_selector.enabled = gs;
     if gs {
         let found = crate::gatesel::detect(cfg);
-        let l: Vec<String> = found.iter().map(|g| format!("{} ({}, приоритет {})", g.name, g.device, g.priority)).collect();
-        w.say(&format!("  шлюзы зоны wan: {}", if l.is_empty() { "не найдены — задайте gate_selector.interfaces в cgmon.yaml".into() } else { l.join("; ") }));
-        w.say("  пока в режиме наблюдения (gate_selector.dry_run) — переключать начнёт после снятия на странице «Все настройки»");
+        let l: Vec<String> = found.iter().map(|g| tr!("{} ({}, приоритет {})", g.name, g.device, g.priority)).collect();
+        w.say(&tr!("  шлюзы зоны wan: {}", if l.is_empty() { tr!("не найдены — задайте gate_selector.interfaces в cgmon.yaml").into() } else { l.join("; ") }));
+        w.say(tr!("  пока в режиме наблюдения (gate_selector.dry_run) — переключать начнёт после снятия на странице «Все настройки»"));
     }
     Some(())
 }
 
 fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
-    w.say("Enter — оставить значение, цифра — выбрать вариант, «!» — оставить весь раздел, «?» — пояснение, «q» — выйти без сохранения.");
+    w.say(tr!("Enter — оставить значение, цифра — выбрать вариант, «!» — оставить весь раздел, «?» — пояснение, «q» — выйти без сохранения."));
     let mut fields: Vec<(String, &'static str)> = Vec::new();
     cfg.walk("", &mut |p, f| {
         if !SKIP.contains(&p) {
@@ -340,7 +340,7 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
         if top != section {
             section = top.clone();
             skip.clear();
-            w.say(&format!("\n==== Раздел: {} ====", if top.is_empty() { "общие" } else { &top }));
+            w.say(&tr!("\n==== Раздел: {} ====", if top.is_empty() { tr!("общие") } else { &top }));
             let h = w.hint(&top);
             if !h.is_empty() && !top.is_empty() {
                 w.say(&h);
@@ -358,7 +358,7 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
         if k.is_empty() {
             if path != "hub.telegram" {
                 let h = w.hint(&path).replace('\n', "\n  ");
-                w.say(&format!("\n{path} — сложный список, настраивается в cgmon.yaml:\n  {h}"));
+                w.say(&tr!("\n{} — сложный список, настраивается в cgmon.yaml:\n  {}", path, h));
             }
             continue;
         }
@@ -369,8 +369,8 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
             let choices = CHOICES.iter().find(|(p, _)| *p == path).map(|(_, c)| *c);
             let secret = SECRETS.contains(&path.as_str());
             let a = if k == "bool" {
-                let d = if cur == "да" { 1 } else { 2 };
-                match w.ask(&format!("  1) да  2) нет  [Enter = {d}]: ")) {
+                let d = if cur == tr!("да") { 1 } else { 2 };
+                match w.ask(&tr!("  1) да  2) нет  [Enter = {}]: ", d)) {
                     Ans::Eof => return None,
                     Ans::Text(a) => match a.as_str() {
                         "" => String::new(),
@@ -383,9 +383,9 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
                 let mut d = 0;
                 for (i, (v, l)) in ch.iter().enumerate() {
                     let m = if *v == cur { d = i + 1; "*" } else { " " };
-                    w.say(&format!("  {m}{}) {v} — {l}", i + 1));
+                    w.say(&format!("  {m}{}) {v} — {}", i + 1, crate::i18n::tr(l)));
                 }
-                match w.ask(&format!("  выбор [Enter = {d}]: ")) {
+                match w.ask(&tr!("  выбор [Enter = {}]: ", d)) {
                     Ans::Eof => return None,
                     Ans::Text(a) => match a.parse::<usize>() {
                         Ok(n) if (1..=ch.len()).contains(&n) => ch[n - 1].0.to_string(),
@@ -394,9 +394,9 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
                 }
             } else {
                 let def = if secret {
-                    if cur.is_empty() { "<сгенерировать>".to_string() } else { "<оставить текущий>".to_string() }
+                    if cur.is_empty() { tr!("<сгенерировать>").to_string() } else { tr!("<оставить текущий>").to_string() }
                 } else if cur.is_empty() {
-                    "пусто".to_string()
+                    tr!("пусто").to_string()
                 } else {
                     cur.clone()
                 };
@@ -407,7 +407,7 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
             };
             match a.as_str() {
                 "q" | "Q" => {
-                    if let Ans::Text(x) = w.ask("Выйти без сохранения? 1) да  2) нет [2]: ") {
+                    if let Ans::Text(x) = w.ask(tr!("Выйти без сохранения? 1) да  2) нет [2]: ")) {
                         if x == "1" {
                             return None;
                         }
@@ -415,7 +415,7 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
                     continue;
                 }
                 "?" => {
-                    w.say(&format!("  Путь: {path}, тип: {k}, сейчас: {cur:?}"));
+                    w.say(&tr!("  Путь: {}, тип: {}, сейчас: {}", path, k, format!("{:?}", cur)));
                     continue;
                 }
                 "!" => {
@@ -425,7 +425,7 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
                 "" => {
                     if secret && cur.is_empty() {
                         let t = rand_hex(24);
-                        w.say(&format!("  сгенерирован: {t} (запишите — нужен на всех роутерах/центрах)"));
+                        w.say(&tr!("  сгенерирован: {} (запишите — нужен на всех роутерах/центрах)", t));
                         if path == "report.token" {
                             cfg.report.token = t;
                         } else {
@@ -456,11 +456,11 @@ fn ask_full(w: &mut W, cfg: &mut Config) -> Option<()> {
 fn finish(w: &mut W, mut cfg: Config, orig: Config, mut text: String, path: &str, existing: bool, on_router: bool) -> i32 {
     cfg.normalize();
     if let Err(e) = crate::livecfg::validate(&cfg) {
-        w.say(&format!("\nВнимание: {e}"));
-        match w.ask("1) сохранить всё равно  2) выйти без сохранения [2]: ") {
+        w.say(&tr!("\nВнимание: {}", e));
+        match w.ask(tr!("1) сохранить всё равно  2) выйти без сохранения [2]: ")) {
             Ans::Text(a) if a == "1" => {}
             _ => {
-                w.say("Ничего не записано.");
+                w.say(tr!("Ничего не записано."));
                 return 1;
             }
         }
@@ -489,18 +489,18 @@ fn finish(w: &mut W, mut cfg: Config, orig: Config, mut text: String, path: &str
     if orig.report.url != cfg.report.url {
         changed.push(("report.url".into(), String::new()));
     }
-    w.say(&format!("\n==== Итог: изменений {} ====", changed.len() + w.tg.is_some() as usize));
+    w.say(&tr!("\n==== Итог: изменений {} ====", changed.len() + w.tg.is_some() as usize));
     for (p, v) in &changed {
         if SECRETS.contains(&p.as_str()) {
-            w.say(&format!("  {p}: задан"));
+            w.say(&tr!("  {}: задан", p));
         } else if p != "report.url" {
             w.say(&format!("  {p}: {v}"));
         }
     }
     if w.tg.is_some() {
-        w.say("  hub.telegram: задан");
+        w.say(tr!("  hub.telegram: задан"));
     }
-    let dest = match w.ask(&format!("Записать в [Enter = {path}]: ")) {
+    let dest = match w.ask(&tr!("Записать в [Enter = {}]: ", path)) {
         Ans::Eof => return 1,
         Ans::Text(a) if a.is_empty() => path.to_string(),
         Ans::Text(a) => a,
@@ -508,7 +508,7 @@ fn finish(w: &mut W, mut cfg: Config, orig: Config, mut text: String, path: &str
     if !existing || dest != path {
         let (s, _) = crate::util::now_wall();
         let t = crate::util::local(s);
-        let head = format!("# cgmon.yaml — записан мастером cgmon {}, {:04}-{:02}-{:02} {:02}:{:02}.\n# Пояснения ко всем настройкам: cgmon --help-advanced, config.reference.yaml.\n", crate::VERSION, t.year, t.mon, t.day, t.hour, t.min);
+        let head = tr!("# cgmon.yaml — записан мастером cgmon {}, {}-{}-{} {}:{}.\n# Пояснения ко всем настройкам: cgmon --help-advanced, config.reference.yaml.\n", crate::VERSION, format!("{:04}", t.year), format!("{:02}", t.mon), format!("{:02}", t.day), format!("{:02}", t.hour), format!("{:02}", t.min));
         if !existing {
             text = format!("{head}{}", text.lines().skip_while(|l| l.starts_with('#')).collect::<Vec<_>>().join("\n"));
         }
@@ -526,24 +526,24 @@ fn finish(w: &mut W, mut cfg: Config, orig: Config, mut text: String, path: &str
         if std::fs::copy(&dest, &bak).is_ok() {
             use std::os::unix::fs::PermissionsExt;
             let _ = std::fs::set_permissions(&bak, std::fs::Permissions::from_mode(0o600));
-            w.say(&format!("Старый файл сохранён: {bak}"));
+            w.say(&tr!("Старый файл сохранён: {}", bak));
         }
     }
     if let Some(dir) = std::path::Path::new(&dest).parent() {
         let _ = std::fs::create_dir_all(dir);
     }
     if let Err(e) = crate::util::write_atomic(&dest, text.as_bytes(), 0o600) {
-        w.say(&format!("Ошибка записи: {e}"));
+        w.say(&tr!("Ошибка записи: {}", e));
         return 1;
     }
     match config::load(&dest) {
         Err(e) => {
-            w.say(&format!("Записанный файл не читается: {e}"));
+            w.say(&tr!("Записанный файл не читается: {}", e));
             return 1;
         }
         Ok(c) => {
             if !c.web.password.is_empty() || cfg.web.password.is_empty() {
-                w.say(&format!("Записано: {dest} (права 0600 — в файле секреты)"));
+                w.say(&tr!("Записано: {} (права 0600 — в файле секреты)", dest));
             }
         }
     }
@@ -551,17 +551,17 @@ fn finish(w: &mut W, mut cfg: Config, orig: Config, mut text: String, path: &str
         return 0;
     }
     if !crate::deps::print(w.out, &cfg) && !crate::deps::missing_pkgs(&crate::deps::check(&cfg)).is_empty() {
-        if let Ans::Text(a) = w.ask("Пакеты: 1) установить сейчас  2) пропустить (функции без них работать не будут) [2]: ") {
+        if let Ans::Text(a) = w.ask(tr!("Пакеты: 1) установить сейчас  2) пропустить (функции без них работать не будут) [2]: ")) {
             if a == "1" {
                 if let Err(e) = crate::deps::install(w.out, &cfg) {
-                    w.say(&format!("Не удалось: {e}"));
+                    w.say(&tr!("Не удалось: {}", e));
                 }
             }
         }
     }
     let installed = std::path::Path::new("/etc/init.d/cgmon").exists();
     let d = if installed { 2 } else { 1 };
-    match w.ask(&format!("Служба: 1) установить/обновить и (пере)запустить  2) только записать конфиг [{d}]: ")) {
+    match w.ask(&tr!("Служба: 1) установить/обновить и (пере)запустить  2) только записать конфиг [{}]: ", d)) {
         Ans::Text(a) if a == "1" || (a.is_empty() && d == 1) => install(w),
         _ => {}
     }
@@ -578,12 +578,12 @@ fn install(w: &mut W) {
             if std::fs::copy(&me, &tmp).is_ok() && std::fs::rename(&tmp, BIN).is_ok() {
                 use std::os::unix::fs::PermissionsExt;
                 let _ = std::fs::set_permissions(BIN, std::fs::Permissions::from_mode(0o755));
-                w.say(&format!("Бинарник: {BIN}"));
+                w.say(&tr!("Бинарник: {}", BIN));
             }
         }
     }
     if !std::path::Path::new("/etc/init.d/cgmon").exists() && crate::util::write_atomic("/etc/init.d/cgmon", INIT_SCRIPT.as_bytes(), 0o755).is_ok() {
-        w.say("Служба: /etc/init.d/cgmon");
+        w.say(tr!("Служба: /etc/init.d/cgmon"));
     }
     for a in ["enable", "restart"] {
         match std::process::Command::new("/etc/init.d/cgmon").arg(a).output() {
@@ -592,7 +592,7 @@ fn install(w: &mut W) {
             Err(e) => w.say(&format!("/etc/init.d/cgmon {a}: {e}")),
         }
     }
-    w.say("Готово: cgmon запущен. Проверка: cgmon status; страница: http://<роутер>/status.html");
+    w.say(tr!("Готово: cgmon запущен. Проверка: cgmon status; страница: http://<роутер>/status.html"));
 }
 
 #[cfg(test)]

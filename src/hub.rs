@@ -41,11 +41,11 @@ fn esc(s: &str) -> String {
 pub fn dur(ms: i64) -> String {
     let s = ms / 1000;
     if s >= 3600 {
-        format!("{} ч {} мин", s / 3600, s % 3600 / 60)
+        tr!("{} ч {} мин", s / 3600, s % 3600 / 60)
     } else if s >= 60 {
-        format!("{} мин {} с", s / 60, s % 60)
+        tr!("{} мин {} с", s / 60, s % 60)
     } else {
-        format!("{s} с")
+        tr!("{} с", s)
     }
 }
 
@@ -143,7 +143,7 @@ fn isp_of(r: &Report, name: &str) -> String {
     } else if !r.isp.asn.is_empty() {
         format!("AS{}", r.isp.asn)
     } else {
-        format!("провайдер {name}")
+        tr!("провайдер {}", name)
     }
 }
 
@@ -185,7 +185,7 @@ pub fn send_telegram(bot: &str, chat: &str, text: &str) -> Result<(), String> {
     let url = format!("https://api.telegram.org/bot{bot}/sendMessage");
     let q = |s: &str| format!("\"{}\"", s.replace('\\', "\\\\").replace('"', "\\\"").replace('\n', "\\n").replace('\r', "\\r").replace('\t', "\\t"));
     let res = match kind {
-        "" => Err("нет curl, uclient-fetch или wget".to_string()),
+        "" => Err(tr!("нет curl, uclient-fetch или wget").to_string()),
         "curl" => {
             let mut conf = format!("url = {}\n", q(&url));
             for (k, v) in [("chat_id", chat), ("text", text), ("parse_mode", "HTML"), ("disable_web_page_preview", "true")] {
@@ -221,15 +221,15 @@ fn run_stdin(bin: &str, args: &[&str], input: &str) -> Result<(), String> {
 }
 
 fn tg_label(bot: &str, chat: &str) -> String {
-    format!("бот {} → {chat}", bot.split(':').next().unwrap_or(""))
+    tr!("бот {} → {}", bot.split(':').next().unwrap_or(""), chat)
 }
 
 /// Слушающий сокет (IPv6 с приёмом IPv4, иначе IPv4).
 fn listen(addr: &str) -> Result<i32, String> {
-    let (host, port) = addr.rsplit_once(':').ok_or_else(|| format!("{addr}: нужен адрес:порт"))?;
-    let port: u16 = port.parse().map_err(|_| format!("{addr}: порт"))?;
+    let (host, port) = addr.rsplit_once(':').ok_or_else(|| tr!("{}: нужен адрес:порт", addr))?;
+    let port: u16 = port.parse().map_err(|_| tr!("{}: порт", addr))?;
     let host = host.trim_matches(['[', ']']);
-    let ip: IpAddr = if host.is_empty() { "::".parse().unwrap() } else { host.parse().map_err(|_| format!("{addr}: адрес"))? };
+    let ip: IpAddr = if host.is_empty() { "::".parse().unwrap() } else { host.parse().map_err(|_| tr!("{}: адрес", addr))? };
     unsafe {
         let fam = if ip.is_ipv4() { libc::AF_INET } else { libc::AF_INET6 };
         let fd = libc::socket(fam, libc::SOCK_STREAM | libc::SOCK_NONBLOCK | libc::SOCK_CLOEXEC, 0);
@@ -699,7 +699,7 @@ impl Hub {
                 if i.level == "crit" { notify.push(m) } else { ev_only.push(m) }
             }
             for o in rt.last.issues.iter().filter(|o| !rep.issues.iter().any(|i| i.kind == o.kind)) {
-                ev_only.push(format!("✅ <b>{}</b>: прошло — {}", esc(&name), esc(&o.text)));
+                ev_only.push(tr!("✅ <b>{}</b>: прошло — {}", esc(&name), esc(&o.text)));
             }
         }
         if rep.isp.asn.is_empty() && !rt.last.isp.asn.is_empty() {
@@ -745,7 +745,7 @@ impl Hub {
             a.routers.remove(name);
         }
         self.alerts.retain(|_, a| !a.routers.is_empty());
-        self.event(&format!("🗑 <b>{}</b> убран с центра ({})", esc(name), esc(why)), now);
+        self.event(&tr!("🗑 <b>{}</b> убран с центра ({})", esc(name), esc(why)), now);
         self.journal(&[("time", Self::q(&time_json(now))), ("router", Self::q(name)), ("event", Self::q("removed"))]);
         self.save();
         true
@@ -792,7 +792,7 @@ impl Hub {
                 if rt.offline {
                     rt.offline = false;
                     if cfg.notify_offline {
-                        msgs.push(format!("🟢 <b>{}</b> снова на связи (не было {})", esc(name), dur(now - rt.off_at)));
+                        msgs.push(tr!("🟢 <b>{}</b> снова на связи (не было {})", esc(name), dur(now - rt.off_at)));
                     }
                     jl.push(vec![("time", t.clone()), ("router", Self::q(name)), ("event", Self::q("online"))]);
                 }
@@ -800,7 +800,7 @@ impl Hub {
                 rt.offline = true;
                 rt.off_at = rt.seen;
                 if cfg.notify_offline {
-                    msgs.push(format!("⚫ <b>{}</b> не на связи с {} (последнее состояние: {}, провайдер {})", esc(name), hhmm(rt.seen), esc(&rt.last.state), esc(&isp_of(&rt.last, name))));
+                    msgs.push(tr!("⚫ <b>{}</b> не на связи с {} (последнее состояние: {}, провайдер {})", esc(name), hhmm(rt.seen), esc(&rt.last.state), esc(&isp_of(&rt.last, name))));
                 }
                 jl.push(vec![("time", t.clone()), ("router", Self::q(name)), ("event", Self::q("offline"))]);
             }
@@ -813,7 +813,7 @@ impl Hub {
         }
         let gone: Vec<String> = self.routers.iter().filter(|(_, r)| r.offline && r.seen != 0 && now - r.seen > FORGET_AFTER).map(|(n, _)| n.clone()).collect();
         for n in gone {
-            self.forget(&n, now, "не на связи 30 дней");
+            self.forget(&n, now, tr!("не на связи 30 дней"));
         }
         let mut isp_bad: BTreeMap<String, Vec<String>> = BTreeMap::new();
         let mut bad: Vec<String> = Vec::new();
@@ -870,15 +870,15 @@ impl Hub {
             let states: BTreeSet<&str> = hits.iter().map(|x| x.1.as_str()).collect();
             let fams: BTreeSet<&str> = hits.iter().map(|x| x.2.as_str()).collect();
             let mut detail = if states.contains("down") && states.contains("slow") {
-                "не отвечает или отвечает медленно"
+                tr!("не отвечает или отвечает медленно")
             } else if states.contains("slow") {
-                "отвечает медленно"
+                tr!("отвечает медленно")
             } else {
-                "не отвечает"
+                tr!("не отвечает")
             }
             .to_string();
             if fams.len() == 1 && !fams.contains("") {
-                detail.push_str(&format!(" по {}", fams.iter().next().unwrap()));
+                detail.push_str(&tr!(" по {}", fams.iter().next().unwrap()));
             }
             mk("service", s, &names, &mut want);
             let w = want.get_mut(&format!("service:{s}")).unwrap();
@@ -930,28 +930,28 @@ impl Hub {
     fn open_text(a: &Alert, fresh: &BTreeMap<String, Report>, total: usize) -> String {
         let mut b = String::new();
         match a.kind.as_str() {
-            "external" => b.push_str(&format!("🔴 <b>Общий сбой внешнего канала</b>\nНовые соединения не проходят у {} из {total} роутеров, провайдеры: {}.\nПохоже на сбой магистрали/внешнего канала, а не у отдельных роутеров.\n", a.routers.len(), set_list(&a.isps))),
-            "isp" => b.push_str(&format!("🟠 <b>Сбой у провайдера {}</b>\nДеградация у {} роутеров этого провайдера, у остальных провайдеров всё в порядке.\n", esc(&a.key), a.routers.len())),
+            "external" => b.push_str(&tr!("🔴 <b>Общий сбой внешнего канала</b>\nНовые соединения не проходят у {0} из {2} роутеров, провайдеры: {1}.\nПохоже на сбой магистрали/внешнего канала, а не у отдельных роутеров.\n", a.routers.len(), set_list(&a.isps), total)),
+            "isp" => b.push_str(&tr!("🟠 <b>Сбой у провайдера {}</b>\nДеградация у {} роутеров этого провайдера, у остальных провайдеров всё в порядке.\n", esc(&a.key), a.routers.len())),
             "service" => {
-                let d = if a.detail.is_empty() { "не отвечает" } else { &a.detail };
-                b.push_str(&format!("🟡 <b>{} {}</b> у {} из {total} роутеров: {}; их WAN в норме.\n", esc(&a.key), esc(d), a.routers.len(), set_list(&a.routers)));
+                let d = if a.detail.is_empty() { tr!("не отвечает") } else { &a.detail };
+                b.push_str(&tr!("🟡 <b>{0} {1}</b> у {2} из {4} роутеров: {3}; их WAN в норме.\n", esc(&a.key), esc(d), a.routers.len(), set_list(&a.routers), total));
                 if a.isps.len() >= 2 {
-                    b.push_str(&format!("Провайдеры разные ({}) — похоже, сбой самого сервиса.", set_list(&a.isps)));
+                    b.push_str(&tr!("Провайдеры разные ({}) — похоже, сбой самого сервиса.", set_list(&a.isps)));
                 } else {
-                    b.push_str(&format!("Все у одного провайдера ({}) — похоже, проблема провайдера с этим сервисом.", set_list(&a.isps)));
+                    b.push_str(&tr!("Все у одного провайдера ({}) — похоже, проблема провайдера с этим сервисом.", set_list(&a.isps)));
                 }
                 return b;
             }
-            "single" => b.push_str(&format!("🟠 <b>Сбой на роутере {}</b>\n", esc(&a.key))),
+            "single" => b.push_str(&tr!("🟠 <b>Сбой на роутере {}</b>\n", esc(&a.key))),
             _ => {}
         }
         for n in &a.routers {
             let Some(r) = fresh.get(n) else { continue };
             let mut line = format!("• <b>{}</b> ({}): ", esc(n), esc(&isp_of(r, n)));
             if !r.wan_up {
-                line.push_str("WAN не работает");
+                line.push_str(tr!("WAN не работает"));
             } else {
-                line.push_str(&format!("пробы IPv4 {:.0}%", r.v4.ok));
+                line.push_str(&tr!("пробы IPv4 {:.0}%", r.v4.ok));
                 if r.v6.avail && r.v6.n > 0 {
                     line.push_str(&format!(", IPv6 {:.0}%", r.v6.ok));
                 }
@@ -966,10 +966,10 @@ impl Hub {
         let d = dur(a.last_bad - a.since + 10_000);
         let span = format!("{}–{}", hhmm(a.since), hhmm(a.last_bad));
         match a.kind.as_str() {
-            "external" => format!("🟢 <b>Внешний канал восстановлен</b>\nСбой длился {d} ({span}), затронуто роутеров: {}, провайдеров: {} ({}). Худшие пробы IPv4: {:.0}%.", a.routers.len(), a.isps.len(), set_list(&a.isps), a.min_v4),
-            "isp" => format!("🟢 <b>Провайдер {} восстановился</b> — сбой {d} ({span}), роутеров: {}.", esc(&a.key), a.routers.len()),
-            "service" => format!("🟢 <b>{}</b> снова отвечает — сбой {d} ({span}).", esc(&a.key)),
-            _ => format!("🟢 <b>{}</b>: восстановилось — сбой {d} ({span}).", esc(&a.key)),
+            "external" => tr!("🟢 <b>Внешний канал восстановлен</b>\nСбой длился {4} ({5}), затронуто роутеров: {0}, провайдеров: {1} ({2}). Худшие пробы IPv4: {3:.0}%.", a.routers.len(), a.isps.len(), set_list(&a.isps), a.min_v4, d, span),
+            "isp" => tr!("🟢 <b>Провайдер {0} восстановился</b> — сбой {2} ({3}), роутеров: {1}.", esc(&a.key), a.routers.len(), d, span),
+            "service" => tr!("🟢 <b>{}</b> снова отвечает — сбой {} ({}).", esc(&a.key), d, span),
+            _ => tr!("🟢 <b>{}</b>: восстановилось — сбой {} ({}).", esc(&a.key), d, span),
         }
     }
 

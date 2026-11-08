@@ -25,6 +25,12 @@ impl Value {
         }
     }
 
+    pub fn as_array(&self) -> Option<&Vec<Value>> {
+        match self {
+            Value::List(l) => Some(l),
+            _ => None,
+        }
+    }
     pub fn as_str(&self) -> Option<&str> {
         match self {
             Value::Str(s) => Some(s),
@@ -107,7 +113,7 @@ pub fn parse_json(s: &str) -> Result<Value, String> {
     let v = p.value(0)?;
     p.ws();
     if p.i != p.b.len() {
-        return Err(format!("json: лишнее после значения (позиция {})", p.i));
+        return Err(tr!("json: лишнее после значения (позиция {})", p.i));
     }
     Ok(v)
 }
@@ -125,7 +131,7 @@ impl<'a> Json<'a> {
     }
 
     fn err<T>(&self, what: &str) -> Result<T, String> {
-        Err(format!("json: {} (позиция {})", what, self.i))
+        Err(tr!("json: {} (позиция {})", what, self.i))
     }
 
     fn lit(&mut self, w: &[u8], v: Value) -> Result<Value, String> {
@@ -133,15 +139,15 @@ impl<'a> Json<'a> {
             self.i += w.len();
             Ok(v)
         } else {
-            self.err("неизвестное слово")
+            self.err(tr!("неизвестное слово"))
         }
     }
 
     fn value(&mut self, depth: usize) -> Result<Value, String> {
         if depth > MAX_DEPTH {
-            return self.err("слишком глубоко");
+            return self.err(tr!("слишком глубоко"));
         }
-        let Some(&c) = self.b.get(self.i) else { return self.err("неожиданный конец") };
+        let Some(&c) = self.b.get(self.i) else { return self.err(tr!("неожиданный конец")) };
         match c {
             b'{' => {
                 self.i += 1;
@@ -154,12 +160,12 @@ impl<'a> Json<'a> {
                 loop {
                     self.ws();
                     if self.b.get(self.i) != Some(&b'"') {
-                        return self.err("ожидается ключ");
+                        return self.err(tr!("ожидается ключ"));
                     }
                     let k = self.string()?;
                     self.ws();
                     if self.b.get(self.i) != Some(&b':') {
-                        return self.err("ожидается :");
+                        return self.err(tr!("ожидается :"));
                     }
                     self.i += 1;
                     self.ws();
@@ -172,7 +178,7 @@ impl<'a> Json<'a> {
                             self.i += 1;
                             return Ok(Value::Map(m));
                         }
-                        _ => return self.err("ожидается , или }"),
+                        _ => return self.err(tr!("ожидается , или }")),
                     }
                 }
             }
@@ -194,7 +200,7 @@ impl<'a> Json<'a> {
                             self.i += 1;
                             return Ok(Value::List(l));
                         }
-                        _ => return self.err("ожидается , или ]"),
+                        _ => return self.err(tr!("ожидается , или ]")),
                     }
                 }
             }
@@ -210,20 +216,20 @@ impl<'a> Json<'a> {
                 }
                 let n = std::str::from_utf8(&self.b[st..self.i]).unwrap_or("");
                 if n.parse::<f64>().is_err() {
-                    return self.err("плохое число");
+                    return self.err(tr!("плохое число"));
                 }
                 Ok(Value::Num(n.to_string()))
             }
-            _ => self.err("неожиданный символ"),
+            _ => self.err(tr!("неожиданный символ")),
         }
     }
 
     fn hex4(&mut self) -> Result<u32, String> {
         if self.i + 4 > self.b.len() {
-            return self.err("короткий \\u");
+            return self.err(tr!("короткий \\u"));
         }
         let h = std::str::from_utf8(&self.b[self.i..self.i + 4]).map_err(|_| "json: \\u".to_string())?;
-        let v = u32::from_str_radix(h, 16).map_err(|_| "json: плохой \\u".to_string())?;
+        let v = u32::from_str_radix(h, 16).map_err(|_| tr!("json: плохой \\u").to_string())?;
         self.i += 4;
         Ok(v)
     }
@@ -236,7 +242,7 @@ impl<'a> Json<'a> {
             while self.i < self.b.len() && self.b[self.i] != b'"' && self.b[self.i] != b'\\' && self.b[self.i] >= 0x20 {
                 self.i += 1;
             }
-            out.push_str(std::str::from_utf8(&self.b[st..self.i]).map_err(|_| "json: не UTF-8".to_string())?);
+            out.push_str(std::str::from_utf8(&self.b[st..self.i]).map_err(|_| tr!("json: не UTF-8").to_string())?);
             match self.b.get(self.i) {
                 Some(b'"') => {
                     self.i += 1;
@@ -244,7 +250,7 @@ impl<'a> Json<'a> {
                 }
                 Some(b'\\') => {
                     self.i += 1;
-                    let Some(&e) = self.b.get(self.i) else { return self.err("обрыв строки") };
+                    let Some(&e) = self.b.get(self.i) else { return self.err(tr!("обрыв строки")) };
                     self.i += 1;
                     match e {
                         b'"' => out.push('"'),
@@ -264,10 +270,10 @@ impl<'a> Json<'a> {
                             }
                             out.push(char::from_u32(c).unwrap_or('\u{fffd}'));
                         }
-                        _ => return self.err("плохое экранирование"),
+                        _ => return self.err(tr!("плохое экранирование")),
                     }
                 }
-                _ => return self.err("обрыв строки"),
+                _ => return self.err(tr!("обрыв строки")),
             }
         }
     }
@@ -320,7 +326,7 @@ fn unquote(s: &str, no: usize) -> Result<String, String> {
     let s = s.trim();
     if s.len() >= 2 && s.starts_with('"') && s.ends_with('"') {
         // двойные кавычки — экранирование как в JSON
-        return parse_json(s).ok().and_then(|v| if let Value::Str(x) = v { Some(x) } else { None }).ok_or(format!("yaml: строка {}: плохая строка в кавычках", no));
+        return parse_json(s).ok().and_then(|v| if let Value::Str(x) = v { Some(x) } else { None }).ok_or(tr!("yaml: строка {}: плохая строка в кавычках", no));
     }
     if s.len() >= 2 && s.starts_with('\'') && s.ends_with('\'') {
         return Ok(s[1..s.len() - 1].replace("''", "'"));
@@ -355,7 +361,7 @@ fn flow(s: &str, no: usize) -> Result<Value, String> {
     let t = s.trim();
     let (open, close) = (t.as_bytes()[0], *t.as_bytes().last().unwrap());
     if (open == b'[' && close != b']') || (open == b'{' && close != b'}') {
-        return Err(format!("yaml: строка {}: незакрытая скобка (многострочные [ ] не поддерживаются)", no));
+        return Err(tr!("yaml: строка {}: незакрытая скобка (многострочные [ ] не поддерживаются)", no));
     }
     let inner = &t[1..t.len() - 1];
     let mut items = Vec::new();
@@ -387,7 +393,7 @@ fn flow(s: &str, no: usize) -> Result<Value, String> {
     } else {
         let mut m = Vec::with_capacity(items.len());
         for it in items {
-            let c = key_colon(it).ok_or(format!("yaml: строка {}: ожидается ключ: значение", no))?;
+            let c = key_colon(it).ok_or(tr!("yaml: строка {}: ожидается ключ: значение", no))?;
             let v = it[c + 1..].trim();
             m.push((unquote(&it[..c], no)?, if v.starts_with('[') || v.starts_with('{') { flow(v, no)? } else { plain(v, no)? }));
         }
@@ -402,7 +408,7 @@ pub fn parse_yaml(src: &str) -> Result<Value, String> {
         let no = i + 1;
         let lead = raw.len() - raw.trim_start_matches([' ', '\t']).len();
         if raw[..lead].contains('\t') && !raw.trim().is_empty() && !raw.trim_start().starts_with('#') {
-            return Err(format!("yaml: строка {}: табуляция в отступе", no));
+            return Err(tr!("yaml: строка {}: табуляция в отступе", no));
         }
         let ind = raw.len() - raw.trim_start_matches(' ').len();
         let t = raw.trim();
@@ -421,7 +427,7 @@ pub fn parse_yaml(src: &str) -> Result<Value, String> {
     let v = p.block(ind)?;
     p.skip_blank();
     if p.i < p.l.len() {
-        return Err(format!("yaml: строка {}: неожиданный отступ", p.l[p.i].no));
+        return Err(tr!("yaml: строка {}: неожиданный отступ", p.l[p.i].no));
     }
     Ok(v)
 }
@@ -494,7 +500,7 @@ impl Yaml {
             return flow(rest, no);
         }
         if rest.starts_with('&') || rest.starts_with('*') || rest.starts_with('!') {
-            return Err(format!("yaml: строка {}: якоря и теги не поддерживаются", no));
+            return Err(tr!("yaml: строка {}: якоря и теги не поддерживаются", no));
         }
         plain(rest, no)
     }
@@ -508,13 +514,13 @@ impl Yaml {
             }
             let no = self.l[self.i].no;
             if self.l[self.i].ind > ind {
-                return Err(format!("yaml: строка {}: неожиданный отступ", no));
+                return Err(tr!("yaml: строка {}: неожиданный отступ", no));
             }
             let c = self.content(self.i).to_string();
             if c == "-" || c.starts_with("- ") {
                 break; // список на том же уровне — конец словаря
             }
-            let k = key_colon(&c).ok_or(format!("yaml: строка {}: ожидается «ключ: значение»", no))?;
+            let k = key_colon(&c).ok_or(tr!("yaml: строка {}: ожидается «ключ: значение»", no))?;
             let key = unquote(&c[..k], no)?;
             self.i += 1;
             let v = self.after(&c[k + 1..], ind, no, true)?;

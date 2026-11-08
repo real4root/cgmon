@@ -16,6 +16,11 @@ pub const PLUGINS: &str = "/tmp/cgmon/www/cgmon-plugins";
 /// Распаковать (busybox gzip): сжатое — во временный файл, gzip -dc читает его
 /// (без второго потока для записи в stdin).
 fn gunzip(gz: &[u8]) -> Result<Vec<u8>, String> {
+    gunzip_pub(gz)
+}
+
+/// Распаковать встроенные сжатые данные (переводы — src/i18n.rs).
+pub fn gunzip_pub(gz: &[u8]) -> Result<Vec<u8>, String> {
     let tmp = format!("{}/.unpack.{}.gz", crate::util::RUN_DIR, std::process::id());
     let _ = std::fs::create_dir_all(crate::util::RUN_DIR);
     std::fs::write(&tmp, gz).map_err(|e| format!("{tmp}: {e}"))?;
@@ -23,7 +28,7 @@ fn gunzip(gz: &[u8]) -> Result<Vec<u8>, String> {
     let _ = std::fs::remove_file(&tmp);
     let o = o.map_err(|e| format!("gzip: {e}"))?;
     if !o.status.success() || o.stdout.is_empty() {
-        return Err("gzip -dc: ошибка".into());
+        return Err(tr!("gzip -dc: ошибка").into());
     }
     Ok(o.stdout)
 }
@@ -122,7 +127,7 @@ pub fn uninstall() -> i32 {
             let _ = std::process::Command::new(init).arg(a).status();
         }
         match std::fs::remove_file(init) {
-            Ok(()) => println!("служба остановлена и снята: {init}"),
+            Ok(()) => println!("{}", tr!("служба остановлена и снята: {}", init)),
             Err(e) => println!("{init}: {e}"),
         }
     }
@@ -135,8 +140,8 @@ pub fn uninstall() -> i32 {
     }
     crate::luci::uninstall();
     let _ = std::fs::remove_dir_all(crate::util::RUN_DIR);
-    println!("ссылок страницы убрано: {n}; /tmp/cgmon очищен");
-    println!("остались (удалите сами, если не нужны): /opt/cgmon (бинарник), /etc/cgmon (настройки и данные)");
+    println!("{}", tr!("ссылок страницы убрано: {}; /tmp/cgmon очищен", n));
+    println!("{}", tr!("остались (удалите сами, если не нужны): /opt/cgmon (бинарник), /etc/cgmon (настройки и данные)"));
     0
 }
 

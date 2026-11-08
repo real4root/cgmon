@@ -239,9 +239,9 @@ fn run(a: &[&str]) -> String {
 
 fn speed_text(l: &Link) -> String {
     if !l.up {
-        return "нет линка".into();
+        return tr!("нет линка").into();
     }
-    format!("{} Мбит/с{}", l.speed, if l.full { "" } else { ", полудуплекс" })
+    tr!("{} Мбит/с{}", l.speed, if l.full { "" } else { tr!(", полудуплекс") })
 }
 
 fn crc_of(m: &BTreeMap<String, u64>) -> u64 {
@@ -272,8 +272,8 @@ pub fn per_frames(crc: u64, frames: u64) -> String {
         return String::new();
     }
     let n = frames as f64 / crc as f64;
-    let t = if n >= 1e6 { format!("{:.1} млн", n / 1e6) } else if n >= 1e3 { format!("{:.1} тыс.", n / 1e3) } else { format!("{:.0}", n.max(1.0)) };
-    format!(" (1 на {} кадров)", t.replace('.', ","))
+    let t = if n >= 1e6 { tr!("{:.1} млн", n / 1e6) } else if n >= 1e3 { tr!("{:.1} тыс.", n / 1e3) } else { format!("{:.0}", n.max(1.0)) };
+    tr!(" (1 на {} кадров)", t.replace('.', ","))
 }
 
 /// «16.10 04:18» по местному времени роутера.
@@ -282,18 +282,18 @@ fn when(ms: i64) -> String {
     format!("{:02}.{:02} {:02}:{:02}", t.day, t.mon, t.hour, t.min)
 }
 
-fn err_text(m: &BTreeMap<String, u64>, names: &[(&str, &str)]) -> String {
-    m.iter().filter(|(_, v)| **v > 0).map(|(k, v)| format!("{} {v}", names.iter().find(|(n, _)| n == k).map(|x| x.1).unwrap_or(k))).collect::<Vec<_>>().join(", ")
+fn err_text(m: &BTreeMap<String, u64>, names: &[(&'static str, &'static str)]) -> String {
+    m.iter().filter(|(_, v)| **v > 0).map(|(k, v)| format!("{} {v}", names.iter().find(|(n, _)| n == k).map(|x| crate::i18n::tr(x.1)).unwrap_or(k))).collect::<Vec<_>>().join(", ")
 }
 
 fn dur(ms: i64) -> String {
     let s = ms / 1000;
     if s < 60 {
-        format!("{s} с")
+        tr!("{} с", s)
     } else if s < 3600 {
-        format!("{} мин {} с", s / 60, s % 60)
+        tr!("{} мин {} с", s / 60, s % 60)
     } else {
-        format!("{} ч {} мин", s / 3600, s % 3600 / 60)
+        tr!("{} ч {} мин", s / 3600, s % 3600 / 60)
     }
 }
 
@@ -351,7 +351,7 @@ impl PhyWatch {
         for (sw, ports, vlans) in self.switches.clone() {
             for n in ports {
                 let id = format!("{sw}:{n}");
-                let label = format!("{sw} порт {n}{}", vlans.get(&n).map(|v| format!(" (VLAN {v})")).unwrap_or_default());
+                let label = tr!("{1} порт {2}{0}", vlans.get(&n).map(|v| format!(" (VLAN {v})")).unwrap_or_default(), sw, n);
                 let Some(link) = parse_sw_link(&run(&["swconfig", "dev", &sw, "port", &n.to_string(), "get", "link"])) else { continue };
                 let lan = port_is_lan(&self.wan, None, vlans.get(&n).map(|v| v.as_str()).unwrap_or(""));
                 let p = self.ports.entry(id).or_insert_with(|| Port::new(label.clone()));
@@ -483,7 +483,7 @@ impl PhyWatch {
 
     /// Новое состояние порта → сообщения.
     #[allow(clippy::too_many_arguments)]
-    fn observe(p: &mut Port, now: i64, link: Link, changes: Option<u64>, errs: BTreeMap<String, u64>, packets: u64, names: &[(&str, &str)], uptime_s: i64, dirty: &mut bool) -> Vec<String> {
+    fn observe(p: &mut Port, now: i64, link: Link, changes: Option<u64>, errs: BTreeMap<String, u64>, packets: u64, names: &[(&'static str, &'static str)], uptime_s: i64, dirty: &mut bool) -> Vec<String> {
         let mut msgs = Vec::new();
         let label = p.label.clone();
         let first = p.link.is_none();
@@ -532,29 +532,29 @@ impl PhyWatch {
             let shown: BTreeMap<String, u64> = errs.iter().filter(|(k, _)| !p.lan || is_crc(k)).map(|(k, v)| (k.clone(), *v)).collect();
             let t = err_text(&shown, names);
             if !t.is_empty() && p.base_crc.is_none() {
-                msgs.push(format!("Порт {label}: с загрузки роутера ({}) ошибок: {t}; сейчас {}", dur(uptime_s * 1000), speed_text(&link)));
+                msgs.push(tr!("Порт {2}: с загрузки роутера ({0}) ошибок: {3}; сейчас {1}", dur(uptime_s * 1000), speed_text(&link), label, t));
             }
         } else if let Some(old) = &p.link {
             let lan = p.lan;
             if old.up && !link.up {
                 p.down_at = now;
                 if !lan {
-                    msgs.push(format!("Порт {label}: линк пропал (был {})", speed_text(old)));
+                    msgs.push(tr!("Порт {1}: линк пропал (был {0})", speed_text(old), label));
                 }
             } else if !old.up && link.up {
-                let d = if p.down_at > 0 { format!(" через {}", dur(now - p.down_at)) } else { String::new() };
+                let d = if p.down_at > 0 { tr!(" через {}", dur(now - p.down_at)) } else { String::new() };
                 if !lan {
-                    msgs.push(format!("Порт {label}: линк появился{d} — {}", speed_text(&link)));
+                    msgs.push(tr!("Порт {1}: линк появился{2} — {0}", speed_text(&link), label, d));
                 }
             } else if !lan && old.up && link.up && (old.speed != link.speed || old.full != link.full) {
                 let worse = link.speed < old.speed || (old.full && !link.full);
-                msgs.push(format!("Порт {label}: {} → {}{}", speed_text(old), speed_text(&link), if worse { " — так бывает при плохом кабеле или разъёме" } else { "" }));
+                msgs.push(tr!("Порт {3}: {0} → {1}{2}", speed_text(old), speed_text(&link), if worse { tr!(" — так бывает при плохом кабеле или разъёме") } else { "" }, label));
             }
             // мигал между опросами: carrier_changes вырос больше, чем видно по состоянию
             if let Some(c) = changes {
                 let seen = if old.up != link.up { 1 } else { 0 };
                 if !lan && p.changes > 0 && c > p.changes + seen {
-                    msgs.push(format!("Порт {label}: линк мигал {} раз за {} с", (c - p.changes - seen + 1) / 2 + ((c - p.changes - seen) % 2), LINK_EVERY / 1000));
+                    msgs.push(tr!("Порт {2}: линк мигал {0} раз за {1} с", (c - p.changes - seen + 1) / 2 + ((c - p.changes - seen) % 2), LINK_EVERY / 1000, label));
                 }
             }
             for (k, v) in &errs {
@@ -566,8 +566,8 @@ impl PhyWatch {
             if !p.pend.is_empty() && now - p.reported >= ERR_REPORT_GAP {
                 let t = err_text(&p.pend, names);
                 if !t.is_empty() {
-                    let win = if p.reported > 0 { format!("за {}", dur(now - p.reported)) } else { "с прошлого опроса".into() };
-                    msgs.push(format!("Порт {label}: ошибки кадров {win}: {t} ({})", speed_text(&link)));
+                    let win = if p.reported > 0 { tr!("за {}", dur(now - p.reported)) } else { tr!("с прошлого опроса").into() };
+                    msgs.push(tr!("Порт {1}: ошибки кадров {2}: {3} ({0})", speed_text(&link), label, win, t));
                 }
                 p.pend.clear();
                 p.reported = now;
@@ -605,7 +605,7 @@ impl PhyWatch {
             let note = slow_note(&link, p.best, p.best_at, p.cap, p.partner);
             if note != p.slow_note {
                 if !note.is_empty() && !p.lan {
-                    msgs.push(format!("Порт {label}: {note}"));
+                    msgs.push(tr!("Порт {}: {}", label, note));
                 }
                 p.slow_note = note;
             }
@@ -635,33 +635,33 @@ impl PhyWatch {
             let (lv, crc_day, drop_day) = p.crc_state(now);
             let share = |f: u64| per_frames(crc_day, f);
             if lv == "crit" {
-                out.push(("crit", format!("phy_crc:{id}"), format!("Порт {}: {crc_day} ошибок CRC за сутки{} — кабель или разъём повреждены, ещё немного — и связи не будет", p.label, share(p.frames_day()))));
+                out.push(("crit", format!("phy_crc:{id}"), tr!("Порт {0}: {2} ошибок CRC за сутки{1} — кабель или разъём повреждены, ещё немного — и связи не будет", p.label, share(p.frames_day()), crc_day)));
             } else if lv == "warn" {
-                out.push(("warn", format!("phy_crc:{id}"), format!("Порт {}: {crc_day} ошибок CRC за сутки{} — кабель или разъём под подозрением", p.label, share(p.frames_day()))));
+                out.push(("warn", format!("phy_crc:{id}"), tr!("Порт {0}: {2} ошибок CRC за сутки{1} — кабель или разъём под подозрением", p.label, share(p.frames_day()), crc_day)));
             } else {
                 let bl = p.boot_level(now);
                 if !bl.is_empty() {
                     let sh = per_frames(p.boot_crc, p.boot_frames);
-                    let what = if bl == "crit" { "кабель или разъём повреждены, ещё немного — и связи не будет" } else { "кабель или разъём под подозрением" };
-                    let dr = if p.boot_downs > 0 { format!(" и {} обрыв(ов) линка", p.boot_downs) } else { String::new() };
-                    out.push((bl, format!("phy_crc:{id}"), format!("Порт {}: {} ошибок CRC{sh}{dr} с загрузки роутера, новых пока нет — {what}", p.label, p.boot_crc)));
+                    let what = if bl == "crit" { tr!("кабель или разъём повреждены, ещё немного — и связи не будет") } else { tr!("кабель или разъём под подозрением") };
+                    let dr = if p.boot_downs > 0 { tr!(" и {} обрыв(ов) линка", p.boot_downs) } else { String::new() };
+                    out.push((bl, format!("phy_crc:{id}"), tr!("Порт {}: {} ошибок CRC{}{} с загрузки роутера, новых пока нет — {}", p.label, p.boot_crc, sh, dr, what)));
                 }
             }
             if p.lan {
                 continue; // LAN: на центр — только CRC
             }
             if b.2 > f.2 {
-                out.push(("crit", format!("phy_drop:{id}"), format!("Порт {}: {} обрыв(ов) линка за час", p.label, b.2 - f.2)));
+                out.push(("crit", format!("phy_drop:{id}"), tr!("Порт {}: {} обрыв(ов) линка за час", p.label, b.2 - f.2)));
             } else if drop_day >= 2 {
-                out.push(("warn", format!("phy_drop:{id}"), format!("Порт {}: {drop_day} обрыв(ов) линка за сутки", p.label)));
+                out.push(("warn", format!("phy_drop:{id}"), tr!("Порт {}: {} обрыв(ов) линка за сутки", p.label, drop_day)));
             }
             // прочие ошибки кадров за час (FIFO, пропущенные — чаще перегрузка, не кабель)
             let other = b.1.saturating_sub(f.1).saturating_sub(ev_sum(&p.ev_crc, now, 3_600_000));
             if other > 0 {
-                out.push(("warn", format!("phy_err:{id}"), format!("Порт {}: {other} ошибок кадров за час", p.label)));
+                out.push(("warn", format!("phy_err:{id}"), tr!("Порт {}: {} ошибок кадров за час", p.label, other)));
             }
             if !p.slow_note.is_empty() && p.link.as_ref().map_or(false, |l| l.up) {
-                out.push(("warn", format!("phy_slow:{id}"), format!("Порт {}: {}", p.label, p.slow_note)));
+                out.push(("warn", format!("phy_slow:{id}"), tr!("Порт {}: {}", p.label, p.slow_note)));
             }
         }
         out
@@ -678,7 +678,7 @@ impl PhyWatch {
                 j.key("errors").uint(e);
                 j.key("kinds").obj();
                 for (k, v) in p.errs.iter().filter(|x| *x.1 > 0) {
-                    j.key(SYS_ERR.iter().chain(MIB_ERR.iter()).find(|(n, _)| n == k).map(|x| x.1).unwrap_or(k)).uint(*v);
+                    j.key(SYS_ERR.iter().chain(MIB_ERR.iter()).find(|(n, _)| n == k).map(|x| crate::i18n::tr(x.1)).unwrap_or(k)).uint(*v);
                 }
                 j.end_obj();
             }
@@ -810,13 +810,13 @@ pub fn slow_note(l: &Link, best: i64, best_at: i64, cap: i64, partner: i64) -> S
     if !l.up || l.speed == 0 || best <= l.speed {
         return String::new();
     }
-    let was = format!("работает на {} Мбит/с, а {} было {best}", l.speed, when(best_at));
+    let was = tr!("работает на {} Мбит/с, а {} было {}", l.speed, when(best_at), best);
     if partner > 0 && partner < best {
-        format!("{was} — устройство на другом конце кабеля теперь объявляет только до {partner}: обычно так оно само понижает скорость после сбоев на кабеле (downshift)")
+        tr!("{} — устройство на другом конце кабеля теперь объявляет только до {}: обычно так оно само понижает скорость после сбоев на кабеле (downshift)", was, partner)
     } else if cap >= best && partner >= best {
-        format!("{was}, и обе стороны по-прежнему умеют {best} — почти всегда кабель или разъём (для гигабита нужны все 4 пары)")
+        tr!("{}, и обе стороны по-прежнему умеют {} — почти всегда кабель или разъём (для гигабита нужны все 4 пары)", was, best)
     } else {
-        format!("{was} — кабель, разъём или устройство на другом конце кабеля")
+        tr!("{} — кабель, разъём или устройство на другом конце кабеля", was)
     }
 }
 

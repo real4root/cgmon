@@ -86,7 +86,7 @@ fn wit_text(s: f64) -> String {
     if s < 0.0 {
         String::new()
     } else {
-        format!(", метрики по сайтам {s:.0}")
+        tr!(", метрики по сайтам {:.0}", s)
     }
 }
 
@@ -146,10 +146,7 @@ impl DnsGuard {
             if now - self.v6_bad_from >= self.cfg.reject_all_v6_sec * 1000 {
                 self.v6_all = now;
                 self.v6_good_from = 0;
-                msgs.push(format!(
-                    "IPv6: клиентам отказ во всех новых IPv6-соединениях в интернет — пробы IPv6 {:.0}%{} (порог {thr:.0}) дольше {}; клиенты сразу уходят на IPv4",
-                    h.v6_rate, wit_text(h.wit_v6_score), crate::dgtarget::dur_text(self.cfg.reject_all_v6_sec * 1000)
-                ));
+                msgs.push(tr!("IPv6: клиентам отказ во всех новых IPv6-соединениях в интернет — пробы IPv6 {0:.0}%{1} (порог {3:.0}) дольше {2}; клиенты сразу уходят на IPv4", h.v6_rate, wit_text(h.wit_v6_score), crate::dgtarget::dur_text(self.cfg.reject_all_v6_sec * 1000), thr));
             }
         } else if self.v6_all == 0 {
             self.v6_bad_from = 0;
@@ -158,7 +155,7 @@ impl DnsGuard {
                 self.v6_good_from = now;
             }
             if now - self.v6_good_from >= OFF_AFTER || !on {
-                msgs.push(format!("IPv6: отказ во всех IPv6-соединениях снят — пробы IPv6 {:.0}%{} (действовал {})", h.v6_rate, wit_text(h.wit_v6_score), crate::dgtarget::dur_text(now - self.v6_all)));
+                msgs.push(tr!("IPv6: отказ во всех IPv6-соединениях снят — пробы IPv6 {:.0}%{} (действовал {})", h.v6_rate, wit_text(h.wit_v6_score), crate::dgtarget::dur_text(now - self.v6_all)));
                 self.v6_all = 0;
                 self.v6_bad_from = 0;
                 self.v6_good_from = 0;

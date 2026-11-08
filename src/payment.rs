@@ -101,15 +101,15 @@ pub fn status(c: &PaymentConfig, unix: i64) -> Option<Status> {
     }
     let mut extra = String::new();
     if !c.amount.is_empty() {
-        extra.push_str(&format!(", сумма: {}", c.amount));
+        extra.push_str(&tr!(", сумма: {}", c.amount));
     }
     if !c.note.is_empty() {
         extra.push_str(&format!(" ({})", c.note));
     }
     st.notices.push(if left == 0 {
-        Notice { key: format!("pay:{}:due", st.due), text: format!("💳 Сегодня день оплаты интернета{extra}") }
+        Notice { key: format!("pay:{}:due", st.due), text: tr!("💳 Сегодня день оплаты интернета{}", extra) }
     } else {
-        Notice { key: format!("pay:{}:before", st.due), text: format!("💳 Оплата интернета через {left} дн. — до {dd:02}.{m:02}.{y:04}{extra}") }
+        Notice { key: format!("pay:{}:before", st.due), text: tr!("💳 Оплата интернета через {} дн. — до {}.{}.{}{}", left, format!("{:02}", dd), format!("{:02}", m), format!("{:04}", y), extra) }
     });
     Some(st)
 }

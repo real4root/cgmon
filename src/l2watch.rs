@@ -596,13 +596,13 @@ impl L2Watch {
     /// Открыть (или продлить) доступ к пойманному устройству.
     pub fn open(&mut self, ip: &str, now: i64) -> Result<Access, String> {
         if !self.on {
-            return Err("cgfinder выключен".into());
+            return Err(tr!("cgfinder выключен").into());
         }
-        let Ok(IpAddr::V4(v)) = ip.parse::<IpAddr>() else { return Err("нужен IPv4-адрес".into()) };
+        let Ok(IpAddr::V4(v)) = ip.parse::<IpAddr>() else { return Err(tr!("нужен IPv4-адрес").into()) };
         let o = v.octets();
         let private = v.is_private() || (o[0] == 169 && o[1] == 254);
         if !private {
-            return Err(format!("{ip} не из частных сетей — доступ не открываю"));
+            return Err(tr!("{} не из частных сетей — доступ не открываю", ip));
         }
         if let Some(a) = self.access.get_mut(ip) {
             a.until = now + ACCESS_FOR;
@@ -611,10 +611,10 @@ impl L2Watch {
             return Ok(c);
         }
         let Some(dev) = self.devs.values().filter(|d| d.ip == ip && !d.own).max_by_key(|d| d.last).cloned() else {
-            return Err(format!("{ip} нет среди пойманных устройств"));
+            return Err(tr!("{} нет среди пойманных устройств", ip));
         };
         if self.access.len() >= ACCESS_MAX {
-            return Err(format!("открыто уже {ACCESS_MAX} доступа — закройте лишний"));
+            return Err(tr!("открыто уже {} доступа — закройте лишний", ACCESS_MAX));
         }
         let mut a = Access { ip: ip.into(), dev: dev.dev.clone(), addr: dev.tr.clone(), net: String::new(), until: now + ACCESS_FOR };
         if a.addr.is_empty() {
@@ -624,22 +624,22 @@ impl L2Watch {
         for x in self.access.values() {
             if parse_net(&x.net).map_or(false, |n| n.contains(&IpAddr::V4(v))) {
                 if x.dev != a.dev {
-                    return Err(format!("сеть {} уже открыта на {}", x.net, x.dev));
+                    return Err(tr!("сеть {} уже открыта на {}", x.net, x.dev));
                 }
                 a.addr = x.addr.clone();
                 shared = true;
             }
         }
-        let Some((aip, bits)) = crate::netx::parse_cidr(&a.addr) else { return Err(format!("не подобрать адрес роутеру в сети {ip}")) };
+        let Some((aip, bits)) = crate::netx::parse_cidr(&a.addr) else { return Err(tr!("не подобрать адрес роутеру в сети {}", ip)) };
         if aip == IpAddr::V4(v) {
-            return Err(format!("не подобрать адрес роутеру в сети {ip}"));
+            return Err(tr!("не подобрать адрес роутеру в сети {}", ip));
         }
         let an = IpNet::new(aip, bits);
         a.net = format!("{}/{}", an.ip, an.bits);
         if !shared {
             let why = net_busy(&an);
             if !why.is_empty() {
-                return Err(format!("сеть {} уже используется на роутере ({why}) — доступ не открываю", a.net));
+                return Err(tr!("сеть {} уже используется на роутере ({}) — доступ не открываю", a.net, why));
             }
             run(&["ip", "addr", "add", &a.addr, "dev", &a.dev]).map_err(|e| format!("ip addr add: {e}"))?;
         }
@@ -657,7 +657,7 @@ impl L2Watch {
     }
 
     pub fn close(&mut self, ip: &str) -> Result<(), String> {
-        let Some(a) = self.access.remove(ip) else { return Err(format!("доступ к {ip} не открыт")) };
+        let Some(a) = self.access.remove(ip) else { return Err(tr!("доступ к {} не открыт", ip)) };
         if let Err(e) = crate::acct::nft_script(&nft_script(&self.access_list(), &router_listen_ports())) {
             crate::log_err!("l2watch: nft on close: {}", e);
         }
@@ -698,10 +698,10 @@ impl L2Watch {
     /// Скан типовых заводских сетей (ARP-пробы от 0.0.0.0) на каждом порту, в потоке.
     pub fn scan(&mut self, now: i64) -> Result<usize, String> {
         if !self.on {
-            return Err("cgfinder выключен".into());
+            return Err(tr!("cgfinder выключен").into());
         }
         if self.scanning.load(Ordering::Relaxed) || now - self.scan_at < 30 {
-            return Err("скан уже идёт или был меньше 30 с назад".into());
+            return Err(tr!("скан уже идёт или был меньше 30 с назад").into());
         }
         self.scan_at = now;
         self.scanning.store(true, Ordering::Relaxed);
@@ -815,12 +815,12 @@ impl L2Watch {
 fn net_busy(n: &IpNet) -> String {
     for (name, ip, bits) in crate::netx::if_addrs() {
         if ip.is_ipv4() && !ip.is_loopback() && overlap(&IpNet::new(ip, bits), n) {
-            return format!("{ip}/{bits} на {name}");
+            return tr!("{}/{} на {}", ip, bits, name);
         }
     }
     match std::process::Command::new("ip").args(["-4", "route", "show", "table", "all"]).output() {
         Ok(o) => route_busy(&String::from_utf8_lossy(&o.stdout), n),
-        Err(_) => "маршруты не прочитать".into(),
+        Err(_) => tr!("маршруты не прочитать").into(),
     }
 }
 

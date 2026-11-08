@@ -206,11 +206,11 @@ impl UploadLearner {
     fn describe(&self, e: &Entry, ev: &Evidence, rate: f64) -> String {
         let safe = e.safe(self.min_mbps);
         if ev.global {
-            return format!("учитель отдачи: общее наказание — встали отдачи на {} адреса при общей отдаче {:.1} Мбит/с (раз: {}); подсказка шейперу: постоянная скорость не выше {:.1} Мбит/с", ev.others, rate, e.bads, safe);
+            return tr!("учитель отдачи: общее наказание — встали отдачи на {} адреса при общей отдаче {:.1} Мбит/с (раз: {}); подсказка шейперу: постоянная скорость не выше {:.1} Мбит/с", ev.others, rate, e.bads, safe);
         }
         let name = if e.brand.is_empty() { e.key.clone() } else { format!("{} ({})", e.brand, e.key) };
-        let good = if e.good_mbps > 0.0 { format!("; без наказания бывало до {:.1} Мбит/с", e.good_mbps) } else { String::new() };
-        format!("учитель отдачи: {name} — наказание на {rate:.1} Мбит/с (раз: {}{good}); в активном режиме ограничил бы до {safe:.1} Мбит/с", e.bads)
+        let good = if e.good_mbps > 0.0 { tr!("; без наказания бывало до {:.1} Мбит/с", e.good_mbps) } else { String::new() };
+        tr!("учитель отдачи: {1} — наказание на {2:.1} Мбит/с (раз: {0}{3}); в активном режиме ограничил бы до {4:.1} Мбит/с", e.bads, name, rate, good, safe)
     }
 
     fn save(&mut self, now: u64) {

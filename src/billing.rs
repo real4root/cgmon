@@ -219,7 +219,7 @@ impl Billing {
     pub fn upload(&mut self, text: &str, now: i64) -> Result<usize, String> {
         let nets = parse_list(text);
         list_ok(nets.len(), 0)?;
-        let data = format!("# cgmon: бесплатные сети, загружено со страницы\n{}\n", nets.join("\n"));
+        let data = tr!("# cgmon: бесплатные сети, загружено со страницы\n{}\n", nets.join("\n"));
         let tmp = format!("{}.up", self.cfg.tasix_file);
         std::fs::write(&tmp, data).map_err(|e| e.to_string())?;
         if let Err(e) = std::fs::rename(&tmp, &self.cfg.tasix_file) {
@@ -249,7 +249,7 @@ impl Billing {
                 return;
             }
         }
-        self.tasix_err = "нет uclient-fetch, wget или curl".into();
+        self.tasix_err = tr!("нет uclient-fetch, wget или curl").into();
         self.next_fetch = util::now_wall().0 + 3600;
     }
 

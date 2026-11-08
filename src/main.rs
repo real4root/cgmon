@@ -1,6 +1,8 @@
 //! cgmon 2.x (Rust). План переноса — ROADMAP-2.md; контракты (cgmon.yaml,
 //! JSON статуса, status.html, CGI, сокет, отчёт на центр) — как в Go 1.3.x.
 
+#[macro_use]
+mod i18n;
 mod acct;
 mod variant;
 mod luci;
@@ -19,6 +21,10 @@ mod devid;
 mod deps;
 mod pkgsetup;
 mod unblock;
+mod persite;
+mod integration;
+mod textenc;
+mod vulnscan;
 mod dgroute;
 mod dgsys;
 mod dgtarget;
@@ -95,6 +101,11 @@ fn main() {
     }
     util::init_readonly();
     let raw: Vec<String> = std::env::args().skip(1).collect();
+    {
+        // язык консоли: -config из аргументов или стандартный путь
+        let ex = raw.iter().position(|a| a == "-config" || a == "--config").and_then(|i| raw.get(i + 1)).cloned();
+        i18n::init_cli(&config::find(ex.as_deref()));
+    }
     match raw.first().map(|s| s.as_str()) {
         Some("-h" | "--help" | "help") => {
             usage();
@@ -254,6 +265,30 @@ fn main() {
                 1
             }
         },
+        "vuln-scan" => {
+            // проверка уязвимостей сразу, без демона (устройства LAN — из ARP)
+            let c = match load() {
+                Ok(c) => c,
+                Err(e) => std::process::exit(e),
+            };
+            let own: Vec<std::net::IpAddr> = netx::if_addrs().into_iter().map(|x| x.1).collect();
+            let mut lan = Vec::new();
+            if c.vuln_scan.lan {
+                for l in std::fs::read_to_string("/proc/net/arp").unwrap_or_default().lines().skip(1) {
+                    let f: Vec<&str> = l.split_whitespace().collect();
+                    // без демона интерфейсы LAN неизвестны — только мосты (br-lan и т. п.)
+                    if f.len() >= 6 && f[2] != "0x0" && f[5].starts_with("br-") && !netx::is_tunnel_dev(f[5]) {
+                        if let Ok(ip) = f[0].parse::<std::net::IpAddr>() {
+                            if !own.contains(&ip) && netx::to4(&ip).map_or(false, netx::is_private4) {
+                                lan.push((ip, String::new(), f[3].to_string(), 0));
+                            }
+                        }
+                    }
+                }
+            }
+            println!("{}", vulnscan::scan_now(vulnscan::Input { lan: c.vuln_scan.lan, lan_devices: lan, own }));
+            0
+        }
         "hints-dump" => {
             // подсказки из комментариев (сверка с Go cfgHintsBytes)
             let text = match &arg1 {
@@ -278,25 +313,25 @@ fn main() {
             // ручная проверка: заблокирован ли сайт по имени и каким путём открывается
             let dom = arg1.as_deref().filter(|d| unblock::domain_ok(d));
             let Some(dom) = dom else {
-                eprintln!("укажите домен: cgmon blockcheck ozodlik.org");
+                eprintln!("{}", tr!("укажите домен: cgmon blockcheck ozodlik.org"));
                 std::process::exit(2);
             };
             let v = unblock::check(dom, unblock::VPN_MARK_U); // проба через per-site VPN (таблица 53)
             let pr = |p: unblock::Probe| match p {
-                unblock::Probe::Ok => "открывается",
-                unblock::Probe::SniReset => "TCP есть, TLS рвётся (блок по имени)",
-                unblock::Probe::NoTcp => "нет TCP",
+                unblock::Probe::Ok => tr!("открывается"),
+                unblock::Probe::SniReset => tr!("TCP есть, TLS рвётся (блок по имени)"),
+                unblock::Probe::NoTcp => tr!("нет TCP"),
                 unblock::Probe::Skip => "—",
             };
-            println!("{dom}: адресов IPv4 {}", v.v4.len());
-            println!("  напрямую IPv4: {}", pr(v.direct4));
-            println!("  напрямую IPv6: {}", pr(v.direct6));
-            println!("  через VPN:     {}", pr(v.vpn4));
+            println!("{}", tr!("{1}: адресов IPv4 {0}", v.v4.len(), dom));
+            println!("{}", tr!("  напрямую IPv4: {}", pr(v.direct4)));
+            println!("{}", tr!("  напрямую IPv6: {}", pr(v.direct6)));
+            println!("{}", tr!("  через VPN:     {}", pr(v.vpn4)));
             match v.scheme() {
-                "" if v.blocked_v4() => println!("ИТОГ: заблокирован, рабочего пути не нашлось"),
-                "" => println!("ИТОГ: не заблокирован"),
-                "ipv6" => println!("ИТОГ: заблокирован по IPv4, открывается по IPv6 — обход не нужен"),
-                "vpn" => println!("ИТОГ: заблокирован по имени — открывается через VPN (dns_guard.unblock: active уведёт туда)"),
+                "" if v.blocked_v4() => println!("{}", tr!("ИТОГ: заблокирован, рабочего пути не нашлось")),
+                "" => println!("{}", tr!("ИТОГ: не заблокирован")),
+                "ipv6" => println!("{}", tr!("ИТОГ: заблокирован по IPv4, открывается по IPv6 — обход не нужен")),
+                "vpn" => println!("{}", tr!("ИТОГ: заблокирован по имени — открывается через VPN (dns_guard.unblock: active уведёт туда)")),
                 _ => {}
             }
             0
@@ -355,8 +390,8 @@ fn trace_cli(ips: &[String]) -> i32 {
     let now = evloop::now_ms();
     let mut own = |ip: &str| ip.parse::<std::net::IpAddr>().ok().and_then(|a| owner.get(&a, now)).map(|i| (i.asn.clone(), i.brand.clone()));
     for r in &run.results {
-        let st = if r.bad() { "ПЛОХО" } else if r.good() { "хорошо" } else { "?" };
-        println!("== {} {} AS{}: дошло {}/{} — {}", r.ip, r.owner, r.asn, r.reached, r.sent, st);
+        let st = if r.bad() { tr!("ПЛОХО") } else if r.good() { tr!("хорошо") } else { "?" };
+        println!("{}", tr!("== {} {} AS{}: дошло {}/{} — {}", r.ip, r.owner, r.asn, r.reached, r.sent, st));
         for (ttl, h) in &r.hops {
             let (asn, name) = own(h).unwrap_or_default();
             println!("  {:2}  {:<40} AS{:<7} {}", ttl, h, asn, name);
@@ -364,7 +399,7 @@ fn trace_cli(ips: &[String]) -> i32 {
     }
     match pathtrace::analyze(fam, &run.results, &mut own) {
         Some(v) => println!("\n{}", v.text),
-        None => println!("\nобщего виновника нет (нужно ≥2 плохих цели разных владельцев и ≥1 хорошая)"),
+        None => println!("{}", tr!("\nобщего виновника нет (нужно ≥2 плохих цели разных владельцев и ≥1 хорошая)")),
     }
     let _ = &mut poller;
     run.close(&poller);

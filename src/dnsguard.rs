@@ -34,8 +34,12 @@ pub const DWELL: i64 = 10 * MIN;
 /// «не навреди»: режим, который навредил, не включается столько
 pub const BLOCK_FOR: i64 = 60 * MIN;
 
-pub const RA_TEXT: &str = "DHCP: IPv6 шлюз отключен (клиентам не раздаётся IPv6-маршрут) из-за деградации IPv6 провайдера";
-pub const RA_BACK: &str = "DHCP: IPv6 шлюз снова включен";
+pub fn ra_text() -> &'static str {
+    tr!("DHCP: IPv6 шлюз отключен (клиентам не раздаётся IPv6-маршрут) из-за деградации IPv6 провайдера")
+}
+pub fn ra_back() -> &'static str {
+    tr!("DHCP: IPv6 шлюз снова включен")
+}
 
 /// Здоровье протоколов по пробам cgmon (dgHealth).
 #[derive(Clone, Debug, Default)]
@@ -251,9 +255,9 @@ impl Backend for SmartDns {
         let mut up = base.files.get(&self.upstream_file).cloned().unwrap_or_default();
         let mut guard = base.files.get(&self.guard_file).cloned().unwrap_or_default();
         match state {
-            NO_AAAA => guard.push_str("\n# cgmon dns_guard: у провайдера плохой IPv6 — без AAAA\nforce-AAAA-SOA yes\n"),
+            NO_AAAA => guard.push_str(tr!("\n# cgmon dns_guard: у провайдера плохой IPv6 — без AAAA\nforce-AAAA-SOA yes\n")),
             DNS64 => {
-                up = "# cgmon dns_guard: у провайдера сломан IPv4 — DNS64 (обычные серверы вернутся сами)\n".into();
+                up = tr!("# cgmon dns_guard: у провайдера сломан IPv4 — DNS64 (обычные серверы вернутся сами)\n").into();
                 for s in &self.dns64 {
                     up.push_str(&format!("server {s}\n"));
                 }
@@ -387,7 +391,7 @@ fn choose_dns(c: &DNSGuardConfig, sys: &dyn Sys) -> (Box<dyn Backend>, String) {
     }
     let inc = dgsys::includes(sys);
     if !inc.contains(&c.upstream_file) || !inc.contains(&c.guard_file) {
-        return (dm(), format!("SmartDNS работает, но в его custom.conf нет строк «conf-file {}» и «conf-file {}» (вышестоящие серверы — в первом файле); пока через dnsmasq — при DNS64 запросы пойдут мимо SmartDNS", c.upstream_file, c.guard_file));
+        return (dm(), tr!("SmartDNS работает, но в его custom.conf нет строк «conf-file {}» и «conf-file {}» (вышестоящие серверы — в первом файле); пока через dnsmasq — при DNS64 запросы пойдут мимо SmartDNS", c.upstream_file, c.guard_file));
     }
     (smart(), String::new())
 }
@@ -404,9 +408,9 @@ pub fn signal(phase: &str, diag: &str) -> &'static str {
 
 pub fn text(state: &str) -> &'static str {
     match state {
-        NO_AAAA => "DNS: клиентам отдаем только IPv4 адрес, у провайдера деградация IPv6",
-        DNS64 => "DNS: клиентам отдаем IPv6 адреса через DNS64, у провайдера деградация IPv4",
-        _ => "DNS: обычные настройки восстановлены",
+        NO_AAAA => tr!("DNS: клиентам отдаем только IPv4 адрес, у провайдера деградация IPv6"),
+        DNS64 => tr!("DNS: клиентам отдаем IPv6 адреса через DNS64, у провайдера деградация IPv4"),
+        _ => tr!("DNS: обычные настройки восстановлены"),
     }
 }
 
@@ -643,8 +647,8 @@ impl DnsGuard {
                             self.t_written = content;
                         }
                         Err(e) => {
-                            self.err = format!("адресный режим: {e}");
-                            msgs.push(format!("DNS-страховка (адресно): не удалось записать {}: {}", self.cfg.targets_file, e));
+                            self.err = tr!("адресный режим: {}", e);
+                            msgs.push(tr!("DNS-страховка (адресно): не удалось записать {}: {}", self.cfg.targets_file, e));
                         }
                     }
                 }
@@ -680,7 +684,7 @@ impl DnsGuard {
         self.backend = Some(b.clone());
         if !hint.is_empty() && !self.hinted {
             self.hinted = true;
-            msgs.push(format!("DNS-страховка: {hint}"));
+            msgs.push(tr!("DNS-страховка: {}", hint));
         }
         let cur = match b.read(&*self.sys) {
             Ok(c) => c,
@@ -709,9 +713,9 @@ impl DnsGuard {
             }
             let st = sv.state.clone();
             self.saved = sv;
-            msgs.push(format!("DNS-страховка: при старте DNS в аварийном режиме ({}) — обычные настройки вернутся, когда провайдер будет в норме", text(&st)));
+            msgs.push(tr!("DNS-страховка: при старте DNS в аварийном режиме ({}) — обычные настройки вернутся, когда провайдер будет в норме", text(&st)));
             if self.ra_off() {
-                msgs.push(format!("{} (действует с {})", RA_TEXT, hhmm(self.since)));
+                msgs.push(tr!("{} (действует с {})", ra_text(), hhmm(self.since)));
             }
         } else {
             // иначе текущие настройки и есть обычные
@@ -734,7 +738,7 @@ impl DnsGuard {
             if !cur.same(&self.saved.baseline) {
                 self.saved.baseline = cur;
                 self.persist();
-                crate::log_info!("dns guard: настройки DNS изменены — сохранены как обычные");
+                crate::log_info!("{}", tr!("dns guard: настройки DNS изменены — сохранены как обычные"));
             }
             return Vec::new();
         }
@@ -744,7 +748,7 @@ impl DnsGuard {
             self.since = now;
             self.persist();
             self.detect_live();
-            return vec!["DNS-страховка: настройки DNS изменены вручную во время аварийного режима — приняты как обычные".into()];
+            return vec![tr!("DNS-страховка: настройки DNS изменены вручную во время аварийного режима — приняты как обычные").into()];
         }
         Vec::new()
     }
@@ -879,7 +883,7 @@ impl DnsGuard {
         }
 
         if self.cfg.mode == "observe" {
-            msgs.push(format!("DNS-страховка (наблюдение): сделал бы — {}", text(sig)));
+            msgs.push(tr!("DNS-страховка (наблюдение): сделал бы — {}", text(sig)));
             self.saved.state = sig.into(); // виртуально: чтобы не повторять
             self.since = now;
             self.switched = now;
@@ -925,7 +929,7 @@ impl DnsGuard {
                 crate::log_err!("dns guard: {}: {}", sig, e);
                 self.err = e.clone();
                 self.want_from = now; // повторить через тот же срок
-                return vec![format!("DNS-страховка: не удалось переключить ({sig}): {e}")];
+                return vec![tr!("DNS-страховка: не удалось переключить ({}): {}", sig, e)];
             }
         };
         self.err.clear();
@@ -936,15 +940,15 @@ impl DnsGuard {
         let mut msg = text(sig).to_string();
         // DHCP — отдельной записью журнала (тип dhcp_guard)
         let ra_msg = if self.ra_off() {
-            RA_TEXT
+            ra_text()
         } else if was_ra {
-            RA_BACK
+            ra_back()
         } else {
             ""
         };
         self.live = live;
         if self.live != sig && !self.live.is_empty() {
-            msg.push_str(&format!(" (проверка: DNS отвечает как «{}»)", self.live));
+            msg.push_str(&tr!(" (проверка: DNS отвечает как «{}»)", self.live));
         }
         let mut msgs = vec![msg];
         if !ra_msg.is_empty() {
@@ -967,7 +971,7 @@ impl DnsGuard {
         self.want.clear();
         self.want_from = 0;
         self.want_at = 0;
-        let mut msg = format!("DNS-страховка не помогла: после переключения стал плохим {what} — обычные настройки DNS, этот режим не включится ещё 1h0m0s");
+        let mut msg = tr!("DNS-страховка не помогла: после переключения стал плохим {} — обычные настройки DNS, этот режим не включится ещё 1h0m0s", what);
         let was_ra = self.ra_off();
         if self.acts() {
             let b = self.backend.clone().unwrap();
@@ -979,7 +983,7 @@ impl DnsGuard {
             }
             return Vec::new();
         }
-        msg = format!("DNS-страховка (наблюдение): {msg}");
+        msg = tr!("DNS-страховка (наблюдение): {}", msg);
         self.rollback_done(now, msg, was_ra, Ok(()))
     }
 
@@ -987,7 +991,7 @@ impl DnsGuard {
         if self.acts() {
             if let Err(e) = res {
                 self.err = e.clone();
-                return vec![format!("DNS-страховка: не удалось вернуть обычные настройки: {e}")];
+                return vec![tr!("DNS-страховка: не удалось вернуть обычные настройки: {}", e)];
             }
             self.err.clear();
             self.saved.written = Snap::default();
@@ -998,7 +1002,7 @@ impl DnsGuard {
         self.switched = now;
         self.check_at = now;
         if was_ra {
-            return vec![msg, RA_BACK.into()];
+            return vec![msg, ra_back().into()];
         }
         vec![msg]
     }
@@ -1041,8 +1045,8 @@ impl DnsGuard {
             }
             let via = match self.check_path() {
                 Some(p) => self.path_label(&p.id),
-                None if self.cfg.check_via == crate::livecfg::DGR_PROTO => "IPv6 (без IPv4)".into(),
-                None => "напрямую".into(),
+                None if self.cfg.check_via == crate::livecfg::DGR_PROTO => tr!("IPv6 (без IPv4)").into(),
+                None => tr!("напрямую").into(),
             };
             j.key("check_via").str(&via);
             if !self.cfg.check_via.is_empty() {

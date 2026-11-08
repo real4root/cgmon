@@ -225,13 +225,13 @@ pub fn analyze(fam: &'static str, res: &[PtResult], own: &mut OwnerFn) -> Option
 }
 
 fn text(v: &Verdict) -> String {
-    let mut b = if v.next.is_empty() { format!("{}: общий виновник — {}", fam_name(v.family), v.culprit) } else { format!("{}: общий виновник — стык {} → {}", fam_name(v.family), v.culprit, v.next) };
-    b += &format!(". Через него идут все плохие маршруты ({}), хорошие ({}) — в обход", v.bad.join(", "), v.good.join(", "));
+    let mut b = if v.next.is_empty() { tr!("{}: общий виновник — {}", fam_name(v.family), v.culprit) } else { tr!("{}: общий виновник — стык {} → {}", fam_name(v.family), v.culprit, v.next) };
+    b += &tr!(". Через него идут все плохие маршруты ({}), хорошие ({}) — в обход", v.bad.join(", "), v.good.join(", "));
     if !v.fork.is_empty() {
-        b += &format!("; развилка после {}", v.fork);
+        b += &tr!("; развилка после {}", v.fork);
     }
     if v.stop {
-        b += "; TCP-соединения дальше этого места почти не проходят";
+        b += tr!("; TCP-соединения дальше этого места почти не проходят");
     }
     b
 }
@@ -513,7 +513,7 @@ impl PathCulprit {
         let v = analyze(fam, results, own);
         match &v {
             Some(v) => crate::log_info!("path trace {}: {}", fam, v.text),
-            None => crate::log_info!("path trace {}: общего виновника нет ({} целей)", fam, results.len()),
+            None => crate::log_info!("{}", tr!("path trace {}: общего виновника нет ({} целей)", fam, results.len())),
         }
         let f = &mut self.fam[fidx(fam)];
         match (f.open.clone(), v.clone()) {
@@ -525,7 +525,7 @@ impl PathCulprit {
             (Some(o), _) => {
                 f.misses += 1;
                 if f.misses >= 2 {
-                    msgs.push(format!("{}: общий виновник больше не виден — {}", fam_name(fam), o.culprit));
+                    msgs.push(tr!("{}: общий виновник больше не виден — {}", fam_name(fam), o.culprit));
                     f.open = None;
                     f.misses = 0;
                 }
@@ -561,7 +561,7 @@ impl PathCulprit {
                 f.good_from = now.max(1);
             }
             if let (Some(o), true) = (&f.open, now - f.good_from >= GOOD_FOR) {
-                msgs.push(format!("{}: деградация прошла, общий виновник снят — {}", fam_name(fam), o.culprit));
+                msgs.push(tr!("{}: деградация прошла, общий виновник снят — {}", fam_name(fam), o.culprit));
                 f.open = None;
                 f.last = None;
                 f.misses = 0;
@@ -578,7 +578,7 @@ impl PathCulprit {
 
     /// Действующий общий виновник (первый) — текст для центра сбора.
     pub fn open_first(&self) -> Option<String> {
-        self.fam.iter().filter_map(|f| f.open.as_ref()).next().map(|v| format!("{}: общий виновник плохих маршрутов — {}", v.family, v.culprit))
+        self.fam.iter().filter_map(|f| f.open.as_ref()).next().map(|v| tr!("{}: общий виновник плохих маршрутов — {}", v.family, v.culprit))
     }
 
     pub fn open_json(&self, j: &mut J) -> bool {

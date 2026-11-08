@@ -67,11 +67,11 @@ fn custom_ready(d: &str) -> Result<(), String> {
     let d = d.trim_end_matches('/');
     let root = dev_of("/");
     if std::path::Path::new(d).is_dir() {
-        return if dev_of(d) == root { Err(format!("{d} на внутренней памяти роутера (носитель не смонтирован?)")) } else { Ok(()) };
+        return if dev_of(d) == root { Err(tr!("{} на внутренней памяти роутера (носитель не смонтирован?)", d)) } else { Ok(()) };
     }
     let parent = std::path::Path::new(d).parent().and_then(|p| p.to_str()).unwrap_or("/");
     if !std::path::Path::new(parent).is_dir() || dev_of(parent) == root {
-        return Err(format!("{d}: носитель не смонтирован"));
+        return Err(tr!("{}: носитель не смонтирован", d));
     }
     std::fs::create_dir_all(d).map_err(|e| format!("{d}: {e}"))
 }
@@ -84,7 +84,7 @@ pub fn apply(want: &str, files: &[String], migrate: bool) {
         "tmp" => (TMP.to_string(), String::new()),
         d => match custom_ready(d) {
             Ok(()) => (format!("{}/", d.trim_end_matches('/')), String::new()),
-            Err(e) => (TMP.to_string(), format!("{e} — данные пока в {TMP}")),
+            Err(e) => (TMP.to_string(), tr!("{} — данные пока в {}", e, TMP)),
         },
     };
     let Ok(mut cur) = CUR.lock() else { return };

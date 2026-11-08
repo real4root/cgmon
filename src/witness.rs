@@ -470,9 +470,9 @@ impl Witness {
                 if known && !fm.verdict.is_empty() && (f == 0 || v6) {
                     let old_bad = (f == 1 && diag == "IPV6_DEGRADATION") || (f == 0 && diag == "IPV4_EXTERNAL_DEGRADATION");
                     if old_bad && fm.verdict == "ok" {
-                        kind = format!("сайты отвечают, а диагноз — деградация {name}");
+                        kind = tr!("сайты отвечают, а диагноз — деградация {}", name);
                     } else if !old_bad && fm.verdict == "bad" {
-                        kind = "сайты не отвечают, а диагноз этого сбоя не видит".into();
+                        kind = tr!("сайты не отвечают, а диагноз этого сбоя не видит").into();
                     }
                 }
             }
@@ -481,7 +481,7 @@ impl Witness {
                 if !self.told[f].is_empty() && known {
                     self.told[f].clear();
                     if let Some(fm) = &self.fam[f] {
-                        msgs.push(format!("Метрики по сайтам: {} — оценка снова совпадает с диагнозом (балл {:.0}, ответили {} из {})", name, fm.score, fm.answered, fm.n));
+                        msgs.push(tr!("Метрики по сайтам: {} — оценка снова совпадает с диагнозом (балл {:.0}, ответили {} из {})", name, fm.score, fm.answered, fm.n));
                     }
                 }
                 continue;
@@ -495,7 +495,7 @@ impl Witness {
             if self.told[f].is_empty() && now - self.since[f] >= DISAGREE {
                 self.told[f] = kind.clone();
                 let fm = self.fam[f].as_ref().unwrap();
-                msgs.push(format!("Метрики по сайтам: {} — {} (балл {:.0}, ответили {} из {})", name, kind, fm.score, fm.answered, fm.n));
+                msgs.push(tr!("Метрики по сайтам: {} — {} (балл {:.0}, ответили {} из {})", name, kind, fm.score, fm.answered, fm.n));
             }
         }
         msgs

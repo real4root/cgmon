@@ -260,14 +260,14 @@ impl GateMaps {
                     g.fails = 0;
                     g.ms = ms;
                     if !g.alive {
-                        msgs.push(format!("Шлюз {}: работает ({} мс)", g.label_or_id(), ms.round()));
+                        msgs.push(tr!("Шлюз {}: работает ({} мс)", g.label_or_id(), ms.round()));
                     }
                     g.alive = true;
                 } else {
                     g.fails += 1;
                     if g.alive && g.fails >= DOWN_AFTER {
                         g.alive = false;
-                        msgs.push(format!("Шлюз {}: не отвечает", g.label_or_id()));
+                        msgs.push(tr!("Шлюз {}: не отвечает", g.label_or_id()));
                     }
                 }
             }
@@ -295,11 +295,11 @@ impl GateMaps {
             let was = self.active.get(i).cloned();
             if was.as_deref() != Some(a.as_str()) && was.is_some() {
                 let to = match a.as_str() {
-                    "" => "основной маршрут (все шлюзы карты не отвечают)".to_string(),
-                    "kill" => "без интернета (все шлюзы не отвечают, kill)".to_string(),
-                    g => format!("через {}", self.gates.get(g).map(|x| x.label_or_id()).unwrap_or_else(|| g.to_string())),
+                    "" => tr!("основной маршрут (все шлюзы карты не отвечают)").to_string(),
+                    "kill" => tr!("без интернета (все шлюзы не отвечают, kill)").to_string(),
+                    g => tr!("через {}", self.gates.get(g).map(|x| x.label_or_id()).unwrap_or_else(|| g.to_string())),
                 };
-                msgs.push(format!("Карта шлюзов «{}»: {}", m.name, to));
+                msgs.push(tr!("Карта шлюзов «{}»: {}", m.name, to));
             }
         }
         self.active = act;

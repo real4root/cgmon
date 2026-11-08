@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Per-Site Routing list</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Crect width='16' height='16' rx='3' fill='%233b82f6'/%3E%3Cpath d='M4 8h8M8 4v8' stroke='white' stroke-width='2'/%3E%3C/svg%3E">
+<style>
+  :root { color-scheme: dark; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #0f0f12; color: #e2e8f0; font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  .wrap { max-width: 860px; margin: 0 auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; min-height: 100vh; }
+  h1 { font-size: 17px; margin: 0; letter-spacing: .02em; }
+  .hint { color: #94a3b8; font-size: 13px; }
+  .hint code { background: #1c1c24; border: 1px solid #2a2a35; border-radius: 4px; padding: 0 4px; color: #cbd5e1; }
+  textarea { flex: 1; min-height: 340px; width: 100%; resize: vertical; background: #17171d; color: #e2e8f0; border: 1px solid #2a2a35; border-radius: 10px; padding: 10px 12px; font: 13px/1.5 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+  textarea:focus, input:focus { outline: 2px solid #3b82f6; outline-offset: -1px; }
+  .row { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+  .sp { flex: 1; }
+  button { background: #1f2937; color: #e2e8f0; border: 1px solid #374151; border-radius: 8px; padding: 7px 12px; font: inherit; cursor: pointer; }
+  button:hover { background: #273244; }
+  button.pri { background: #2563eb; border-color: #2563eb; color: #fff; }
+  button.pri:hover { background: #1d4ed8; }
+  button:disabled { opacity: .5; cursor: default; }
+  input[type=password] { background: #17171d; color: #e2e8f0; border: 1px solid #374151; border-radius: 8px; padding: 7px 10px; font: inherit; width: 170px; }
+  .sum { color: #cbd5e1; font-size: 13px; }
+  .ok { color: #10b981; } .err { color: #f87171; }
+  .bad { color: #fbbf24; font-size: 13px; word-break: break-all; }
+  select { background: #17171d; color: #e2e8f0; border: 1px solid #374151; border-radius: 8px; padding: 6px 8px; font: inherit; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="row"><h1 data-t="title"></h1><span class="sp"></span>
+    <select id="lang"><option value="en">ENG</option><option value="ru">РУС</option><option value="uz">UZB</option><option value="kk">ҚАЗ</option><option value="zh">中文</option></select></div>
+  <div class="hint" data-t="hint" data-html="1"></div>
+  <textarea id="txt" spellcheck="false" autocomplete="off"></textarea>
+  <div class="sum" id="sum"></div>
+  <div class="bad" id="bad" hidden></div>
+  <div class="row">
+    <button type="button" id="b-lines" data-t="lines"></button>
+    <button type="button" id="b-semi" data-t="semi"></button>
+    <button type="button" id="b-sort" data-t="sort"></button>
+    <span class="sp"></span>
+    <input type="password" id="pass" autocomplete="current-password">
+    <button type="button" class="pri" id="b-save" data-t="save"></button>
+  </div>
+  <div class="sum" id="msg"></div>
+</div>
+<script>
+const T = {
+  en: { title: 'Per-Site Routing — permanent list', save: 'Save', lines: 'One per line', semi: 'Separate with ;', sort: 'Sort and dedupe',
+    hint: 'Sites, networks and AS that always go via the gate chosen in Settings → Per-Site Routing. One per line or separated with <code>;</code> — both work; <code>#</code> starts a comment.<br><code>taobao.com</code> — a domain with all its subdomains (IPv4 via the gate, IPv6 refused so clients use IPv4) · <code>47.74.0.0/15</code> or <code>1.2.3.4</code> — an IPv4 network, all ports · <code>2401:b180::/32</code> — an IPv6 network, refused · <code>AS45102</code> — all prefixes of the AS (from RIPEstat, refreshed weekly).',
+    sum: (d, n4, n6, a) => `domains: ${d} · IPv4 networks: ${n4} · IPv6 networks: ${n6} · AS: ${a}`, bad: 'Not understood (ignored):', saved: 'Saved — applied within a few seconds', pass: 'password',
+    err: 'Error', unsaved: 'There are unsaved changes. Leave anyway?', ro: 'The page password is not set — the list is read-only (LuCI → Services → cgmon).', loading: 'loading…' },
+  ru: { title: 'Per-Site Routing — постоянный список', save: 'Сохранить', lines: 'По одному на строку', semi: 'Через ;', sort: 'Сортировать, убрать повторы',
+    hint: 'Сайты, сети и AS, которые всегда идут через гейт, выбранный в Настройках → Per-Site Routing. По одному на строку или через <code>;</code> — подходят оба варианта; <code>#</code> — комментарий.<br><code>taobao.com</code> — домен со всеми поддоменами (IPv4 через гейт, IPv6 — отказ, клиенты идут по IPv4) · <code>47.74.0.0/15</code> или <code>1.2.3.4</code> — сеть IPv4, все порты · <code>2401:b180::/32</code> — сеть IPv6, отказ · <code>AS45102</code> — все префиксы AS (из RIPEstat, обновление раз в неделю).',
+    sum: (d, n4, n6, a) => `доменов: ${d} · сетей IPv4: ${n4} · сетей IPv6: ${n6} · AS: ${a}`, bad: 'Не понято (пропущено):', saved: 'Сохранено — применится в течение нескольких секунд', pass: 'пароль',
+    err: 'Ошибка', unsaved: 'Есть несохранённые изменения. Всё равно уйти?', ro: 'Пароль страницы не задан — список только для просмотра (LuCI → Службы → cgmon).', loading: 'загрузка…' },
+  uz: { title: 'Per-Site Routing — doimiy roʻyxat', save: 'Saqlash', lines: 'Har qatorda bittadan', semi: '; bilan ajratish', sort: 'Saralash, takrorlarni olib tashlash',
+    hint: 'Sozlamalar → Per-Site Routing boʻlimida tanlangan shlyuz orqali doim oʻtadigan saytlar, tarmoqlar va AS. Har qatorda bittadan yoki <code>;</code> bilan — ikkalasi ham ishlaydi; <code>#</code> — izoh.<br><code>taobao.com</code> — barcha subdomenlari bilan domen (IPv4 shlyuz orqali, IPv6 rad etiladi, mijozlar IPv4 dan foydalanadi) · <code>47.74.0.0/15</code> yoki <code>1.2.3.4</code> — IPv4 tarmogʻi, barcha portlar · <code>2401:b180::/32</code> — IPv6 tarmogʻi, rad etiladi · <code>AS45102</code> — AS ning barcha prefikslari (RIPEstat dan, haftada bir yangilanadi).',
+    sum: (d, n4, n6, a) => `domenlar: ${d} · IPv4 tarmoqlari: ${n4} · IPv6 tarmoqlari: ${n6} · AS: ${a}`, bad: 'Tushunilmadi (oʻtkazib yuborildi):', saved: 'Saqlandi — bir necha soniyada qoʻllaniladi', pass: 'parol',
+    err: 'Xato', unsaved: 'Saqlanmagan oʻzgarishlar bor. Baribir chiqasizmi?', ro: 'Sahifa paroli oʻrnatilmagan — roʻyxat faqat koʻrish uchun (LuCI → Services → cgmon).', loading: 'yuklanmoqda…' },
+  kk: { title: 'Per-Site Routing — тұрақты тізім', save: 'Сақтау', lines: 'Әр жолда біреу', semi: '; арқылы бөлу', sort: 'Сұрыптау, қайталауды алып тастау',
+    hint: 'Баптаулар → Per-Site Routing бөлімінде таңдалған шлюз арқылы әрқашан өтетін сайттар, желілер және AS. Әр жолда біреуден немесе <code>;</code> арқылы — екеуі де жарайды; <code>#</code> — түсініктеме.<br><code>taobao.com</code> — барлық субдомендерімен домен (IPv4 шлюз арқылы, IPv6 қабылданбайды, клиенттер IPv4 пайдаланады) · <code>47.74.0.0/15</code> немесе <code>1.2.3.4</code> — IPv4 желісі, барлық порттар · <code>2401:b180::/32</code> — IPv6 желісі, қабылданбайды · <code>AS45102</code> — AS-тің барлық префикстері (RIPEstat-тан, аптасына бір рет жаңартылады).',
+    sum: (d, n4, n6, a) => `домендер: ${d} · IPv4 желілері: ${n4} · IPv6 желілері: ${n6} · AS: ${a}`, bad: 'Түсінілмеді (өткізілді):', saved: 'Сақталды — бірнеше секундта қолданылады', pass: 'құпиясөз',
+    err: 'Қате', unsaved: 'Сақталмаған өзгерістер бар. Бәрібір шығасыз ба?', ro: 'Бет құпиясөзі орнатылмаған — тізім тек қарау үшін (LuCI → Services → cgmon).', loading: 'жүктелуде…' },
+  zh: { title: 'Per-Site Routing — 固定列表', save: '保存', lines: '每行一个', semi: '用 ; 分隔', sort: '排序并去重',
+    hint: '始终经由“设置 → Per-Site Routing”中所选网关的网站、网络和 AS。每行一个或用 <code>;</code> 分隔 — 两种都支持；<code>#</code> 开始注释。<br><code>taobao.com</code> — 域名及其全部子域名（IPv4 经网关，IPv6 被拒绝，客户端改用 IPv4）· <code>47.74.0.0/15</code> 或 <code>1.2.3.4</code> — IPv4 网络，所有端口 · <code>2401:b180::/32</code> — IPv6 网络，拒绝 · <code>AS45102</code> — 该 AS 的全部前缀（来自 RIPEstat，每周更新）。',
+    sum: (d, n4, n6, a) => `域名：${d} · IPv4 网络：${n4} · IPv6 网络：${n6} · AS：${a}`, bad: '无法识别（已忽略）：', saved: '已保存 — 几秒内生效', pass: '密码',
+    err: '错误', unsaved: '有未保存的更改。仍要离开吗？', ro: '未设置页面密码 — 列表只读（LuCI → Services → cgmon）。', loading: '加载中…' },
+};
+const $ = id => document.getElementById(id);
+let lang = (() => { try { return localStorage.getItem('router_lang') || ''; } catch (e) { return ''; } })();
+if (!T[lang]) lang = (navigator.language || 'en').slice(0, 2).toLowerCase();
+if (!T[lang]) lang = 'en';
+const t = k => (T[lang] || T.en)[k] || T.en[k];
+let orig = '', last = null;
+function applyLang() {
+  document.documentElement.lang = lang;
+  $('lang').value = lang;
+  document.title = t('title');
+  document.querySelectorAll('[data-t]').forEach(e => { if (e.dataset.html) e.innerHTML = t(e.dataset.t); else e.textContent = t(e.dataset.t); });
+  $('pass').placeholder = t('pass');
+  if (last) showSum(last);
+}
+$('lang').onchange = () => { lang = $('lang').value; try { localStorage.setItem('router_lang', lang); } catch (e) {} applyLang(); };
+function showSum(r) {
+  last = r;
+  $('sum').textContent = t('sum')(r.domains || 0, r.nets4 || 0, r.nets6 || 0, r.asns || 0);
+  const bad = r.bad || [];
+  $('bad').hidden = !bad.length;
+  $('bad').textContent = bad.length ? `${t('bad')} ${bad.join(', ')}` : '';
+}
+async function post(body) {
+  const r = await fetch('/cgi-bin/api_set', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({ error: 'HTTP ' + r.status }));
+  if (j.error) throw new Error(j.error);
+  return j;
+}
+function items(text) {
+  const out = [];
+  for (const line of text.split('\n')) {
+    const body = line.split('#')[0];
+    for (const x of body.split(/[;,\s]+/)) if (x.trim()) out.push(x.trim());
+  }
+  return out;
+}
+$('b-lines').onclick = () => { $('txt').value = items($('txt').value).join('\n') + '\n'; };
+$('b-semi').onclick = () => { $('txt').value = items($('txt').value).join('; ') + '\n'; };
+$('b-sort').onclick = () => {
+  const v = [...new Set(items($('txt').value).map(x => x.toLowerCase()))];
+  const rank = x => /^as\d+$/.test(x) ? 2 : /^[0-9a-f:.]+(\/\d+)?$/.test(x) && /[:.]/.test(x) && !/[g-z]/.test(x) ? 1 : 0;
+  v.sort((a, b) => rank(a) - rank(b) || a.localeCompare(b, 'en', { numeric: true }));
+  $('txt').value = v.join('\n') + '\n';
+};
+$('b-save').onclick = async () => {
+  $('b-save').disabled = true; $('msg').textContent = '';
+  try {
+    const r = await post({ persite_set: $('txt').value, password: $('pass').value });
+    orig = $('txt').value; showSum(r);
+    $('msg').className = 'sum ok'; $('msg').textContent = t('saved');
+    try { if (window.opener && window.opener.fetchStatus) window.opener.fetchStatus(); } catch (e) {}
+  } catch (e) { $('msg').className = 'sum err'; $('msg').textContent = `${t('err')}: ${e.message}`; }
+  $('b-save').disabled = false;
+};
+window.addEventListener('beforeunload', e => { if ($('txt').value !== orig) { e.preventDefault(); e.returnValue = t('unsaved'); } });
+(async () => {
+  applyLang();
+  $('msg').textContent = t('loading');
+  // пароль, уже введённый на странице настроек, — подставить
+  try { const p = window.opener && window.opener.document.getElementById('s2-pass'); if (p && p.value) $('pass').value = p.value; } catch (e) {}
+  try {
+    const st = await fetch('/cgi-bin/api_status').then(r => r.json()).catch(() => ({}));
+    const rt = st.runtime || {};
+    $('pass').hidden = !rt.password_required;
+    if (rt.password_missing) { $('b-save').disabled = true; $('txt').readOnly = true; $('msg').className = 'sum err'; $('msg').textContent = t('ro'); }
+    const r = await post({ persite_get: true });
+    $('txt').value = orig = r.text || '';
+    showSum(r);
+    if (!rt.password_missing) $('msg').textContent = '';
+  } catch (e) { $('msg').className = 'sum err'; $('msg').textContent = `${t('err')}: ${e.message}`; }
+})();
+</script>
+</body>
+</html>

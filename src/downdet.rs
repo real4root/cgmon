@@ -81,7 +81,7 @@ pub fn family(ips: &[String]) -> &'static str {
     let v6 = ips.iter().any(|i| i.contains(':'));
     let v4 = ips.iter().any(|i| !i.contains(':'));
     match (v4, v6) {
-        (true, true) => "IPv4 и IPv6",
+        (true, true) => tr!("IPv4 и IPv6"),
         (false, true) => "IPv6",
         (true, false) => "IPv4",
         _ => "",
@@ -219,13 +219,13 @@ impl DownDetector {
 
     fn describe(sv: &Service) -> String {
         let fam = family(&sv.ips);
-        let what = if sv.state == "slow" { format!("отвечает медленно по {fam} — медиана рукопожатия {:.0} мс", sv.median_ms) } else { format!("не отвечает по {fam} — {} из {} соединений без ответа за 5 мин", sv.fail, sv.total) };
-        let mut s = format!("{} {}", sv.name, what);
+        let what = if sv.state == "slow" { tr!("отвечает медленно по {1} — медиана рукопожатия {0:.0} мс", sv.median_ms, fam) } else { tr!("не отвечает по {2} — {0} из {1} соединений без ответа за 5 мин", sv.fail, sv.total, fam) };
+        let mut s = format!("{}: {}", sv.name, what);
         if !sv.by_ip {
-            s += &format!("; адреса {}", sv.ips.join(", "));
+            s += &tr!("; адреса {}", sv.ips.join(", "));
         }
         if !sv.clients.is_empty() {
-            s += &format!("; клиенты: {}", sv.clients.join(", "));
+            s += &tr!("; клиенты: {}", sv.clients.join(", "));
         }
         s
     }
@@ -257,7 +257,7 @@ impl DownDetector {
             }
             let ips: Vec<String> = g.ips.iter().take(4).cloned().collect();
             let (name, by_ip, ready) = Self::title(&key, &g, &ips, owner, now);
-            let clients: Vec<String> = g.clients.iter().map(|c| if c == "router" { "роутер".to_string() } else { let n = client_name(c); if n.is_empty() { c.clone() } else { n } }).collect();
+            let clients: Vec<String> = g.clients.iter().map(|c| if c == "router" { tr!("роутер").to_string() } else { let n = client_name(c); if n.is_empty() { c.clone() } else { n } }).collect();
             let sv = self.open.get_mut(&key).unwrap();
             sv.state = state;
             sv.fail = g.fail;
@@ -279,7 +279,7 @@ impl DownDetector {
             let sv = self.open.remove(&k).unwrap();
             self.closed_at.insert(k, now);
             if sv.reported && now - sv.since_ms >= CLEAR {
-                events.push(format!("{} снова в норме по {} (сбой {})", sv.name, family(&sv.ips), go_minutes(now - sv.since_ms - CLEAR)));
+                events.push(tr!("{}: снова в норме по {} (сбой {})", sv.name, family(&sv.ips), go_minutes(now - sv.since_ms - CLEAR)));
             }
         }
         self.closed_at.retain(|_, t| now - *t <= QUIET);
@@ -289,12 +289,12 @@ impl DownDetector {
             if !self.mass && wan_ok {
                 self.mass = true;
                 let v6 = mfail6 as f64 / mfail as f64;
-                self.mass_fam = if v6 >= 0.8 { "IPv6" } else if v6 <= 0.2 { "IPv4" } else { "IPv4 и IPv6" };
-                events.push(format!("Массовые сбои соединений по {} — {:.0}% из {} без ответа за 2 мин, направлений: {} (пробы WAN в норме — вероятна частичная беда маршрутов провайдера)", self.mass_fam, pct, mtotal, mdest));
+                self.mass_fam = if v6 >= 0.8 { "IPv6" } else if v6 <= 0.2 { "IPv4" } else { tr!("IPv4 и IPv6") };
+                events.push(tr!("Массовые сбои соединений по {} — {:.0}% из {} без ответа за 2 мин, направлений: {} (пробы WAN в норме — вероятна частичная беда маршрутов провайдера)", self.mass_fam, pct, mtotal, mdest));
             }
         } else if self.mass && now - self.mass_bad >= CLEAR {
             self.mass = false;
-            events.push(format!("Массовые сбои соединений по {} закончились", self.mass_fam));
+            events.push(tr!("Массовые сбои соединений по {} закончились", self.mass_fam));
         }
         events
     }
