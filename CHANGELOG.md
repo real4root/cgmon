@@ -3,6 +3,455 @@
 All notable changes to cgmon. Versions are numbered `major.minor.patch`; every
 build that reaches a router or a release gets a new patch number.
 
+## 2.8.6
+
+### Changed
+- Collection hub: the provider and each hub status are one line ("provider: X · address ·
+  N sent · M s ago").
+- Settings: the option labels of "Threat lists" ("small (~2k)" …) and "Package sources"
+  ("no", "stable only", "stable + beta for serious") are back as in 2.8.4. In 2.8.5 they were
+  shortened without need.
+
+### Security
+- Botnet watch:
+  - **List caps:** if a source suddenly grows or is replaced, the lists are cut at
+    400k domains / 100k addresses (full), 60k / 15k (lite) or 8k / 3k (nano).
+  - **Finding cap:** at most 500 findings are kept; the oldest by last time is dropped.
+  - **Event rate:** events are limited per device and threat kind — at most one every
+    10 minutes, even when a device hits many domains from a list. All findings are still
+    counted.
+- Code review of the changes since 2.7.17: page input and the data from devices, DNS and
+  threat lists. The page escapes all of it on output. uci, nft and apk get their arguments
+  directly, without a shell. The device name, MAC, IP, knock steps, forwards and interfaces
+  are checked both on the page and in the daemon. Feed addresses are built from constants.
+
+## 2.8.5
+
+### Changed
+- Settings page:
+  - "Threat lists" no longer has a "by build" option. With `auto` the list shows the size
+    that applies to this build (full — "large"); the setting changes only when another size is
+    chosen.
+  - "Fixes from the main OpenWrt repository" is now "Package sources" and is the first row of
+    the Security card. The values are short ("firmware", "+ OpenWrt", "+ OpenWrt beta");
+    details are in the "?".
+  - The "Knock steps" field takes the free width of the row.
+  - Port-knocking → forwards: the label and the fields line up with the other labels.
+    "No forwards" is shown in the label row; the list appears only when there are forwards.
+  - "Where to keep intermediate data": the "now: /etc/cgmon/" line moved into the tooltip.
+    A separate line appears only on an error.
+  - Collection hub: each hub status is one line ("address · N sent · M s ago", ending in
+    "…" if it does not fit). The label is shortened to "This router is the hub".
+
+## 2.8.4
+
+### Added
+- Naming a device from the page. Next to the device name in "Active devices" there is a ✎
+  (it shows on hover).
+  - The name (Latin letters, digits and "-") is saved as a DHCP static lease (`config host`:
+    name, MAC, IP, dns) and as a router hostname (`config domain`: name → IP) in
+    `/etc/config/dhcp`, then dnsmasq re-reads its settings.
+  - The name shows in cgmon, in LuCI and in DNS (`name.lan`), even for a device with a
+    manual address that does not report its name (for example Windows in a public network).
+  - An empty name removes both records. The settings password is required.
+  - From the console: `cgmon dev-name MAC IP [NAME]`.
+
+### Changed
+- The "botnet watch" line moved to the bottom of the Security block, right of the "Full
+  report" button, aligned right. In the full report window it stays in the header.
+
+### Fixed
+- Vulnerability scan: Docker 29 and newer (dockerd 29.6.1 on a test router) got false high findings,
+  for example CVE-2026-34040. Since version 29 Docker lives in the Go module
+  `github.com/moby/moby/v2`; the old `github.com/docker/docker` is frozen at 28, and OSV
+  says "everything is affected, no fix" for it. Now the version is mapped from the Docker tag
+  through the Go module proxy (`docker-v29.6.1` → `v2.0.0-beta.18…`), and OSV is queried
+  for `moby/moby/v2`. If the proxy is unavailable, the old behaviour is kept.
+
+## 2.8.3
+
+### Changed
+- The Security header now has two lines: the vulnerability check on top, and the botnet watch
+  below it in smaller text. The severity chips no longer wrap one by one; on phones they
+  wrap as a group.
+
+### Fixed
+- Port-knocking card: on a narrow column the "+" button of the forwards stuck out past the
+  card edge. The fields and the button are now a flexible row.
+
+## 2.8.2
+
+### Changed
+- Botnet watch findings no longer repeat the device name in the issue text; it is already
+  in the "What" column.
+
+### Checked
+- Live test on a test router (x86_64, ImmortalWrt 25.12), from a LAN machine:
+  - a DNS query for a C2IntelFeeds domain → "Botnet: … command server";
+  - 30 random non-existent names → "Suspicious: … domain generation";
+  - a connection to an address from Spamhaus DROP → the kernel recorded the pair in `hits4` →
+    "Threat: … (Spamhaus DROP)";
+  - SYN to 40 documentation addresses (203.0.113.0/24) on port 23 → "Botnet: … scans the
+    internet".
+- With the large lists (190k domains, 36k IPs, 1.7k networks) cgmon on the test router uses 9.3 MB RSS
+  (12.3 MB peak while loading). nft parses the 580 KB address script in 0.5 s.
+
+## 2.8.1
+
+### Fixed
+- Botnet watch: the address table was not created, because the chain name `fwd` is an nft
+  keyword. Chains are now `fw_hits` and `out_hits`. After an nft error, cgmon re-applies the
+  table at most once an hour instead of every minute (the script for 36k addresses is
+  580 KB).
+
+## 2.8.0
+
+### Added
+- Botnet and threat watch (`threat_watch:`, module `src/threatwatch.rs`). cgmon watches every
+  device on the network: a TV box, a camera, a computer or a vacuum cleaner can all be part
+  of a botnet.
+  - **Threat lists**, downloaded daily in the background, no keys needed:
+    - command servers: C2IntelFeeds (domains and IPs), Feodo Tracker, SSLBL;
+    - malware distribution: URLhaus, mirrored by malware-filter (the abuse.ch exports now
+      require a key);
+    - Spamhaus DROP;
+    - HaGeZi TIF: 190k domains and 36k IPs.
+  - **List size** depends on the build: `lists: auto` gives full — large (~230k entries,
+    ~2 MB RAM, ~4 MB traffic a day), lite — medium (~20k, ~0.2 MB), nano — small (command
+    servers and live URLhaus hosts, ~2k).
+  - **Domains:** DNS answers to devices are checked against the lists (a domain and its
+    parent domains). Domains are stored as 64-bit hashes in a sorted array, 8 bytes per domain; a
+    check is a few hashes and a binary search.
+  - **Addresses:** kept in the nft sets `inet cgmon_threat` (single IPs in a hash set,
+    networks in an interval set). The kernel itself records "device . address" pairs for
+    new connections from the LAN and from the router; cgmon collects them once a minute.
+  - **Behavior, without lists:**
+    - Internet scanning: ≥30 addresses in SYN_SENT on one port among
+      telnet/SSH/ADB/TR-069/SMB/RDP/VNC/databases in two snapshots in a row — worms like
+      Mirai.
+    - Random non-existent domains: ≥25 in an hour (domain generation, DGA).
+    - ≥600 addresses at once for 10 minutes: a proxy botnet, or torrents, so it is only
+      "suspicious".
+  - **Findings** appear in Security as LAN device rows with the Isolate button, and in the
+    events (no more often than every 6 hours per device and threat). They are kept for 7 days
+    and saved to `/etc/cgmon/threat.json`.
+  - The Security header shows how many domains and addresses are being watched.
+  - Settings, in the Security card: "Botnet watch" (on/off), "Threat lists" (by build,
+    small, medium or large) and "Behavior signs".
+
+## 2.7.41
+
+### Fixed
+- Gateways and address bypass: tunnels without their own default route never appeared among
+  the paths. Examples: OpenVPN with `redirect-gateway def1` (routes 0.0.0.0/1 + 128.0.0.0/1),
+  OpenVPN with `route-nopull`, WireGuard without `route_allowed_ips`. Now every
+  point-to-point tunnel that is up and has IPv4 (OpenVPN tun, WireGuard, AmneziaWG, L2TP,
+  GRE, IPsec, a backup PPPoE…) is a path: cgmon puts `default dev <tunnel>` into its own
+  table, no gateway address is needed. On the page such tunnels can also be the "all
+  traffic" gateway (overlay).
+  - Tailscale is a path only when an exit node is selected: then Tailscale puts a default
+    route into table 52 itself. Without an exit node tailscaled drops internet traffic.
+  - ZeroTier and other L2 networks work through an `@name` node: they need a gateway
+    address.
+
+## 2.7.40
+
+### Changed
+- The knock card is now "🚪 Port-knocking", and its row is "Interfaces".
+  - The button has a fixed width and shows only "on" or "off"; the interface list opens on
+    click.
+  - The top item of the list is "Disable" while something is selected and "off" otherwise.
+    Checking any interface turns it back into "Disable".
+  - The gateways group is titled "gateways — enable the ones you need".
+
+### Fixed
+- Settings: the "?" icon sat below the middle of the line in every row (by 1.9 px) and in
+  card headers (by 1.1 px), for example "Speed: queue and upload". It was aligned to
+  lowercase letters (`vertical-align: middle`). Now the line height of labels, headers and
+  subheaders is fixed, and the icon is placed at the exact center (checked in headless Chrome:
+  0 px offset in all 64 rows and all headers).
+
+## 2.7.39
+
+### Fixed
+- Port knocking: the old `knock.from` value `wan4`/`wan6` also expanded to netifd interface
+  names that are not devices (INTERNET, @INTERNET, INTERNET_6). Only real devices are used
+  now.
+
+## 2.7.38
+
+### Changed
+- Port knocking: interfaces are chosen per device. The candidates are every device with a
+  route to the internet (`default` in any routing table: WAN, modem, OpenVPN `tun*`,
+  WireGuard…) and every VPN network (ZeroTier, Tailscale, `wg*`, `tun*`, `tap*`, IPsec, GRE…),
+  shown under their netifd names. Old `knock.from` values still work: `wan4`/`wan6` mean all
+  WAN devices, `zerotier`/`tailscale` mean all such devices.
+- Knock steps can be ping, TCP or UDP in any mix: `knock.steps: ["ping:100", "tcp:7000",
+  "udp:8123"]`. The old `knock.sizes` (ping only) is read as before. Only knock-like packets
+  enter the knock chain, so ordinary traffic from the same address does not break the
+  sequence.
+- The knock card is compact. The "Knock" row is a dropdown: "off" plus interfaces with
+  checkboxes, grouped into "gateways" and "VPN networks". The CGNAT note and the commands moved
+  to a "how to knock" window, which puts the router address into the commands (chosen from the
+  addresses of the selected interfaces, or `%address`). Commands are given for
+  Linux/Android/macOS and Windows PowerShell, including TCP and UDP steps.
+
+## 2.7.37
+
+### Fixed
+- Port knocking: the remaining access time was read wrong ("9m58s440ms" — milliseconds were
+  taken as minutes, so the event said "for 570 min" instead of 10).
+- Port knocking: "external IPv4" in the card showed the address of a backup modem behind the
+  router (192.168.2.2) instead of PPPoE. Addresses outside home networks now come first.
+
+## 2.7.36
+
+### Added
+- Port knocking in cgmon (`knock:`, card "🚪 Port knocking" in the 3rd settings column).
+  - **The knock:** access opens for the address that sent pings of the given sizes in order,
+    one packet each (default `ping -s 100`, `100`, `122`). No client app is needed.
+  - **What opens:** the router ports (default 22 and 80) are redirected to the router LAN
+    address, so SSH that listens on LAN only becomes reachable from WAN and via
+    ZeroTier/Tailscale. Forwards ("ports=address[:port]") lead to LAN devices. Access lasts
+    `open_min` minutes; a wrong ping size resets the sequence.
+  - **Where knocks are accepted:** checkboxes for internet IPv4, internet IPv6, ZeroTier and
+    Tailscale. If the external IPv4 is behind CGNAT, the card warns that knocks over IPv4
+    from the internet cannot arrive, and shows the current external IPv6.
+  - **How it is built:** a `inet cgmon_knock` table, plus "marked by knock — accept" rules in
+    fw4 input/forward. fw4 loses them on a firewall reload; cgmon restores them within 30 s.
+  - **In the card:** ready-made commands for Linux/Android/macOS and Windows. Every opening
+    is written to the events.
+  - Off by default.
+
+## 2.7.35
+
+### Fixed
+- Per-Site Routing → check sites, the "route through" dropdown closed by itself: the page
+  redrew it on every status update (every 2 s). Now it is redrawn only when something
+  changed, and never while it is open or focused.
+
+### Changed
+- The "Speed: queue and upload" card moved to the bottom of the second settings column.
+
+## 2.7.34
+
+### Fixed
+- Gateways and address bypass showed devices that no longer exist on the router. Example:
+  eth3 after the card was removed, still listed in `dns_guard.alternatives`/`metered`, shown
+  as "off" with a traffic limit. The daemon no longer sends such devices to the page, and the
+  page does not draw them. They stay in the settings until the settings are saved again.
+- "IPv4 ⇄ IPv6" (other protocol) is no longer offered in address bypass when the router has
+  no IPv6 route to the internet at all (`ip -6 route show default` is empty). Without IPv6 it
+  can do nothing.
+
+## 2.7.33
+
+### Fixed
+- An extra gateway in networks (`dns_guard.relays`, for example `node1@10.147.17.1`) was saved
+  but appeared neither in "Gateway order" nor in "Address bypass of broken routes" unless the
+  DNS guard mode was "targeted". Paths were found and sent to the page only in that mode.
+  Now:
+  - paths, including `@name` nodes, are found in any mode except off (read-only, nothing is
+    configured) and shown on the page;
+  - the "all traffic" gateway (overlay), including one through your own node, also works in
+    "active" mode. Before, it worked only in "targeted" mode.
+
+## 2.7.32
+
+### Changed
+- Current events, "Vulnerabilities": the count now matches the Security block. A package is
+  counted once, not once per CVE: "serious 4" used to mean 3 CVEs in glib2 and 1 in docker.
+  Only items with a fix are counted: a package or cgmon with an Update button, router
+  settings, or LAN devices (isolation). A vulnerability with nothing to install no longer
+  clutters the events.
+- The "port works slower than before" note (downshift) is shown for at most 7 days after the
+  port was last seen at full speed (it was 30). As before, it is shown only for WAN ports.
+
+## 2.7.31
+
+### Added
+- A new cgmon version is announced in the current events, with an "Update to X" button,
+  when auto-update is off. cgmon checks the latest GitHub release 10 minutes after start and
+  then every 6 hours (not with paid traffic). It writes to the journal once per version and
+  does not repeat after a restart.
+
+### Changed
+- The auto-update setting shows plain "off" / "on"; the hint explains where the update
+  button is.
+
+## 2.7.30
+
+### Fixed
+- Security block: the risk label ("FOR INFORMATION" and the like) no longer wraps onto two lines.
+- A single failed request to the vulnerability database (OSV, `HTTP 000`, no response) wiped
+  all package and kernel findings from the Security block: the new report kept only settings
+  and LAN devices and replaced the good report. Now:
+  - the OSV request is retried up to three times (pauses of 5 and 20 s);
+  - if the database is still unavailable, findings for packages, the kernel and OpenWrt
+    advisories are kept from the previous report, the error is shown as "not everything
+    could be checked", and the check is repeated in an hour instead of in a week.
+
+## 2.7.29
+
+### Changed
+- Router names for cgmon (`integration.names`) default to `cgmon.lan`. The field is a single
+  line, so several names are separated with «;», and the hint no longer says "one per line".
+- "Auto-update cgmon" is now the first row of the "cgmon: data and integration" card.
+
+### Fixed
+- Dropdown options in settings that are defined in the settings dictionary showed raw keys
+  (`au_off`, `vu_stable` …) instead of text. They are now translated.
+- The hint icon in the Security block shifted right from row to row, because the column was
+  right-aligned and the hint texts have different lengths. The column is now left-aligned.
+
+## 2.7.28
+
+### Fixed
+- The "fixed in X · no package yet" hint also appeared for findings where X is the
+  installed version itself (Debian fixed it with a patch without changing the version, and
+  the page already marks such findings separately) and for commit-hash "versions". The hint
+  is now shown only when the fixed version is newer than the installed one.
+
+## 2.7.27
+
+### Added
+- Automatic cgmon update from GitHub: new setting `auto_update` (off | on, default off),
+  under "cgmon: data and integration" on the settings page.
+  - When on: 10 minutes after start and then every 6 hours, cgmon checks the latest GitHub
+    release. If it is newer, cgmon downloads it, verifies the SHA256 checksum, installs it
+    (as an apk/opkg package or a binary, matching how cgmon is installed) and restarts.
+  - Not used with paid traffic or in read-only mode. The result goes to the journal and to
+    events.
+
+### Fixed
+- 2.7.25 offered "Update · from OpenWrt" for packages that were already up to date (for
+  example busybox 1.37.0-r6 → 1.37.0-r6). It compared the package version without the build
+  number against the full version in the OpenWrt index. Now it compares full versions,
+  including `-rN`.
+- Packages built per platform (dropbear, grub2 and others in
+  `targets/<target>/packages`) are now looked up in the main OpenWrt repository too.
+- The "fix not in the repository yet" hint now says what is going on:
+  - "fixed in X · no package yet": the program's authors fixed it, but there is no package
+    with the fix in the firmware repository or in OpenWrt;
+  - "only in OpenWrt beta: X": the fix exists in a beta build, but beta is offered only for
+    high and critical vulnerabilities.
+
+## 2.7.26
+
+### Fixed
+- After a cgmon update, the Security block kept showing the report made by the old version,
+  so the scanner's new logic did not show up until the weekly check: no "from OpenWrt"
+  buttons, and findings that are now filtered out stayed visible. The report now records
+  the cgmon version that made it. When the version differs, the check runs again right
+  after the update (in weekly mode, not with paid traffic).
+
+## 2.7.25
+
+### Added
+- Vulnerability fixes from the main OpenWrt repository. On forks (ImmortalWrt and others) or
+  with a lagging mirror, the fixed package version may already be on downloads.openwrt.org
+  while the firmware repository does not have it. When the scan finds no fix in the firmware
+  repository, it looks in the main OpenWrt repository for the same branch and architecture
+  (`index.json`, or `Packages` on older releases) and offers "Update to X · from OpenWrt".
+  - Stable channel: the latest release of the branch, for any vulnerability.
+  - Beta channel: the branch nightly builds (`<branch>-SNAPSHOT`), only for high and
+    critical vulnerabilities. It is marked "OpenWrt beta", asks for an extra confirmation
+    and is not included in "Update all".
+- How it is installed:
+  - apk adds the feed only for this command (`--repository …/packages.adb`); opkg uses a
+    temporary config in /tmp/cgmon. The router's repository list is not changed.
+  - apk/opkg checks the signature with the OpenWrt key, which forks ship.
+  - The feed address is taken only from the scanner's own report, never from the page.
+- New setting `vuln_scan.upstream`: off | stable | beta (default beta). On the settings
+  page: "Fixes from the main OpenWrt repository".
+
+## 2.7.24
+
+### Fixed
+- Vulnerability scan: a CVE described as a flaw in one program of a source package (for
+  example "sshd in OpenSSH before 10.6p2 …") is no longer reported when the OpenWrt
+  subpackage with that program is not installed. A router with dropbear and only
+  `openssh-sftp-server` showed CVE-2026-123158 (sshd password bypass on musl) as a high
+  threat. The openssh programs are mapped to their subpackages: server, client,
+  client-utils, keygen, sftp-client and sftp-server. Generic descriptions ("In OpenSSH …")
+  are kept as before.
+- Vulnerability report: when a fixed version exists but the router's firmware repository
+  does not have it yet, the package shows "fix not in the repository yet" with an
+  explanation instead of no button at all. The Update button appears once the package
+  reaches the repository.
+
+## 2.7.23
+
+### Added
+- lighttpd support: with `lighttpd-mod-cgi` installed, cgmon adds
+  `/etc/lighttpd/conf.d/90-cgmon.conf`, which runs `/cgi-bin/api_*` as CGI, and reloads
+  lighttpd. The scripts talk to the daemon through a root-only socket, so lighttpd must run
+  as root. If `server.username` is set, the log explains what to change.
+- `cgmon web-setup` configures the router's web server for cgmon right away and prints what it
+  found and did. The daemon also runs this check at start and once a minute.
+
+### Checked
+- On an OpenWrt 25.12.6 test system, the page and all `api_*` endpoints (GET, POST body, query
+  string, client address) behave the same on uhttpd (default config and Gargoyle's config;
+  Gargoyle uses uhttpd), nginx + uwsgi (luci-nginx) and lighttpd. Without the fix, nginx and
+  lighttpd return the script text. Apache in OpenWrt serves `/usr/share/apache2/htdocs`
+  rather than `/www` and is not used for the router UI, so it is not configured.
+
+## 2.7.22
+
+### Fixed
+- Routers that serve the web interface with nginx (luci-nginx) instead of uhttpd showed an
+  empty page: nginx does not run CGI scripts, so `/cgi-bin/api_*` returned the script text
+  (`#!/bin/sh…`) and the page failed with "Unexpected token '#' … is not valid JSON". cgmon
+  now detects nginx with the uwsgi CGI plugin (what LuCI uses under nginx) and adds its own
+  uwsgi vassal `/etc/uwsgi/vassals/cgmon-cgi.ini` and `/etc/nginx/conf.d/cgmon.locations`
+  for `/cgi-bin/api_*`, then reloads nginx once. The CGI root is the real location of the
+  scripts (`/tmp/cgmon/www`), because uwsgi refuses to run a symlinked script outside its
+  root. If nginx has no uwsgi CGI plugin, the log says what to install. `--uninstall` removes
+  both files. Routers with uhttpd are not affected.
+
+## 2.7.21
+
+### Fixed
+- The WAN chart kept a gap after the tab had been in the background or the computer had
+  slept: router history was loaded only once, when the page opened, and only before the first
+  live point. Now any gap is filled with the router's 2-second points from its last-hour
+  history; live browser points are kept. The page notices a wake-up in two ways: the tab
+  becomes visible again, or the timer clock jumps (sleep with the tab open). After 30 minutes
+  or more away the whole page reloads, unless settings are being edited or the full
+  vulnerability report window is open; then only the chart is refilled.
+
+## 2.7.20
+
+### Changed
+- Settings: the «Extra gateways in networks» card moved from the second column to the first,
+  right under «Gateways».
+
+## 2.7.19
+
+### Changed
+- Current events are split into two columns by height instead of alternating left and
+  right. The page measures each event at the column width and balances the columns, so a
+  long event (e.g. the Per-Site Routing site list) no longer leaves a gap opposite it. The
+  order by importance is kept inside each column, and the most important event stays top
+  left. Phones still get one column.
+
+## 2.7.18
+
+### Added
+- Router DNS self-healing (`dns_guard.local_heal`: off | observe | active, default active;
+  Settings → cgmon: data and integration). Once a minute cgmon asks dnsmasq for a random
+  non-existent name, so the answer cannot come from a cache. After three failures in a row
+  (timeout, SERVFAIL, REFUSED), and only if public DNS still answers directly, cgmon finds
+  the service that is not answering and restarts it:
+  - a local upstream of dnsmasq (SmartDNS, AdGuard Home…), identified by the process on
+    its port;
+  - or dnsmasq itself.
+  At most once in 15 minutes and 4 times a day; every step goes to the journal. Seen in the
+  field: SmartDNS answered SERVFAIL to everything from boot. Without DNS, NTP could not
+  resolve its servers, so the clock drifted by 82 minutes, the hub rejected reports for
+  clock skew, and tailscale could not reach its control server.
+
 ## 2.7.17
 
 ### Fixed

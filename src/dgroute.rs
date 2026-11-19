@@ -257,6 +257,47 @@ pub fn parse_labels(out: &str) -> HashMap<String, String> {
 }
 
 /// Таблица inet cgmon_route целиком (без delete table: pN_ip наполняет SmartDNS).
+/// Туннели «точка-точка» с IPv4 (OpenVPN tun, WireGuard, AmneziaWG, L2TP, GRE, IPsec, резервный
+/// PPPoE…) — годятся в пути и без своего default: cgmon сам ставит в свою таблицу
+/// `default dev <туннель>` (адрес шлюза не нужен). OpenVPN с def1 ставит 0.0.0.0/1 + 128.0.0.0/1,
+/// с route-nopull — ничего; WireGuard без route_allowed_ips — тоже. Tailscale — только с exit node
+/// (без него tailscaled отбрасывает интернет-трафик; default появится в таблице 52 сам),
+/// ZeroTier и прочие L2 — через узел @имя: им нужен адрес шлюза.
+pub fn p2p_devs(links: &str, addrs: &str) -> Vec<String> {
+    let with_v4: Vec<&str> = addrs.lines().filter_map(|l| {
+        let w: Vec<&str> = l.split_whitespace().collect();
+        (w.len() > 3 && w[2] == "inet").then(|| w[1])
+    }).collect();
+    let mut out = Vec::new();
+    for l in links.lines() {
+        let w: Vec<&str> = l.split_whitespace().collect();
+        if w.len() < 3 {
+            continue;
+        }
+        let dev = w[1].trim_end_matches(':').split('@').next().unwrap_or("");
+        let flags = w[2];
+        let up = flags.contains(",UP") || flags.contains("<UP");
+        if !up || !flags.contains("POINTOPOINT") || !path_id_ok(dev) || dev.starts_with("tailscale") || !with_v4.contains(&dev) {
+            continue;
+        }
+        if !out.iter().any(|x: &String| x == dev) {
+            out.push(dev.to_string());
+        }
+    }
+    out
+}
+
+/// Сетевое устройство существует (sysfs).
+pub fn dev_exists(dev: &str) -> bool {
+    !dev.is_empty() && !dev.contains('/') && std::path::Path::new(&format!("/sys/class/net/{dev}")).exists()
+}
+
+/// В выводе `ip -6 route show default table all` есть настоящий маршрут в интернет
+/// (не unreachable/prohibit/blackhole).
+pub fn has_v6_default(t: &str) -> bool {
+    t.lines().any(|l| l.starts_with("default") && (l.contains(" via ") || l.contains(" dev ")) && !l.contains("unreachable") && !l.contains("prohibit") && !l.contains("blackhole"))
+}
+
 pub fn table_script(act: &[&Path], relay_mbit: i64, overlay_idx: u32, lan: &[crate::netx::IpNet], excl: &[crate::netx::IpNet]) -> String {
     let t = format!("inet {TABLE}");
     let mut b = format!("add table {t}\n");
@@ -508,10 +549,27 @@ impl DnsGuard {
         msgs
     }
 
+    /// Без обхода и overlay: раз в CHECK_EVERY только найти пути (для страницы), ничего не настраивая.
+    pub fn route_scan(&mut self, now: i64) {
+        if now - self.r_at >= CHECK_EVERY {
+            self.r_at = now;
+            let _ = self.route_find(now);
+        }
+    }
+
     /// Пути из таблиц маршрутов и их имена netifd.
     fn route_find(&mut self, now: i64) -> Vec<String> {
         let mut msgs = Vec::new();
         let mut found = parse_routes(&self.sys.query(&["ip", "-4", "route", "show", "table", "all"]).unwrap_or_default());
+        // туннели без своего default (OpenVPN def1/route-nopull, WireGuard без маршрутов) — тоже пути
+        let links = self.sys.query(&["ip", "-o", "link", "show"]).unwrap_or_default();
+        let addrs = self.sys.query(&["ip", "-o", "-4", "addr", "show"]).unwrap_or_default();
+        for dev in p2p_devs(&links, &addrs) {
+            found.entry(dev.clone()).or_insert_with(|| Path { id: dev.clone(), dev: dev.clone(), kind: gate_kind(&dev, false).into(), ..Default::default() });
+        }
+        if let Ok(v6) = self.sys.query(&["ip", "-6", "route", "show", "default", "table", "all"]) {
+            self.r_v6wan = Some(has_v6_default(&v6));
+        }
         for r in &self.cfg.relays {
             let Some((name, ip)) = crate::livecfg::parse_relay(r) else { continue };
             // узел должен быть в соседней сети (ZeroTier, LAN) — не через шлюз
@@ -990,12 +1048,18 @@ impl DnsGuard {
     pub fn paths_json(&self, j: &mut J) {
         let mut ids: Vec<String> = Vec::new();
         for id in &self.cfg.alternatives {
-            if !ids.contains(id) {
+            // устройство из настроек, которого больше нет (сняли карту, удалили интерфейс), — не показывать
+            let alive = id == DGR_PROTO || id.starts_with('@') || self.r_paths.contains_key(id) || dev_exists(id);
+            if alive && !ids.contains(id) {
                 ids.push(id.clone());
             }
         }
         if !ids.iter().any(|x| x == DGR_PROTO) {
             ids.push(DGR_PROTO.into());
+        }
+        // нет IPv6 в интернет вообще — «другой протокол» не предлагать
+        if self.r_v6wan == Some(false) {
+            ids.retain(|x| x != DGR_PROTO);
         }
         let rest: Vec<String> = self.r_paths.keys().filter(|id| !ids.contains(id)).cloned().collect();
         ids.extend(rest);
@@ -1077,6 +1141,13 @@ mod tests {
         let (mut g, sys) = guard("targeted", f, &tmp("r-relay"));
         g.cfg.alternatives = vec![DGR_PROTO.into(), "@node1".into()];
         g.cfg.relays = vec!["node1@10.147.17.1".into()];
+        let links = "1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536\n5: pppoe-wan: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1492\n7: tun0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1500\n8: wg0: <POINTOPOINT,NOARP,UP,LOWER_UP> mtu 1420\n9: tailscale0: <POINTOPOINT,MULTICAST,NOARP,UP,LOWER_UP> mtu 1280\n10: wg1: <POINTOPOINT,NOARP> mtu 1420\n11: ztabc: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 2800\n";
+        let addrs = "5: pppoe-wan    inet 100.88.1.2 peer 100.86.0.1/32 scope global pppoe-wan\n7: tun0    inet 10.8.0.6/24 scope global tun0\n8: wg0    inet 10.9.0.2/32 scope global wg0\n9: tailscale0    inet 100.64.0.9/32 scope global tailscale0\n10: wg1    inet 10.10.0.2/32 scope global wg1\n11: ztabc    inet 10.147.17.18/24 scope global ztabc\n";
+        // поднятые туннели с IPv4 — да; tailscale (нужен exit node), выключенный wg1, L2 ZeroTier — нет
+        assert_eq!(p2p_devs(links, addrs), vec!["pppoe-wan", "tun0", "wg0"]);
+        assert!(has_v6_default("default via fe80::1 dev pppoe-wan metric 1024 pref medium\n"));
+        assert!(!has_v6_default(""));
+        assert!(!has_v6_default("unreachable default dev lo table 52 metric 1024 pref medium\n"));
         sys.queries.lock().unwrap().insert("ip -4 route show table all".into(), "default via 10.0.0.1 dev pppoe-wan metric 10\ndefault via 10.147.17.1 dev zt0 table 53\n".into());
         sys.queries.lock().unwrap().insert("ip -4 route get 10.147.17.1".into(), "10.147.17.1 dev zt0 src 10.147.17.18 uid 0\n    cache".into());
         g.route_find(1_700_000_000_000);

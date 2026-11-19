@@ -188,6 +188,10 @@ pub fn build(d: &mut Daemon, unix: i64) {
     d.unblock.status_json(&mut ublj);
     let mut vsj = crate::json::J::new();
     d.vuln.status_json(&mut vsj, &d.cfg.vuln_scan.mode);
+    let mut knj = crate::json::J::new();
+    d.knock.status_json(&mut knj, &d.cfg.knock);
+    let mut twj = crate::json::J::new();
+    d.threat.status_json(&mut twj, d.cfg.threat_watch.mode == "on");
     let mut psj = crate::json::J::new();
     {
         let on = d.cfg.dns_guard.persite != "off" && !d.cfg.dns_guard.persite.is_empty();
@@ -463,6 +467,10 @@ pub fn build(d: &mut Daemon, unix: i64) {
     }
     if !vsj.b.is_empty() {
         j.key("vuln").raw(&vsj.b);
+    }
+    {
+        j.key("knock").raw(&knj.b);
+        j.key("threat").raw(&twj.b);
     }
     if !psj.b.is_empty() {
         j.key("persite").raw(&psj.b);

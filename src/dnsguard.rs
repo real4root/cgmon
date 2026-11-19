@@ -478,6 +478,9 @@ pub struct DnsGuard {
 
     // обход (dgroute.rs)
     pub r_paths: BTreeMap<String, crate::dgroute::Path>,
+    /// есть ли у роутера IPv6-маршрут в интернет (None — ещё не смотрели): без него
+    /// «другой протокол» (IPv4 ⇄ IPv6) бесполезен и на странице не предлагается
+    pub r_v6wan: Option<bool>,
     pub r_idx: BTreeMap<String, u32>,
     pub r_at: i64,
     pub r_label_at: i64,
@@ -547,6 +550,7 @@ impl DnsGuard {
             t_err: String::new(),
             t_writing: false,
             r_paths: BTreeMap::new(),
+            r_v6wan: None,
             r_idx: BTreeMap::new(),
             r_at: 0,
             r_label_at: 0,
@@ -812,14 +816,20 @@ impl DnsGuard {
             msgs.extend(self.recheck(now));
         }
         let targeted = self.cfg.mode == "targeted";
+        // пути обхода и шлюз «весь трафик» (overlay, в т. ч. через свой узел @имя) работают в
+        // адресном режиме и в любом другом, если overlay задан
+        let routed = targeted || !self.cfg.overlay.is_empty();
+        if routed {
+            msgs.extend(self.route_tick(now, feed)); // пути обхода — до решений по владельцам
+        }
         if targeted || !self.t_written.is_empty() {
-            if targeted {
-                msgs.extend(self.route_tick(now, feed)); // пути обхода — до решений по владельцам
-            }
             msgs.extend(self.targets_tick(now, h.v6_avail, feed));
         }
-        if !targeted {
+        if !routed {
             self.route_teardown();
+            // только найти пути (без таблиц и проверок) — чтобы страница показала шлюзы,
+            // в т. ч. дополнительные (@имя), в «Порядке шлюзов» и в адресном обходе
+            self.route_scan(now);
         }
         msgs.extend(self.v6_tick(now, h));
         if self.busy || self.backend.is_none() {
@@ -1033,6 +1043,10 @@ impl DnsGuard {
         }
         if self.ra_off() {
             j.key("ra_off").bool(true);
+        }
+        // пути — во всех режимах: страница строит из них «Порядок шлюзов» и адресный обход
+        if self.cfg.mode != "targeted" {
+            self.paths_json(j);
         }
         if self.cfg.mode == "targeted" {
             self.targets_json(j);

@@ -75,6 +75,12 @@ pub struct Finding {
     pub mac: String,
     /// камера/регистратор ходит в интернет (облако производителя): yes | no | "" — не камера
     pub cloud: String,
+    /// откуда обновление: "" — репозиторий прошивки; stable | beta — главный OpenWrt (repo)
+    pub channel: String,
+    /// фид главного OpenWrt (каталог с packages.adb / Packages.gz) для кнопки «Обновить»
+    pub repo: String,
+    /// исправленная версия есть только в beta OpenWrt, а находка не серьёзная — кнопки нет, подсказка
+    pub avail: String,
 }
 
 #[derive(Clone, Debug, Default)]
@@ -89,6 +95,10 @@ pub struct Report {
     pub findings: Vec<Finding>,
     pub errors: Vec<String>,
     pub pkg_sig: String,
+    /// версия cgmon, сделавшая проверку: другая — логика сканера могла измениться, перепроверить
+    pub ver: String,
+    /// базы уязвимостей недоступны — пакеты и ядро не проверены (находки берутся из прошлого отчёта)
+    pub pkg_failed: bool,
 }
 
 pub struct VulnScan {
@@ -108,18 +118,30 @@ pub struct VulnScan {
     iso_macs: Vec<String>,
     /// после обновления пакета — полная перепроверка, как только поток свободен
     recheck_due: bool,
+    /// автообновление cgmon: когда проверяли релиз (мс; 0 — ещё не после запуска)
+    auto_at: i64,
+    auto_busy: bool,
+    auto_on: bool,
+    /// на GitHub есть новее (автообновление выключено) — событие с кнопкой на странице
+    pub new_ver: Option<String>,
+    /// находки слежения за угрозами (threatwatch) — подмешиваются к отчёту, сам отчёт не трогают
+    pub extra: Vec<Finding>,
 }
 
 enum Msg {
     Phase(String),
     Done(Report),
     Act(bool, String, Vec<(String, String)>),
+    /// автообновление: новее нет / не удалось узнать — просто освободить
+    Idle,
+    /// вышла новая версия, автообновление выключено — сообщить
+    NewVer(String),
 }
 
 impl Default for VulnScan {
     fn default() -> Self {
         let (tx, rx) = std::sync::mpsc::channel();
-        VulnScan { report: None, rx: Some(rx), tx, busy: false, phase: String::new(), loaded: false, last_try: 0, act_busy: false, act_result: None, iso_written: String::new(), iso_at: 0, iso_macs: Vec::new(), recheck_due: false }
+        VulnScan { report: None, rx: Some(rx), tx, busy: false, phase: String::new(), loaded: false, last_try: 0, act_busy: false, act_result: None, iso_written: String::new(), iso_at: 0, iso_macs: Vec::new(), recheck_due: false, auto_at: 0, auto_busy: false, auto_on: false, new_ver: None, extra: Vec::new() }
     }
 }
 
@@ -130,6 +152,8 @@ pub struct Input {
     /// адрес, имя, MAC, байт в интернет за сутки (учёт трафика)
     pub lan_devices: Vec<(IpAddr, String, String, u64)>,
     pub own: Vec<IpAddr>,
+    /// off | stable | beta — см. VulnScanConfig::upstream
+    pub upstream: String,
 }
 
 impl VulnScan {
@@ -150,8 +174,25 @@ impl VulnScan {
             while let Ok(m) = rx.try_recv() {
                 match m {
                     Msg::Phase(p) => self.phase = p,
+                    Msg::Idle => {
+                        self.auto_busy = false;
+                        if self.auto_on {
+                            self.act_busy = false;
+                        }
+                    }
+                    Msg::NewVer(v) => {
+                        self.auto_busy = false;
+                        // в журнал/события — один раз на версию (и после перезапуска не повторять)
+                        let seen = format!("{}/new_ver_seen", crate::util::RUN_DIR);
+                        if std::fs::read_to_string(&seen).ok().as_deref() != Some(v.as_str()) {
+                            let _ = std::fs::write(&seen, &v);
+                            msgs.push(tr!("Вышла новая версия cgmon {} (установлена {}) — кнопка «Обновить» в событиях и в разделе «Безопасность»", v, crate::VERSION).to_string());
+                        }
+                        self.new_ver = Some(v);
+                    }
                     Msg::Act(ok, t, vers) => {
                         self.act_busy = false;
+                        self.auto_busy = false;
                         msgs.push(if ok { tr!("Сканер уязвимостей: обновлено — {}", t) } else { tr!("Сканер уязвимостей: обновить не удалось — {}", t) });
                         self.act_result = Some((ok, t));
                         // сразу пересчитать находки обновлённых пакетов по новой версии,
@@ -166,9 +207,17 @@ impl VulnScan {
                             }
                         }
                     }
-                    Msg::Done(r) => {
+                    Msg::Done(mut r) => {
                         self.busy = false;
                         self.phase.clear();
+                        // базы недоступны — не терять находки по пакетам и ядру: прежние остаются,
+                        // а перепроверка — через час (pkg_sig сброшен), не через неделю
+                        if r.pkg_failed {
+                            if let Some(old) = &self.report {
+                                carry_pkg_findings(&mut r, old);
+                            }
+                            r.pkg_sig.clear();
+                        }
                         let (c, h) = (r.findings.iter().filter(|f| f.sev == "crit").count(), r.findings.iter().filter(|f| f.sev == "high").count());
                         msgs.push(tr!("Сканер уязвимостей: проверка завершена — критических {}, серьёзных {}, всего находок {}", c, h, r.findings.len()));
                         save(state_file, &r);
@@ -185,10 +234,11 @@ impl VulnScan {
         if self.busy || mode == "off" || mode == "manual" || billed {
             return msgs;
         }
-        // раз в неделю или после смены пакетов (не чаще раза в час)
+        // раз в неделю, после смены пакетов (не чаще раза в час) или после обновления cgmon
+        // (новая логика сканера — старый отчёт может врать: кнопок нет, лишние находки)
         let due = match &self.report {
             None => true,
-            Some(r) => now - r.at >= WEEK_MS || (r.pkg_sig != pkg_sig() && now - r.at >= 3600_000),
+            Some(r) => now - r.at >= WEEK_MS || (r.pkg_sig != pkg_sig() && now - r.at >= 3600_000) || r.ver != crate::VERSION,
         };
         if due && now - self.last_try >= 3600_000 {
             self.start(now, input());
@@ -221,12 +271,15 @@ impl VulnScan {
         if kind != "pkg" && kind != "self" {
             return Err("bad action".into());
         }
+        // фид главного OpenWrt — только из своего отчёта (страница его не передаёт);
+        // stable предпочтительнее beta
+        let repos: Vec<String> = if kind == "pkg" { action_repos(self.report.as_ref(), &pkgs) } else { Vec::new() };
         self.act_busy = true;
         self.act_result = None;
         let tx = self.tx.clone();
         let kind = kind.to_string();
         let _ = std::thread::Builder::new().name("vulnact".into()).spawn(move || {
-            let r = if kind == "self" { self_update().map(|v| format!("cgmon {v}")) } else { upgrade_pkgs(&pkgs) };
+            let r = if kind == "self" { self_update().map(|v| format!("cgmon {v}")) } else { upgrade_pkgs(&pkgs, &repos) };
             // новые версии установленных пакетов — для быстрого пересчёта
             let vers: Vec<(String, String)> = if r.is_ok() && kind == "pkg" { inventory().into_iter().filter(|p| pkgs.contains(&p.name)).map(|p| (p.name, p.version)).collect() } else { Vec::new() };
             let _ = tx.send(match r {
@@ -235,6 +288,41 @@ impl VulnScan {
             });
         });
         Ok(())
+    }
+
+    /// Автообновление cgmon (`auto_update: on`): через 10 минут после запуска и затем раз
+    /// в 6 часов — последний релиз на GitHub; новее — скачать, проверить SHA256, поставить
+    /// и перезапуститься (self_update). Не при платном трафике и не в режиме только чтения.
+    pub fn auto_update(&mut self, now: i64, on: bool, billed: bool) {
+        const EVERY: i64 = 6 * 3600_000;
+        self.auto_on = on;
+        if billed || crate::util::readonly() || self.auto_busy || (on && self.act_busy) {
+            return;
+        }
+        if self.auto_at == 0 {
+            self.auto_at = now - EVERY + 600_000;
+            return;
+        }
+        if now - self.auto_at < EVERY {
+            return;
+        }
+        self.auto_at = now;
+        self.auto_busy = true;
+        if on {
+            self.act_busy = true;
+        }
+        let tx = self.tx.clone();
+        let _ = std::thread::Builder::new().name("autoupdate".into()).spawn(move || {
+            let newer = latest_release().ok().filter(|v| vcmp(v, crate::VERSION) == std::cmp::Ordering::Greater);
+            let _ = tx.send(match newer {
+                None => Msg::Idle,
+                Some(v) if !on => Msg::NewVer(v),
+                Some(v) => match self_update() {
+                    Ok(v) => Msg::Act(true, tr!("cgmon {} (автообновление)", v).to_string(), Vec::new()),
+                    Err(e) => Msg::Act(false, tr!("автообновление cgmon до {}: {}", v, e).to_string(), Vec::new()),
+                },
+            });
+        });
     }
 
     /// Кратко — в статус (счётчики; находки — по запросу vuln_get).
@@ -276,10 +364,14 @@ impl VulnScan {
     }
 
     pub fn status_json(&self, j: &mut J, mode: &str) {
-        if mode == "off" && self.report.is_none() && self.iso_macs.is_empty() {
+        let new_ver = self.new_ver.as_ref().filter(|v| !self.auto_on && vcmp(v, crate::VERSION) == std::cmp::Ordering::Greater);
+        if mode == "off" && self.report.is_none() && self.iso_macs.is_empty() && new_ver.is_none() && self.extra.is_empty() {
             return;
         }
         j.obj().key("mode").str(mode).key("busy").bool(self.busy);
+        if let Some(v) = new_ver {
+            j.key("new_ver").str(v);
+        }
         if self.busy {
             j.key("phase").str(&self.phase);
         }
@@ -292,18 +384,38 @@ impl VulnScan {
         if let Some((ok, t)) = &self.act_result {
             j.key("act_ok").bool(*ok).key("act_text").str(t);
         }
-        if let Some(r) = &self.report {
-            let n = |s: &str| r.findings.iter().filter(|f| f.sev == s).count() as i64;
-            j.key("at").int(r.at).key("crit").int(n("crit")).key("high").int(n("high")).key("med").int(n("med")).key("low").int(n("low")).key("info").int(n("info"));
-            j.key("kev").int(r.findings.iter().filter(|f| f.kev).count() as i64);
+        if self.report.is_some() || !self.extra.is_empty() {
+            // без копии отчёта (статус — раз в 2 с): находки отчёта и слежения подряд
+            let all = || self.report.iter().flat_map(|r| r.findings.iter()).chain(self.extra.iter());
+            let n = |s: &str| all().filter(|f| f.sev == s).count() as i64;
+            j.key("at").int(self.report.as_ref().map_or(0, |r| r.at)).key("crit").int(n("crit")).key("high").int(n("high")).key("med").int(n("med")).key("low").int(n("low")).key("info").int(n("info"));
+            j.key("kev").int(all().filter(|f| f.kev).count() as i64);
+            // для событий: как в разделе «Безопасность» (пакет — одна строка) и только то, что
+            // можно исправить (кнопка обновления, настройка, устройство LAN)
+            let (c, h, k) = event_counts_of(all());
+            j.key("ev_crit").int(c).key("ev_high").int(h).key("ev_kev").int(k);
         }
         j.end_obj();
     }
 
+    /// Отчёт вместе с находками слежения за угрозами (None — нет ни того, ни другого).
+    fn merged(&self) -> Option<std::borrow::Cow<'_, Report>> {
+        match (&self.report, self.extra.is_empty()) {
+            (Some(r), true) => Some(std::borrow::Cow::Borrowed(r)),
+            (Some(r), false) => {
+                let mut r = r.clone();
+                r.findings.extend(self.extra.iter().cloned());
+                Some(std::borrow::Cow::Owned(r))
+            }
+            (None, false) => Some(std::borrow::Cow::Owned(Report { findings: self.extra.clone(), ..Default::default() })),
+            (None, true) => None,
+        }
+    }
+
     pub fn report_json(&self) -> String {
         let mut j = J::new();
-        match &self.report {
-            Some(r) => report_json(&mut j, r, self.busy, &self.phase),
+        match self.merged() {
+            Some(r) => report_json(&mut j, &r, self.busy, &self.phase),
             None => {
                 j.obj().key("busy").bool(self.busy).key("phase").str(&self.phase).end_obj();
             }
@@ -327,7 +439,7 @@ pub fn scan_now(input: Input) -> String {
 
 fn report_json(j: &mut J, r: &Report, busy: bool, phase: &str) {
     j.obj().key("at").int(r.at).key("took_ms").int(r.took_ms).key("packages").int(r.packages as i64).key("kernel").str(&r.kernel);
-    j.key("kernel_total").int(r.kernel_total as i64).key("kernel_hidden").int(r.kernel_hidden as i64).key("pkg_sig").str(&r.pkg_sig);
+    j.key("kernel_total").int(r.kernel_total as i64).key("kernel_hidden").int(r.kernel_hidden as i64).key("pkg_sig").str(&r.pkg_sig).key("ver").str(&r.ver);
     j.key("busy").bool(busy).key("phase").str(phase);
     j.key("errors").arr();
     for e in &r.errors {
@@ -348,7 +460,7 @@ fn report_json(j: &mut J, r: &Report, busy: bool, phase: &str) {
             }
             j.end_arr();
         }
-        for (k, v) in [("cve", &f.cve), ("osv", &f.osv), ("version", &f.version), ("fixed", &f.fixed), ("av", &f.av), ("urgency", &f.urgency), ("state", &f.state), ("summary", &f.summary), ("upgrade", &f.upgrade), ("action", &f.action), ("url", &f.url), ("ports", &f.ports), ("mac", &f.mac), ("cloud", &f.cloud)] {
+        for (k, v) in [("cve", &f.cve), ("osv", &f.osv), ("version", &f.version), ("fixed", &f.fixed), ("av", &f.av), ("urgency", &f.urgency), ("state", &f.state), ("summary", &f.summary), ("upgrade", &f.upgrade), ("action", &f.action), ("url", &f.url), ("ports", &f.ports), ("mac", &f.mac), ("cloud", &f.cloud), ("channel", &f.channel), ("repo", &f.repo), ("avail", &f.avail)] {
             if !v.is_empty() {
                 j.key(k).str(v);
             }
@@ -384,7 +496,7 @@ fn load(path: &str) -> Option<Report> {
     let v = crate::value::parse_json(&t).ok()?;
     let s = |v: &Value, k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").to_string();
     let f = |v: &Value, k: &str| v.get(k).and_then(|x| x.as_f64()).unwrap_or(0.0);
-    let mut r = Report { at: f(&v, "at") as i64, took_ms: f(&v, "took_ms") as i64, packages: f(&v, "packages") as usize, kernel: s(&v, "kernel"), kernel_total: f(&v, "kernel_total") as usize, kernel_hidden: f(&v, "kernel_hidden") as usize, pkg_sig: s(&v, "pkg_sig"), ..Default::default() };
+    let mut r = Report { at: f(&v, "at") as i64, took_ms: f(&v, "took_ms") as i64, packages: f(&v, "packages") as usize, kernel: s(&v, "kernel"), kernel_total: f(&v, "kernel_total") as usize, kernel_hidden: f(&v, "kernel_hidden") as usize, pkg_sig: s(&v, "pkg_sig"), ver: s(&v, "ver"), ..Default::default() };
     if let Some(Value::List(l)) = v.get("errors") {
         r.errors = l.iter().filter_map(|x| x.as_str().map(String::from)).collect();
     }
@@ -394,7 +506,7 @@ fn load(path: &str) -> Option<Report> {
                 Some(Value::List(a)) => a.iter().filter_map(|y| y.as_str().map(String::from)).collect(),
                 _ => Vec::new(),
             };
-            r.findings.push(Finding { sev: s(x, "sev"), area: s(x, "area"), code: s(x, "code"), target: s(x, "target"), args: list("args"), cve: s(x, "cve"), osv: s(x, "osv"), version: s(x, "version"), fixed: s(x, "fixed"), cvss: f(x, "cvss"), av: s(x, "av"), urgency: s(x, "urgency"), epss: f(x, "epss"), kev: x.get("kev").and_then(|y| y.as_bool()).unwrap_or(false), state: s(x, "state"), summary: s(x, "summary"), upgrade: s(x, "upgrade"), action: s(x, "action"), pkgs: list("pkgs"), url: s(x, "url"), exposed: x.get("exposed").and_then(|y| y.as_bool()).unwrap_or(false), ports: s(x, "ports"), mac: s(x, "mac"), cloud: s(x, "cloud") });
+            r.findings.push(Finding { sev: s(x, "sev"), area: s(x, "area"), code: s(x, "code"), target: s(x, "target"), args: list("args"), cve: s(x, "cve"), osv: s(x, "osv"), version: s(x, "version"), fixed: s(x, "fixed"), cvss: f(x, "cvss"), av: s(x, "av"), urgency: s(x, "urgency"), epss: f(x, "epss"), kev: x.get("kev").and_then(|y| y.as_bool()).unwrap_or(false), state: s(x, "state"), summary: s(x, "summary"), upgrade: s(x, "upgrade"), action: s(x, "action"), pkgs: list("pkgs"), url: s(x, "url"), exposed: x.get("exposed").and_then(|y| y.as_bool()).unwrap_or(false), ports: s(x, "ports"), mac: s(x, "mac"), cloud: s(x, "cloud"), channel: s(x, "channel"), repo: s(x, "repo"), avail: s(x, "avail") });
         }
     }
     Some(r)
@@ -408,6 +520,8 @@ pub struct Pkg {
     pub name: String,
     pub origin: String,
     pub version: String,
+    /// версия целиком, с номером сборки (-rN / -N) — для сравнения с индексами
+    pub full: String,
 }
 
 /// Подпись списка пакетов (смена — повод перепроверить).
@@ -440,7 +554,7 @@ pub fn parse_apk(text: &str) -> Vec<Pkg> {
         let Some(vpos) = head.rfind('-') else { continue };
         let (name, ver) = (&first[..vpos], &first[vpos + 1..]);
         let origin = line.split('{').nth(1).and_then(|x| x.split('}').next()).map(|p| p.rsplit('/').next().unwrap_or(p).to_string()).unwrap_or_else(|| name.to_string());
-        out.push(Pkg { name: name.to_string(), origin, version: strip_rel(ver) });
+        out.push(Pkg { name: name.to_string(), origin, version: strip_rel(ver), full: ver.to_string() });
     }
     out
 }
@@ -461,7 +575,7 @@ pub fn parse_opkg_status(text: &str) -> Vec<Pkg> {
         }
         if !name.is_empty() && !ver.is_empty() {
             let origin = if src.is_empty() { name.clone() } else { src };
-            out.push(Pkg { name, origin, version: strip_rel(&ver) });
+            out.push(Pkg { version: strip_rel(&ver), full: ver, name, origin });
         }
     }
     out
@@ -475,6 +589,16 @@ fn inventory() -> Vec<Pkg> {
 }
 
 /// Исходник OpenWrt → (экосистема OSV, имя, версия для запроса); None — данных нет.
+const MOBY_V2: &str = "github.com/moby/moby/v2";
+
+/// Версия модуля moby/moby/v2 для тега Docker (`docker-v29.6.1` → `2.0.0-beta.18.0.2026…`)
+/// через прокси Go-модулей.
+fn moby_version(tag: &str) -> Option<String> {
+    let t = http_get(&format!("https://proxy.golang.org/{MOBY_V2}/@v/{tag}.info"), "moby", 30).ok()?;
+    let v = crate::value::parse_json(&t).ok()?;
+    v.get("Version").and_then(|x| x.as_str()).map(|x| x.trim_start_matches('v').to_string())
+}
+
 fn osv_target(origin: &str, ver: &str) -> Option<(&'static str, String, String)> {
     if ver.contains('~') || ver.is_empty() {
         return None; // снимок git OpenWrt (uhttpd, odhcpd…) — в базах их нет
@@ -490,6 +614,11 @@ fn osv_target(origin: &str, ver: &str) -> Option<(&'static str, String, String)>
         _ => None,
     };
     if let Some(m) = go {
+        // Docker 29+ живёт в модуле github.com/moby/moby/v2 (docker/docker заморожен на 28 — там
+        // «уязвимо всё, исправлений нет»): версию модуля по тегу docker-vX узнаёт moby_version()
+        if origin.starts_with("docker") && ver.split('.').next().and_then(|x| x.parse::<u32>().ok()).map_or(false, |m| m >= 29) {
+            return Some(("Go", MOBY_V2.to_string(), format!("docker-v{ver}")));
+        }
         let v = if origin.starts_with("docker") { format!("v{ver}+incompatible") } else { format!("v{ver}") };
         return Some(("Go", m.to_string(), v));
     }
@@ -666,7 +795,16 @@ fn osv_ids(queries: &[(String, String, String)]) -> Result<Vec<Vec<String>>, Str
                 b.push('}');
             }
             b.push_str("]}");
-            let resp = http_post("https://api.osv.dev/v1/querybatch", &b, "osvq", 120)?;
+            // сбой связи бывает разовым — до трёх попыток с паузой
+            let mut resp = http_post("https://api.osv.dev/v1/querybatch", &b, "osvq", 120);
+            for pause in [5, 20] {
+                if resp.is_ok() {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_secs(pause));
+                resp = http_post("https://api.osv.dev/v1/querybatch", &b, "osvq", 120);
+            }
+            let resp = resp?;
             let v = crate::value::parse_json(&resp).map_err(|e| format!("OSV: {e}"))?;
             let Some(Value::List(results)) = v.get("results") else { return Err("OSV: results".into()) };
             for ((i, _), r) in chunk.iter().zip(results.iter()) {
@@ -1134,7 +1272,7 @@ fn run(now: i64, input: &Input, tx: &Sender<Msg>) -> Report {
     let phase = |p: &str| {
         let _ = tx.send(Msg::Phase(p.to_string()));
     };
-    let mut r = Report { at: now, pkg_sig: pkg_sig(), ..Default::default() };
+    let mut r = Report { at: now, pkg_sig: pkg_sig(), ver: crate::VERSION.to_string(), ..Default::default() };
     phase("config");
     let exp = exposure();
     r.findings.extend(check_config(&exp));
@@ -1166,6 +1304,20 @@ fn run(now: i64, input: &Input, tx: &Sender<Msg>) -> Report {
             _ => r.findings.push(Finding { sev: "info".into(), area: "pkg".into(), code: "unpackaged".into(), target: path, ..Default::default() }),
         }
     }
+    // Docker 29+: тег → версия модуля moby/moby/v2; не узнали — по-старому (docker/docker)
+    let mut shown: HashMap<usize, String> = HashMap::new();
+    for (i, q) in queries.iter_mut().enumerate() {
+        if let Some(dv) = q.2.strip_prefix("docker-v").map(|x| x.to_string()) {
+            match moby_version(&q.2) {
+                Some(mv) => q.2 = mv,
+                None => {
+                    q.1 = "github.com/docker/docker".into();
+                    q.2 = format!("v{dv}+incompatible");
+                }
+            }
+            shown.insert(i, dv);
+        }
+    }
     let kver = upstream(&r.kernel);
     let kidx = queries.len();
     if !kver.is_empty() {
@@ -1187,6 +1339,7 @@ fn run(now: i64, input: &Input, tx: &Sender<Msg>) -> Report {
         Ok(x) => x,
         Err(e) => {
             r.errors.push(e);
+            r.pkg_failed = true;
             r.took_ms = t0.elapsed().as_millis() as i64;
             if input.lan {
                 phase("lan");
@@ -1230,7 +1383,10 @@ fn run(now: i64, input: &Input, tx: &Sender<Msg>) -> Report {
             if info.fixed.is_none() && past_last_affected(&ours, &format!("{} {}", info.summary, v.get("details").and_then(|x| x.as_str()).unwrap_or(""))) {
                 continue;
             }
+            // moby/moby/v2: OSV уже отобрала затронутое этой версией модуля; исправлено — в бете модуля
+            let moby = name == MOBY_V2 && shown.contains_key(&i);
             let state = match &info.fixed {
+                Some(_) if moby => "fixed",
                 Some(f) => match vcmp(&ours, &upstream(f)) {
                     std::cmp::Ordering::Less => "fixed",
                     std::cmp::Ordering::Equal => "maybe",
@@ -1238,7 +1394,10 @@ fn run(now: i64, input: &Input, tx: &Sender<Msg>) -> Report {
                 },
                 None => "open",
             };
-            pkg_found.push(Finding { area: "pkg".into(), code: "cve".into(), target: qsrc[i].clone(), cve: info.cve, osv: id.clone(), version: qver.trim_start_matches('v').split(':').last().unwrap_or("").trim_end_matches("-0").trim_end_matches("+incompatible").to_string(), fixed: info.fixed.map(|f| upstream(&f)).unwrap_or_default(), cvss: info.cvss, av: info.av, urgency: info.urgency, state: state.into(), summary: info.summary, ..Default::default() });
+            if program_absent(&qsrc[i], &info.summary, &pkgs) {
+                continue; // CVE про программу, подпакет которой не установлен (sshd без openssh-server)
+            }
+            pkg_found.push(Finding { area: "pkg".into(), code: "cve".into(), target: qsrc[i].clone(), cve: info.cve, osv: id.clone(), version: shown.get(&i).cloned().unwrap_or_else(|| qver.trim_start_matches('v').split(':').last().unwrap_or("").trim_end_matches("-0").trim_end_matches("+incompatible").to_string()), fixed: info.fixed.map(|f| if moby { format!("moby {f}") } else { upstream(&f) }).unwrap_or_default(), cvss: info.cvss, av: info.av, urgency: info.urgency, state: state.into(), summary: info.summary, ..Default::default() });
         }
     }
     // ядро: номера → KEV/EPSS → подробности для отобранных
@@ -1285,6 +1444,16 @@ fn run(now: i64, input: &Input, tx: &Sender<Msg>) -> Report {
     let upg = upgradable();
     for f in pkg_found.iter_mut() {
         attach_upgrade(f, &pkgs, &upg);
+    }
+    // в репозитории прошивки исправления нет — главный OpenWrt (stable, для серьёзных — и beta)
+    if input.upstream != "off" {
+        let mut up = Upstream::new(&input.upstream);
+        for f in pkg_found.iter_mut() {
+            up.attach(f, &pkgs);
+        }
+        if let Some(e) = up.err.take() {
+            r.errors.push(format!("OpenWrt: {e}"));
+        }
     }
     for f in r.findings.iter_mut().filter(|f| f.area == "openwrt") {
         attach_upgrade(f, &pkgs, &upg);
@@ -1794,6 +1963,43 @@ pub fn pkg_date(v: &str) -> u32 {
     }
 }
 
+/// Программы исходного пакета → подпакеты OpenWrt, в которых они лежат. openssh в
+/// OpenWrt дробится: на роутере часто только openssh-sftp-server при dropbear, и CVE
+/// «sshd in OpenSSH …» его не касается.
+const PROGRAMS: &[(&str, &str, &[&str])] = &[
+    ("openssh", "sshd", &["openssh-server"]),
+    ("openssh", "sshd-session", &["openssh-server"]),
+    ("openssh", "ssh", &["openssh-client"]),
+    ("openssh", "scp", &["openssh-client"]),
+    ("openssh", "ssh-add", &["openssh-client-utils"]),
+    ("openssh", "ssh-agent", &["openssh-client-utils"]),
+    ("openssh", "ssh-keyscan", &["openssh-client-utils"]),
+    ("openssh", "ssh-keysign", &["openssh-client-utils"]),
+    ("openssh", "ssh-pkcs11-helper", &["openssh-client-utils"]),
+    ("openssh", "ssh-keygen", &["openssh-keygen"]),
+    ("openssh", "sftp", &["openssh-sftp-client"]),
+    ("openssh", "sftp-server", &["openssh-sftp-server"]),
+];
+
+/// CVE описана как «<программа> in <продукт> …» (NVD), а ни одного подпакета с этими
+/// программами не установлено — находка не наша. Незнакомое слово — оставить.
+fn program_absent(origin: &str, summary: &str, pkgs: &[Pkg]) -> bool {
+    let s = summary.trim().to_lowercase();
+    let Some(at) = s.find(" in ") else { return false };
+    let progs: Vec<&str> = s[..at].split(|c: char| c.is_whitespace() || c == ',' || c == '/').filter(|w| !w.is_empty() && *w != "and" && *w != "or" && *w != "the").collect();
+    if progs.is_empty() || progs.len() > 4 {
+        return false;
+    }
+    let mut need: Vec<&str> = Vec::new();
+    for w in &progs {
+        match PROGRAMS.iter().find(|(o, p, _)| *o == origin && p == w) {
+            Some((_, _, sub)) => need.extend(sub.iter()),
+            None => return false,
+        }
+    }
+    !need.iter().any(|n| pkgs.iter().any(|p| p.origin == origin && (p.name == *n || p.name.starts_with(&format!("{n}-")))))
+}
+
 /// Компонент из заголовка/имени пакета advisory → установленные пакеты.
 fn component_pkgs(text: &str, pkgs: &[Pkg]) -> Vec<Pkg> {
     let alias = |w: &str| -> String {
@@ -1947,6 +2153,160 @@ fn attach_upgrade(f: &mut Finding, pkgs: &[Pkg], upg: &HashMap<String, String>) 
     }
 }
 
+// ======================= главный репозиторий OpenWrt =======================
+// Форк (ImmortalWrt и т. п.) или отставшее зеркало: исправленная версия уже есть в
+// downloads.openwrt.org, а в репозитории прошивки — нет. Берём ту же ветку и
+// архитектуру; подпись проверяет сам apk/opkg ключом OpenWrt (форки его хранят).
+
+pub const OPENWRT_DL: &str = "https://downloads.openwrt.org/releases";
+const FEEDS: &[&str] = &["base", "packages", "luci", "routing", "telephony"];
+
+/// Ветка прошивки: «25.12» из «25.12.2» или «25.12.0-rc4»; SNAPSHOT и непонятное — None.
+pub fn branch_of(rel: &str) -> Option<String> {
+    let mut it = rel.split(['.', '-']);
+    let (a, b) = (it.next()?, it.next()?);
+    let num = |x: &str| !x.is_empty() && x.bytes().all(|c| c.is_ascii_digit());
+    (num(a) && num(b) && a.len() == 2).then(|| format!("{a}.{b}"))
+}
+
+/// Последний стабильный релиз ветки из списка каталогов releases/ (без -rc).
+pub fn latest_stable(listing: &str, branch: &str) -> Option<String> {
+    let mut best: Option<String> = None;
+    for part in listing.split("href=\"").skip(1) {
+        let name = part.split(['"', '/']).next().unwrap_or("");
+        let Some(tail) = name.strip_prefix(branch).and_then(|t| t.strip_prefix('.')) else { continue };
+        if !tail.is_empty() && tail.bytes().all(|c| c.is_ascii_digit()) && best.as_deref().map_or(true, |b| vcmp(name, b) == std::cmp::Ordering::Greater) {
+            best = Some(name.to_string());
+        }
+    }
+    best
+}
+
+/// Индекс фида: index.json (`{"packages":{имя:версия}}`) или Packages (opkg, текст).
+pub fn parse_index(t: &str) -> HashMap<String, String> {
+    let mut m = HashMap::new();
+    if t.trim_start().starts_with('{') {
+        if let Ok(v) = crate::value::parse_json(t) {
+            if let Some(Value::Map(list)) = v.get("packages") {
+                for (k, x) in list {
+                    if let Some(s) = x.as_str() {
+                        m.insert(k.clone(), s.to_string());
+                    }
+                }
+            }
+        }
+        return m;
+    }
+    let mut name = String::new();
+    for l in t.lines() {
+        if let Some(n) = l.strip_prefix("Package: ") {
+            name = n.trim().to_string();
+        } else if let Some(v) = l.strip_prefix("Version: ") {
+            if !name.is_empty() {
+                m.insert(name.clone(), v.trim().to_string());
+            }
+        }
+    }
+    m
+}
+
+/// Новее ли версия `cand` установленной `have` и закрывает ли исправление `fixed`.
+pub fn upstream_fixes(cand: &str, have: &str, fixed: &str) -> bool {
+    vcmp(cand, have) == std::cmp::Ordering::Greater && vcmp(&upstream(cand), fixed) != std::cmp::Ordering::Less
+}
+
+/// Поиск исправлений в главном OpenWrt за одну проверку (индексы — один раз).
+struct Upstream {
+    mode: String,
+    inited: bool,
+    /// (канал, фиды: …/packages/<arch>/<feed> и …/targets/<target>/packages)
+    bases: Vec<(&'static str, Vec<String>)>,
+    idx: HashMap<String, HashMap<String, String>>,
+    err: Option<String>,
+}
+
+impl Upstream {
+    fn new(mode: &str) -> Self {
+        Upstream { mode: mode.to_string(), inited: false, bases: Vec::new(), idx: HashMap::new(), err: None }
+    }
+
+    fn init(&mut self) {
+        if self.inited {
+            return;
+        }
+        self.inited = true;
+        let t = std::fs::read_to_string("/etc/openwrt_release").unwrap_or_default();
+        let get = |k: &str| t.lines().find_map(|l| l.strip_prefix(k)).map(|v| v.trim_start_matches('=').trim_matches(['\'', '"']).to_string()).unwrap_or_default();
+        let (arch, target) = (get("DISTRIB_ARCH"), get("DISTRIB_TARGET"));
+        let Some(branch) = branch_of(&get("DISTRIB_RELEASE")) else { return };
+        let ok = |x: &str| !x.is_empty() && x.bytes().all(|c| c.is_ascii_alphanumeric() || c == b'_' || c == b'-' || c == b'/');
+        if !ok(&arch) {
+            return;
+        }
+        let feeds = |rel: &str| -> Vec<String> {
+            let mut v: Vec<String> = FEEDS.iter().map(|f| format!("{OPENWRT_DL}/{rel}/packages/{arch}/{f}")).collect();
+            if ok(&target) && target.contains('/') {
+                v.push(format!("{OPENWRT_DL}/{rel}/targets/{target}/packages")); // dropbear, grub2… — пакеты платформы
+            }
+            v
+        };
+        match http_get(&format!("{OPENWRT_DL}/"), "owrt-releases", 30) {
+            Ok(list) => {
+                if let Some(v) = latest_stable(&list, &branch) {
+                    self.bases.push(("stable", feeds(&v)));
+                }
+            }
+            Err(e) => self.err = Some(e),
+        }
+        // beta смотрим всегда (для подсказки), ставим — только в режиме beta и для серьёзных
+        self.bases.push(("beta", feeds(&format!("{branch}-SNAPSHOT"))));
+    }
+
+    fn index(&mut self, feed_url: &str) -> &HashMap<String, String> {
+        if !self.idx.contains_key(feed_url) {
+            let t = http_get(&format!("{feed_url}/index.json"), "owrt-index", 40).or_else(|_| http_get(&format!("{feed_url}/Packages"), "owrt-index", 60)).unwrap_or_default();
+            self.idx.insert(feed_url.to_string(), parse_index(&t));
+        }
+        &self.idx[feed_url]
+    }
+
+    /// Находке пакета без кнопки (в репозитории прошивки нет новее) — версия из OpenWrt:
+    /// stable всегда, beta — только серьёзным и критичным.
+    fn attach(&mut self, f: &mut Finding, pkgs: &[Pkg]) {
+        if f.area != "pkg" || !f.upgrade.is_empty() || f.fixed.is_empty() {
+            return;
+        }
+        self.init();
+        let names: Vec<String> = if f.pkgs.is_empty() { pkgs.iter().filter(|p| p.origin == f.target).map(|p| p.name.clone()).collect() } else { f.pkgs.clone() };
+        let beta_ok = self.mode == "beta" && matches!(f.sev.as_str(), "high" | "crit");
+        for (ch, feeds) in self.bases.clone() {
+            for url in feeds {
+                let idx = self.index(&url);
+                let up: Vec<(String, String)> = names
+                    .iter()
+                    .filter_map(|n| {
+                        let have = pkgs.iter().find(|p| p.name == *n)?.full.clone();
+                        let cand = idx.get(n)?;
+                        upstream_fixes(cand, &have, &f.fixed).then(|| (n.clone(), cand.clone()))
+                    })
+                    .collect();
+                if let Some((_, v)) = up.first() {
+                    if ch == "beta" && !beta_ok {
+                        f.avail = v.clone(); // есть, но только beta — подсказка без кнопки
+                        return;
+                    }
+                    f.upgrade = v.clone();
+                    f.action = "pkg".into();
+                    f.pkgs = up.iter().map(|x| x.0.clone()).collect();
+                    f.channel = ch.to_string();
+                    f.repo = url;
+                    return;
+                }
+            }
+        }
+    }
+}
+
 /// Архитектура для файлов релиза cgmon.
 fn release_arch() -> &'static str {
     match std::env::consts::ARCH {
@@ -1991,7 +2351,7 @@ fn sha256_hex(b: &[u8]) -> String {
     Sha256::digest(b).iter().map(|x| format!("{x:02x}")).collect()
 }
 
-fn download(url: &str, to: &str) -> Result<(), String> {
+pub(crate) fn download(url: &str, to: &str) -> Result<(), String> {
     let (bin, kind) = crate::report::https_tool();
     let _ = std::fs::remove_file(to);
     match kind {
@@ -2068,27 +2428,144 @@ pub fn self_update() -> Result<String, String> {
     Ok(ver)
 }
 
-/// Обновить пакеты (apk/opkg upgrade); имена — только из установленных.
-pub fn upgrade_pkgs(names: &[String]) -> Result<String, String> {
+/// Счётчики для текущих событий: серьёзные/критичные строки раздела «Безопасность»
+/// (находки пакета/ядра — одна строка), у которых есть решение: обновление пакета или
+/// cgmon, настройка роутера, устройство LAN (изоляция). Без решения в события не идёт.
+pub fn event_counts(r: &Report) -> (i64, i64, i64) {
+    event_counts_of(r.findings.iter())
+}
+
+pub fn event_counts_of<'a>(it: impl Iterator<Item = &'a Finding>) -> (i64, i64, i64) {
+    let mut groups: HashMap<String, (u8, bool, bool)> = HashMap::new(); // ключ → (худший уровень, есть решение, KEV)
+    for f in it {
+        let rank = match f.sev.as_str() {
+            "crit" => 2,
+            "high" => 1,
+            _ => 0,
+        };
+        let pkgish = matches!(f.area.as_str(), "pkg" | "kernel" | "openwrt");
+        let key = if pkgish { format!("{}|{}", if f.area == "kernel" { "kernel" } else { "pkg" }, f.target) } else { format!("{}|{}|{}|{}", f.area, f.code, f.target, f.mac) };
+        let fix = if pkgish { !f.upgrade.is_empty() && matches!(f.action.as_str(), "pkg" | "self") } else { matches!(f.area.as_str(), "cfg" | "lan") };
+        let g = groups.entry(key).or_insert((0, false, false));
+        g.0 = g.0.max(rank);
+        g.1 |= fix;
+        g.2 |= f.kev;
+    }
+    let ok: Vec<&(u8, bool, bool)> = groups.values().filter(|g| g.1).collect();
+    (ok.iter().filter(|g| g.0 == 2).count() as i64, ok.iter().filter(|g| g.0 == 1).count() as i64, ok.iter().filter(|g| g.2 && g.0 > 0).count() as i64)
+}
+
+/// Проверка пакетов не удалась: находки по пакетам, ядру и бюллетеням OpenWrt — из прошлого отчёта.
+pub fn carry_pkg_findings(r: &mut Report, old: &Report) {
+    let pkgish = |f: &Finding| matches!(f.area.as_str(), "pkg" | "kernel" | "openwrt");
+    r.findings.retain(|f| !pkgish(f) || f.code == "cgmon_update");
+    r.findings.extend(old.findings.iter().filter(|f| pkgish(f) && f.code != "cgmon_update").cloned());
+    if r.kernel_total == 0 {
+        r.kernel_total = old.kernel_total;
+        r.kernel_hidden = old.kernel_hidden;
+    }
+}
+
+/// Фиды OpenWrt для обновления пакетов `pkgs` — из своего отчёта: на пакет один фид,
+/// stable предпочтительнее beta.
+pub fn action_repos(r: Option<&Report>, pkgs: &[String]) -> Vec<String> {
+    let mut out: Vec<String> = Vec::new();
+    for p in pkgs {
+        let mut c: Vec<&Finding> = r.iter().flat_map(|r| r.findings.iter()).filter(|f| f.action == "pkg" && f.repo.starts_with(OPENWRT_DL) && f.pkgs.contains(p)).collect();
+        c.sort_by_key(|f| f.channel != "stable");
+        if let Some(f) = c.first() {
+            if !out.contains(&f.repo) {
+                out.push(f.repo.clone());
+            }
+        }
+    }
+    out
+}
+
+/// Временный конфиг opkg: свой как есть (фиды, ключи, check_signature) + фид OpenWrt,
+/// списки — в /tmp/cgmon (системные /var/opkg-lists не трогаем).
+pub fn opkg_alt_conf(base: &str, feeds: &str, repos: &[String], lists: &str) -> String {
+    let mut s = String::new();
+    for l in base.lines() {
+        if l.trim_start().starts_with("lists_dir") {
+            s.push_str(&format!("lists_dir ext {lists}\n"));
+        } else {
+            s.push_str(l);
+            s.push('\n');
+        }
+    }
+    if !base.lines().any(|l| l.trim_start().starts_with("lists_dir")) {
+        s.push_str(&format!("lists_dir ext {lists}\n"));
+    }
+    for l in feeds.lines().filter(|l| l.trim_start().starts_with("src")) {
+        s.push_str(l.trim());
+        s.push('\n');
+    }
+    for (i, r) in repos.iter().enumerate() {
+        s.push_str(&format!("src/gz cgmon_openwrt{i} {r}\n"));
+    }
+    s
+}
+
+const OPKG_ALT: &str = "/tmp/cgmon/opkg-openwrt.conf";
+const OPKG_ALT_LISTS: &str = "/tmp/cgmon/opkg-openwrt-lists";
+
+/// Обновить пакеты (apk/opkg upgrade); имена — только из установленных. `repo` —
+/// фид главного OpenWrt (из отчёта), если исправление есть только там.
+pub fn upgrade_pkgs(names: &[String], repos: &[String]) -> Result<String, String> {
     let installed: BTreeSet<String> = inventory().into_iter().map(|p| p.name).collect();
     let names: Vec<&String> = names.iter().filter(|n| installed.contains(*n) && n.bytes().all(|c| c.is_ascii_alphanumeric() || b"-_.+".contains(&c))).collect();
     if names.is_empty() {
         return Err(tr!("нечего обновлять").to_string());
     }
     let apk = crate::util::have_bin("apk");
-    space_check(&names, apk)?;
-    let (bin, args): (&str, Vec<&str>) = if apk { ("apk", vec!["upgrade"]) } else { ("opkg", vec!["upgrade"]) };
+    let repos: Vec<String> = repos.iter().filter(|r| r.starts_with(OPENWRT_DL) && !r.contains(char::is_whitespace)).cloned().collect();
+    let repo = (!repos.is_empty()).then_some(());
+    // доп. фиды: apk — --repository (индексы сначала в кеш), opkg — свой конфиг
+    let mut extra: Vec<String> = Vec::new();
+    if repo.is_some() {
+        if apk {
+            for r in &repos {
+                extra.push("--repository".into());
+                extra.push(format!("{r}/packages.adb"));
+            }
+            let mut a = vec!["update"];
+            a.extend(extra.iter().map(|s| s.as_str()));
+            let o = std::process::Command::new("apk").args(&a).output().map_err(|e| format!("apk update: {e}"))?;
+            // ошибка зеркала самой прошивки не мешает; важен только фид OpenWrt
+            let t = format!("{}{}", String::from_utf8_lossy(&o.stdout), String::from_utf8_lossy(&o.stderr));
+            if let Some(l) = t.lines().find(|l| repos.iter().any(|r| l.contains(r.as_str())) && (l.contains("ERROR") || l.contains("UNTRUSTED") || l.contains("No such file"))) {
+                return Err(format!("apk update (OpenWrt): {}", l.trim()));
+            }
+        } else {
+            let conf = opkg_alt_conf(&std::fs::read_to_string("/etc/opkg.conf").unwrap_or_default(), &format!("{}\n{}", std::fs::read_to_string("/etc/opkg/distfeeds.conf").unwrap_or_default(), std::fs::read_to_string("/etc/opkg/customfeeds.conf").unwrap_or_default()), &repos, OPKG_ALT_LISTS);
+            let _ = std::fs::create_dir_all(OPKG_ALT_LISTS);
+            std::fs::write(OPKG_ALT, conf).map_err(|e| format!("{OPKG_ALT}: {e}"))?;
+            extra = vec!["-f".into(), OPKG_ALT.into()];
+            let mut a: Vec<&str> = extra.iter().map(|s| s.as_str()).collect();
+            a.push("update");
+            let _ = crate::flowwatch::output_timeout("opkg", &a, 180_000);
+        }
+    }
+    space_check(&names, apk, &extra, if repo.is_some() && !apk { OPKG_ALT_LISTS } else { "/var/opkg-lists" })?;
+    let bin = if apk { "apk" } else { "opkg" };
     let mut cmd = std::process::Command::new(bin);
-    cmd.args(&args);
+    cmd.args(&extra);
+    cmd.arg("upgrade");
     for n in &names {
         cmd.arg(n.as_str());
     }
     let o = cmd.output().map_err(|e| e.to_string())?;
     let text = format!("{}{}", String::from_utf8_lossy(&o.stdout), String::from_utf8_lossy(&o.stderr));
+    if repo.is_some() && !apk {
+        let _ = std::fs::remove_file(OPKG_ALT);
+        let _ = std::fs::remove_dir_all(OPKG_ALT_LISTS);
+    }
     if !o.status.success() {
         return Err(text.lines().last().unwrap_or("").trim().to_string());
     }
-    Ok(names.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(" "))
+    let from = if repo.is_some() { " (OpenWrt)" } else { "" };
+    Ok(format!("{}{from}", names.iter().map(|s| s.as_str()).collect::<Vec<_>>().join(" ")))
 }
 
 /// Свободное место (байт) на разделе, куда ставятся пакеты: overlay или корень.
@@ -2121,13 +2598,14 @@ pub fn space_need(new: &[(String, u64)], old_overlay: &HashMap<String, u64>) -> 
 
 /// Хватит ли места на обновление: что именно поставится (с зависимостями), их размер,
 /// свободное место. Не хватает — ошибка с цифрами, ничего не трогаем.
-fn space_check(names: &[&String], apk: bool) -> Result<(), String> {
+fn space_check(names: &[&String], apk: bool, extra: &[String], opkg_lists: &str) -> Result<(), String> {
     let new: Vec<(String, u64)>;
     let mut old: HashMap<String, u64> = HashMap::new();
     let rom: BTreeSet<String>;
     if apk {
         // что поставится вместе с зависимостями
-        let mut sim = vec!["add", "--simulate", "-u"];
+        let mut sim: Vec<&str> = extra.iter().map(|s| s.as_str()).collect();
+        sim.extend(["add", "--simulate", "-u"]);
         sim.extend(names.iter().map(|s| s.as_str()));
         let st = crate::flowwatch::output_timeout("apk", &sim, 60_000).unwrap_or_default();
         let mut todo: Vec<String> = Vec::new();
@@ -2142,7 +2620,8 @@ fn space_check(names: &[&String], apk: bool) -> Result<(), String> {
         if todo.is_empty() {
             todo = names.iter().map(|s| s.to_string()).collect();
         }
-        let mut q = vec!["query", "--from", "repositories", "--fields", "name,installed-size"];
+        let mut q: Vec<&str> = extra.iter().map(|s| s.as_str()).collect();
+        q.extend(["query", "--from", "repositories", "--fields", "name,installed-size"]);
         q.extend(todo.iter().map(|s| s.as_str()));
         let qt = crate::flowwatch::output_timeout("apk", &q, 60_000).unwrap_or_default();
         let mut sizes: HashMap<String, u64> = HashMap::new();
@@ -2174,7 +2653,7 @@ fn space_check(names: &[&String], apk: bool) -> Result<(), String> {
     } else {
         // opkg: размеры из списков репозиториев
         let mut sizes: HashMap<String, u64> = HashMap::new();
-        for e in std::fs::read_dir("/var/opkg-lists").into_iter().flatten().flatten() {
+        for e in std::fs::read_dir(opkg_lists).into_iter().flatten().flatten() {
             let mut p = String::new();
             for l in std::fs::read_to_string(e.path()).unwrap_or_default().lines() {
                 if let Some(x) = l.strip_prefix("Package: ") {
@@ -2308,7 +2787,7 @@ mod tests {
     #[test]
     fn apk_lines() {
         let p = parse_apk("libcurl4-8.19.0-r2 x86_64 {feeds/packages/feeds/packages/net/curl} (MIT) [installed]\ndnsmasq-full-2.93-r1 x86_64 {feeds/base/network/services/dnsmasq} (GPL-2.0) [installed]\nuhttpd-2026.06.16~7b1bec45-r1 x86_64 {feeds/base/network/services/uhttpd} (ISC) [installed]\n");
-        assert_eq!(p[0], Pkg { name: "libcurl4".into(), origin: "curl".into(), version: "8.19.0".into() });
+        assert_eq!(p[0], Pkg { name: "libcurl4".into(), origin: "curl".into(), version: "8.19.0".into(), full: "8.19.0-r2".into() });
         assert_eq!(p[1].origin, "dnsmasq");
         assert_eq!(p[1].version, "2.93");
         assert!(osv_target(&p[2].origin, &p[2].version).is_none());
@@ -2317,7 +2796,7 @@ mod tests {
     #[test]
     fn opkg_status() {
         let p = parse_opkg_status("Package: libopenssl3\nVersion: 3.0.13-1\nSource: package/libs/openssl\n\nPackage: dropbear\nVersion: 2022.82-6\n");
-        assert_eq!(p[0], Pkg { name: "libopenssl3".into(), origin: "openssl".into(), version: "3.0.13-1".into() });
+        assert_eq!(p[0], Pkg { name: "libopenssl3".into(), origin: "openssl".into(), version: "3.0.13-1".into(), full: "3.0.13-1".into() });
         assert_eq!(p[1].origin, "dropbear");
     }
 
@@ -2343,6 +2822,8 @@ mod tests {
         assert_eq!(osv_target("busybox", "1.37.0").unwrap().2, "1:1.37.0-0");
         assert_eq!(osv_target("hostapd", "2.11").unwrap().1, "wpa");
         assert_eq!(osv_target("tailscale", "1.98.3").unwrap(), ("Go", "tailscale.com".to_string(), "v1.98.3".to_string()));
+        assert_eq!(osv_target("dockerd", "29.6.1").unwrap(), ("Go", "github.com/moby/moby/v2".to_string(), "docker-v29.6.1".to_string()));
+        assert_eq!(osv_target("docker", "28.5.2").unwrap().2, "v28.5.2+incompatible");
     }
 
     #[test]
@@ -2365,6 +2846,71 @@ mod tests {
         assert_eq!(cve_sev(false, 0.0, 7.5, "N", "", "fixed", false), "med");
         assert_eq!(cve_sev(false, 0.03, 9.8, "N", "", "maybe", true), "med");
         assert_eq!(port_list("22 8000-8002,443"), vec![22, 8000, 8001, 8002, 443]);
+    }
+
+    #[test]
+    fn events_only_actionable() {
+        let f = |a: &str, t: &str, sev: &str, up: &str| Finding { area: a.into(), code: "cve".into(), target: t.into(), sev: sev.into(), upgrade: up.into(), action: if up.is_empty() { String::new() } else { "pkg".into() }, ..Default::default() };
+        let r = Report { findings: vec![f("pkg", "glib2", "high", ""), f("pkg", "glib2", "high", ""), f("pkg", "docker", "high", ""), f("pkg", "curl", "high", "8.1"), f("pkg", "curl", "crit", ""), f("cfg", "22", "high", ""), f("kernel", "linux", "high", "")], ..Default::default() };
+        // glib2, docker, ядро — без решения; curl — одна строка (худшее crit); настройка — решение есть
+        assert_eq!(event_counts(&r), (1, 1, 0));
+    }
+
+    #[test]
+    fn carry_on_failure() {
+        let f = |a: &str, c: &str| Finding { area: a.into(), code: c.into(), ..Default::default() };
+        let old = Report { findings: vec![f("pkg", "cve"), f("kernel", "cve"), f("cfg", "open_wan"), f("pkg", "cgmon_update")], kernel_total: 10, ..Default::default() };
+        let mut r = Report { findings: vec![f("cfg", "ssh_password"), f("lan", "x")], pkg_failed: true, ..Default::default() };
+        carry_pkg_findings(&mut r, &old);
+        let areas: Vec<&str> = r.findings.iter().map(|f| f.area.as_str()).collect();
+        assert_eq!(areas, vec!["cfg", "lan", "pkg", "kernel"]);
+        assert_eq!(r.kernel_total, 10);
+    }
+
+    #[test]
+    fn openwrt_action_repos() {
+        let f = |p: &str, ch: &str, repo: &str| Finding { action: "pkg".into(), pkgs: vec![p.into()], channel: ch.into(), repo: repo.into(), ..Default::default() };
+        let st = format!("{OPENWRT_DL}/25.12.6/packages/x86_64/packages");
+        let be = format!("{OPENWRT_DL}/25.12-SNAPSHOT/packages/x86_64/packages");
+        let r = Report { findings: vec![f("a", "beta", &be), f("a", "stable", &st), f("b", "beta", &be), f("c", "", ""), f("d", "stable", "https://evil.example/x")], ..Default::default() };
+        assert_eq!(action_repos(Some(&r), &["a".into(), "b".into(), "c".into(), "d".into()]), vec![st.clone(), be.clone()]);
+        assert!(action_repos(Some(&r), &["c".into()]).is_empty());
+    }
+
+    #[test]
+    fn openwrt_upstream() {
+        assert_eq!(branch_of("25.12.2").as_deref(), Some("25.12"));
+        assert_eq!(branch_of("25.12.0-rc4").as_deref(), Some("25.12"));
+        assert_eq!(branch_of("SNAPSHOT"), None);
+        let list = r#"<a href="24.10.4/">x</a><a href="25.12.0-rc5/">x</a><a href="25.12.6/">x</a><a href="25.12.10/">x</a><a href="25.12-SNAPSHOT/">"#;
+        assert_eq!(latest_stable(list, "25.12").as_deref(), Some("25.12.10"));
+        assert_eq!(latest_stable(list, "23.05"), None);
+        let j = parse_index(r#"{"version":2,"architecture":"x86_64","packages":{"openssh-sftp-server":"10.6_p2-r1","curl":"8.1-r1"}}"#);
+        assert_eq!(j.get("openssh-sftp-server").map(|s| s.as_str()), Some("10.6_p2-r1"));
+        let p = parse_index("Package: openssh-sftp-server\nVersion: 9.9p2-1\nDepends: libc\n\nPackage: curl\nVersion: 8.1-1\n");
+        assert_eq!(p.get("openssh-sftp-server").map(|s| s.as_str()), Some("9.9p2-1"));
+        assert!(upstream_fixes("10.6_p2-r1", "10.6_p1-r2", "10.6p2"));
+        assert!(!upstream_fixes("10.6_p1-r3", "10.6_p1-r2", "10.6p2"));
+        assert!(!upstream_fixes("10.6_p2-r1", "10.6_p2-r1", "10.6p2"));
+        let c = opkg_alt_conf("dest root /\nlists_dir ext /var/opkg-lists\noption check_signature\n", "src/gz a https://x/base\n# src/gz b c\n", &["https://downloads.openwrt.org/releases/23.05.5/packages/mips_24kc/packages".to_string()], "/tmp/l");
+        assert!(c.contains("lists_dir ext /tmp/l\n") && c.contains("option check_signature") && c.contains("src/gz a https://x/base\n") && !c.contains("src/gz b") && c.ends_with("src/gz cgmon_openwrt0 https://downloads.openwrt.org/releases/23.05.5/packages/mips_24kc/packages\n"));
+    }
+
+    #[test]
+    fn program_subpackages() {
+        let pk = |n: &str| Pkg { name: n.into(), origin: "openssh".into(), version: "10.6_p1".into(), full: "10.6_p1-r2".into() };
+        let sftp = vec![pk("openssh-sftp-server")];
+        let sshd = "sshd in OpenSSH before 10.6p2 on Linux, when musl libc is used without PAM, lacks a workaround";
+        assert!(program_absent("openssh", sshd, &sftp));
+        assert!(!program_absent("openssh", sshd, &[pk("openssh-sftp-server"), pk("openssh-server-pam")]));
+        assert!(!program_absent("openssh", sshd, &[pk("openssh-server")]));
+        assert!(program_absent("openssh", "ssh-agent in OpenSSH before 9.3p2 has an insufficiently trustworthy search path", &sftp));
+        assert!(program_absent("openssh", "ssh and sshd in OpenSSH before 9.6 allow …", &sftp));
+        assert!(!program_absent("openssh", "ssh and sshd in OpenSSH before 9.6 allow …", &[pk("openssh-client")]));
+        // общее описание или незнакомое слово — оставить
+        assert!(!program_absent("openssh", "In OpenSSH before 9.6, a race condition", &sftp));
+        assert!(!program_absent("openssh", "A flaw was found in OpenSSH", &sftp));
+        assert!(!program_absent("curl", "curl in libcurl before 8.0", &sftp));
     }
 
     #[test]

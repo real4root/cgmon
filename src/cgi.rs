@@ -108,6 +108,12 @@ pub fn set(config_path: &str) -> i32 {
     let page_lang = s("lang");
     let ps_get = v.get("persite_get").and_then(|x| x.as_bool()).unwrap_or(false);
     let ps_set = v.get("persite_set").and_then(|x| x.as_str());
+    // имя устройства: {mac, ip, name} — в DHCP и имена хостов
+    let dev_name = match v.get("dev_name") {
+        Some(d @ Value::Map(_)) => Some((d.get("mac").and_then(|x| x.as_str()).unwrap_or("").to_string(), d.get("ip").and_then(|x| x.as_str()).unwrap_or("").to_string(), d.get("name").and_then(|x| x.as_str()).unwrap_or("").to_string())),
+        Some(_) => return fail(400, "bad request"),
+        None => None,
+    };
     // установка пакетов: true — недостающее для включённых функций, строка — имена через пробел
     let install = match v.get("install") {
         Some(Value::Bool(true)) => Some(String::new()),
@@ -116,7 +122,7 @@ pub fn set(config_path: &str) -> i32 {
         None => None,
     };
     let (nset, ncfg) = (map_len("set"), map_len("config"));
-    if (nset == 0 && ncfg == 0 && !get_config && free.is_empty() && l2o.is_empty() && l2c.is_empty() && !l2_scan && !extras && !l2_on && forget.is_empty() && install.is_none() && !ps_get && ps_set.is_none() && set_lang.is_empty() && !vuln_get && !vuln_scan && vuln_action.is_empty()) || password.len() > 128 || ncfg > 300 {
+    if (nset == 0 && ncfg == 0 && !get_config && free.is_empty() && l2o.is_empty() && l2c.is_empty() && !l2_scan && !extras && !l2_on && forget.is_empty() && install.is_none() && !ps_get && ps_set.is_none() && set_lang.is_empty() && !vuln_get && !vuln_scan && vuln_action.is_empty() && dev_name.is_none()) || password.len() > 128 || ncfg > 300 {
         return fail(400, "bad request");
     }
     // большое тело — только загрузка списка, без других настроек
@@ -152,6 +158,18 @@ pub fn set(config_path: &str) -> i32 {
             Some(p @ Value::List(_)) => p.to_json(&mut req),
             _ => req.push_str("[]"),
         }
+        pw(&mut req);
+        req.push('}');
+    } else if let Some((mac, ip, name)) = &dev_name {
+        if mac.len() > 20 || ip.len() > 15 || name.len() > 63 {
+            return fail(400, "bad request");
+        }
+        req.push_str("{\"cmd\":\"dev_name\",\"mac\":");
+        json_str(&mut req, mac);
+        req.push_str(",\"ip\":");
+        json_str(&mut req, ip);
+        req.push_str(",\"text\":");
+        json_str(&mut req, name);
         pw(&mut req);
         req.push('}');
     } else if !set_lang.is_empty() {

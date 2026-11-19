@@ -831,5 +831,44 @@ integration.home: {} — luci или cgmon	integration.home: {} — luci yoki cg
 integration.names: нужны DNS-имена (router.lan, cgmon.lan) без пробелов и повторов	integration.names: DNS nomlari kerak (router.lan, cgmon.lan), boʻshliqlar va takrorlarsiz
 cfg:integration	==== OpenWrt bilan integratsiya ====
 cfg:integration.home	Router manzilida nima ochiladi (http://192.168.1.1/): luci — odatdagidek OpenWrt sozlamalari; cgmon — cgmon sahifasi (OpenWrt sozlamalari — uning sarlavhasidagi «OpenWrt» havolasi orqali). Avvalgi /www/index.html yonida saqlanadi va luci tanlansa qaytariladi.
-cfg:integration.names	Har doim cgmon ochiladigan router DNS nomlari (masalan router.lan, cgmon.lan) — dnsmasq soʻrov kelgan tarmoqdagi router manzili bilan javob beradi.
+cfg:integration.names	Har doim cgmon ochiladigan router DNS nomlari (masalan cgmon.lan; router.lan) — dnsmasq soʻrov kelgan tarmoqdagi router manzili bilan javob beradi. Boʻsh — cgmon.lan.
 не хватает места на {}: нужно ≈ {} МБ, свободно {} МБ — ничего не обновлено	{} da joy yetmaydi: ≈ {} MB kerak, {} MB boʻsh — hech narsa yangilanmadi
+DNS: не удалось перезапустить {}: {}	DNS: {} ni qayta ishga tushirib boʻlmadi: {}
+DNS: после перезапуска {} снова работает	DNS: qayta ishga tushirilgandan keyin {} yana ishlayapti
+DNS: {} не отвечает ({}), интернет есть — нужен перезапуск {} (режим наблюдения)	DNS: {} javob bermayapti ({}), internet bor — {} ni qayta ishga tushirish kerak (kuzatuv rejimi)
+DNS: {} не отвечает ({}), перезапуски за сутки исчерпаны — только журнал	DNS: {} javob bermayapti ({}), bir kunlik qayta ishga tushirishlar tugadi — faqat jurnal
+DNS: {} не отвечает ({}), интернет есть — перезапускаю {}	DNS: {} javob bermayapti ({}), internet bor — {} qayta ishga tushirilmoqda
+ошибка или таймаут	xato yoki vaqt tugadi
+DNS: {} не отвечает ({}), а интернет есть; своей службы для перезапуска нет	DNS: {} javob bermayapti ({}), internet esa bor; qayta ishga tushiriladigan oʻz xizmati yoʻq
+dns_guard.local_heal: {} — off, observe или active	dns_guard.local_heal: {} — off, observe yoki active
+cfg:dns_guard.local_heal	Router DNS ini oʻzi tiklash (SmartDNS, AdGuard Home, dnsmasq): daqiqada bir marta cgmon dnsmasq dan mavjud boʻlmagan nomni soʻraydi (keshda boʻlmaydi); ommaviy DNS toʻgʻridan-toʻgʻri javob berganda ketma-ket uch xato — javob bermayotgan xizmat qayta ishga tushiriladi (15 daqiqada bir martadan, kuniga 4 martadan koʻp emas). off | observe (faqat jurnal) | active.
+настройка веб-сервера убрана: {}	veb-server sozlamasi olib tashlandi: {}
+vuln_scan.upstream: {} — off, stable или beta	vuln_scan.upstream: {} — off, stable yoki beta
+cfg:vuln_scan.upstream	Proshivka repozitoriysida (ImmortalWrt kabi fork yoki orqada qolgan koʻzgu) tuzatilgan versiya hali boʻlmasa — asosiy OpenWrt repozitoriysidan (downloads.openwrt.org) tuzatishlar; oʻsha tarmoq va arxitektura, imzoni apk/opkg OpenWrt kaliti bilan tekshiradi. off | stable (tarmoqning soʻnggi relizi) | beta (tarmoq SNAPSHOT ham, faqat jiddiy va kritik zaifliklar uchun). Faqat «Yangilash» tugmasi bilan oʻrnatiladi.
+auto_update: {} — off или on	auto_update: {} — off yoki on
+cfg:auto_update	cgmon avtoyangilanishi: on — har 6 soatda cgmon GitHub’dagi soʻnggi relizni tekshiradi va yangiroq boʻlsa, yuklab oladi, SHA256 ni tekshiradi, oʻrnatadi va qayta ishga tushadi. Pullik trafikda va faqat oʻqish rejimida emas. off — faqat sahifadagi tugma.
+cgmon {} (автообновление)	cgmon {} (avtoyangilanish)
+автообновление cgmon до {}: {}	cgmon’ni {} gacha avtoyangilash: {}
+Вышла новая версия cgmon {} (установлена {}) — кнопка «Обновить» в событиях и в разделе «Безопасность»	cgmon’ning yangi versiyasi {} chiqdi (oʻrnatilgan {}): «Yangilash» tugmasi hodisalarda va «Xavfsizlik» boʻlimida
+knock.forwards: {} — нужно «порты=адрес», напр. 3389=192.168.1.10	knock.forwards: {} — «portlar=manzil» kerak, m-n 3389=192.168.1.10
+Стук: доступ открыт для {} на {} мин	Taqillatish: {} uchun kirish {} daqiqaga ochildi
+cfg:knock.enabled	Taqillatish: berilgan oʻlchamdagi ping’larni tartib bilan yuborgan manzil uchun kirish ochiladi; router portlari uning LAN manziliga, yoʻnaltirishlar LAN qurilmalariga.
+knock.steps: {} — нужно ping:размер, tcp:порт или udp:порт	knock.steps: {} — ping:oʻlcham, tcp:port yoki udp:port kerak
+knock.steps: нужно от 2 до 6 шагов	knock.steps: 2 dan 6 gacha qadam kerak
+knock.from: {} — нужно имя интерфейса	knock.from: {} — interfeys nomi kerak
+threat_watch: mode — off или on, lists — auto, small, medium или large	threat_watch: mode — off yoki on, lists — auto, small, medium yoki large
+Ботнет: {} обращается к командному серверу {} ({})	Botnet: {} boshqaruv serveriga murojaat qilmoqda {} ({})
+Угроза: {} обращается к узлу раздачи вредоносов {} ({})	Tahdid: {} zararli dasturlar tarqatish tuguniga murojaat qilmoqda {} ({})
+Угроза: {} обращается к адресу из списка угроз {} ({})	Tahdid: {} tahdidlar roʻyxatidagi manzilga murojaat qilmoqda {} ({})
+Ботнет: {} сканирует интернет ({}) — так распространяются черви вроде Mirai	Botnet: {} internetni skanerlamoqda ({}) — Mirai kabi qurtlar shunday tarqaladi
+Подозрительно: {} запрашивает много случайных несуществующих доменов ({}) — признак генерации доменов (DGA)	Shubhali: {} koʻp tasodifiy mavjud boʻlmagan domenlarni soʻramoqda ({}) — domen generatsiyasi belgisi (DGA)
+Подозрительно: {} держит соединения с очень многими адресами ({}) — так работают прокси-ботнеты (или торрент)	Shubhali: {} juda koʻp manzillar bilan ulanishlarni ushlab turibdi ({}) — proksi-botnetlar shunday ishlaydi (yoki torrent)
+{} за час	bir soatda {}
+порт {}, {} адресов	port {}, {} manzil
+до {} адресов одновременно	bir vaqtda {} tagacha manzil
+cfg:threat_watch.mode	Botnet va tahdidlar kuzatuvi: botnet boshqaruv serverlari, zararli tugunlar va tahdid roʻyxatidagi manzillarga murojaat qiladigan qurilmalar (roʻyxatlar kuniga yangilanadi), hamda xatti-harakat belgilari. off | on.
+нужен MAC-адрес устройства	qurilmaning MAC manzili kerak
+нужен адрес устройства в локальной сети	qurilmaning mahalliy tarmoqdagi manzili kerak
+имя: латинские буквы, цифры и «-», до 63 знаков	nom: lotin harflari, raqamlar va «-», 63 belgigacha
+Имя устройства {} ({}) убрано	Qurilma nomi {} ({}) olib tashlandi
+Устройство {} ({}) названо {}	Qurilma {} ({}) {} deb nomlandi

@@ -13,7 +13,7 @@ pub const HIDDEN: &[&str] = &[
     "gate_selector.interfaces", "gate_selector.switching.on_switch", "gate_selector.enabled",
     "billing.tasix_file", "billing.state_file", "witness.state_file", "payment.state_file",
     // файлы, в которые cgmon пишет, — только в cgmon.yaml
-    "dns_guard.upstream_file", "dns_guard.guard_file", "dns_guard.targets_file", "dns_guard.cache_file", "dns_guard.state_file", "dns_guard.persite_file", "vuln_scan.state_file", "flow_watch.learn_file", "devices.vendor_cache", "devices.vendor_url",
+    "dns_guard.upstream_file", "dns_guard.guard_file", "dns_guard.targets_file", "dns_guard.cache_file", "dns_guard.state_file", "dns_guard.persite_file", "vuln_scan.state_file", "threat_watch.state_file", "flow_watch.learn_file", "devices.vendor_cache", "devices.vendor_url",
     "qos.device", "qos.ifb", "upload_shaper.device", "upload_shaper.class_id", "upload_shaper.stages",
     "accounting.enabled", "peers.list", "special_hosts", "dns.static",
     "report.token", "report.url", "hub.", // секреты и параметры центра
@@ -29,7 +29,7 @@ pub const MAIN: &[&str] = &[
     "lan_zones", "lan_interfaces", "isolated_zones",
     "billing.tasix_url",
     "report.enabled", "report.urls", "hub.enabled",
-    "lang", "dns_guard.mode", "dns_guard.unblock", "dns_guard.persite", "dns_guard.persite_aaaa", "dns_guard.withdraw_ra", "dns_guard.v6_enter_sec",
+    "lang", "auto_update", "knock.enabled", "knock.sizes", "knock.steps", "knock.step_sec", "knock.open_min", "knock.from", "knock.ports", "knock.forwards", "threat_watch.mode", "threat_watch.lists", "threat_watch.behavior", "dns_guard.mode", "dns_guard.unblock", "dns_guard.persite", "dns_guard.persite_aaaa", "dns_guard.withdraw_ra", "dns_guard.local_heal", "dns_guard.v6_enter_sec",
     "dns_guard.v4_enter_sec", "dns_guard.recover_sec", "dns_guard.dns64_servers",
     "dns_guard.target_base_min", "dns_guard.target_max_hours",
     "dns_guard.alternatives", "dns_guard.metered", "dns_guard.metered_day_mb", "dns_guard.relays", "dns_guard.relay_mbit", "dns_guard.overlay", "dns_guard.overlay_fail_sec",
@@ -40,7 +40,7 @@ pub const MAIN: &[&str] = &[
     "payment.amount", "payment.note", "payment.remind_days", "payment.remind_hour",
     "flow_watch.learn_mode", "flow_watch.learn_min_kbit", "flow_watch.loss_only_percent",
     "client_retention_sec",
-    "devices.l2_watch", "devices.l2_probe", "path_trace.enabled", "storage", "vuln_scan.mode", "vuln_scan.lan", "vuln_scan.isolate", "integration.home", "integration.names",
+    "devices.l2_watch", "devices.l2_probe", "path_trace.enabled", "storage", "vuln_scan.mode", "vuln_scan.lan", "vuln_scan.isolate", "vuln_scan.upstream", "integration.home", "integration.names",
 ];
 
 /// Свободный текст (только показывается): буквы любых алфавитов.
@@ -303,6 +303,19 @@ pub fn validate(c: &Config) -> Result<(), String> {
         if crate::vulnscan::norm_mac(m).is_none() {
             return Err(tr!("vuln_scan.isolate: {} — нужен MAC-адрес (aa:bb:cc:dd:ee:ff)", format!("{m:?}")));
         }
+    }
+    crate::knock::validate(&c.knock)?;
+    if !matches!(c.threat_watch.mode.as_str(), "off" | "on" | "") || !matches!(c.threat_watch.lists.as_str(), "auto" | "small" | "medium" | "large" | "") {
+        return Err(tr!("threat_watch: mode — off или on, lists — auto, small, medium или large").to_string());
+    }
+    if !matches!(c.auto_update.as_str(), "off" | "on" | "") {
+        return Err(tr!("auto_update: {} — off или on", format!("{:?}", c.auto_update)));
+    }
+    if !matches!(c.vuln_scan.upstream.as_str(), "off" | "stable" | "beta" | "") {
+        return Err(tr!("vuln_scan.upstream: {} — off, stable или beta", format!("{:?}", c.vuln_scan.upstream)));
+    }
+    if !matches!(c.dns_guard.local_heal.as_str(), "off" | "observe" | "active" | "") {
+        return Err(tr!("dns_guard.local_heal: {} — off, observe или active", format!("{:?}", c.dns_guard.local_heal)));
     }
     if !matches!(c.integration.home.as_str(), "luci" | "cgmon" | "") {
         return Err(tr!("integration.home: {} — luci или cgmon", format!("{:?}", c.integration.home)));

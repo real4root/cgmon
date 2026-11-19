@@ -1623,6 +1623,128 @@ impl IntegrationConfig {
 }
 
 #[derive(Clone, Debug, Default, PartialEq)]
+pub struct ThreatWatchConfig {
+    /// off | on — слежение за ботнетами и угрозами (списки + поведение)
+    pub mode: String,
+    /// auto | small | medium | large — размер списков угроз
+    pub lists: String,
+    /// поведенческие признаки: сканирование, генерация доменов, «прокси»
+    pub behavior: bool,
+    /// находки (сохраняются при перезапуске)
+    pub state_file: String,
+}
+
+impl ThreatWatchConfig {
+    pub fn apply(&mut self, v: &Value, p: &str) -> Result<(), String> {
+        let m = match v {
+            Value::Map(m) => m,
+            Value::Null => return Ok(()),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
+        };
+        for (k, x) in m {
+            let q = join(p, k);
+            match k.as_str() {
+                "mode" => self.mode = dec_str(x, &q)?,
+                "lists" => self.lists = dec_str(x, &q)?,
+                "behavior" => self.behavior = dec_bool(x, &q)?,
+                "state_file" => self.state_file = dec_str(x, &q)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn walk<'a>(&'a self, p: &str, f: &mut dyn FnMut(&str, Field<'a>)) {
+        f(&join(p, "mode"), Field::Str(&self.mode));
+        f(&join(p, "lists"), Field::Str(&self.lists));
+        f(&join(p, "behavior"), Field::Bool(&self.behavior));
+        f(&join(p, "state_file"), Field::Str(&self.state_file));
+    }
+
+    pub fn field_mut(&mut self, path: &str) -> Option<FieldMut<'_>> {
+        let (head, rest) = match path.split_once('.') { Some((h, r)) => (h, Some(r)), None => (path, None) };
+        match (head, rest) {
+            ("mode", None) => Some(FieldMut::Str(&mut self.mode)),
+            ("lists", None) => Some(FieldMut::Str(&mut self.lists)),
+            ("behavior", None) => Some(FieldMut::Bool(&mut self.behavior)),
+            ("state_file", None) => Some(FieldMut::Str(&mut self.state_file)),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct KnockConfig {
+    /// стук (port-knocking) включён
+    pub enabled: bool,
+    /// размеры ping по порядку (`ping -s N`) — старое, вместо него steps
+    pub sizes: Vec<i64>,
+    /// шаги стука по порядку: ping:размер | tcp:порт | udp:порт (2–6)
+    pub steps: Vec<String>,
+    /// между шагами не дольше, с
+    pub step_sec: i64,
+    /// на сколько минут открывать доступ
+    pub open_min: i64,
+    /// откуда принимать стук: wan4 | wan6 | zerotier | tailscale
+    pub from: Vec<String>,
+    /// порты роутера (SSH, веб) — переводятся на его LAN-адрес
+    pub ports: Vec<i64>,
+    /// пробросы «порты=адрес[:порт]»
+    pub forwards: Vec<String>,
+}
+
+impl KnockConfig {
+    pub fn apply(&mut self, v: &Value, p: &str) -> Result<(), String> {
+        let m = match v {
+            Value::Map(m) => m,
+            Value::Null => return Ok(()),
+            _ => return Err(tr!("{}: ожидается словарь", if p.is_empty() { tr!("конфиг") } else { p })),
+        };
+        for (k, x) in m {
+            let q = join(p, k);
+            match k.as_str() {
+                "enabled" => self.enabled = dec_bool(x, &q)?,
+                "sizes" => self.sizes = dec_int_list(x, &q)?,
+                "steps" => self.steps = dec_str_list(x, &q)?,
+                "step_sec" => self.step_sec = dec_int(x, &q)?,
+                "open_min" => self.open_min = dec_int(x, &q)?,
+                "from" => self.from = dec_str_list(x, &q)?,
+                "ports" => self.ports = dec_int_list(x, &q)?,
+                "forwards" => self.forwards = dec_str_list(x, &q)?,
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    pub fn walk<'a>(&'a self, p: &str, f: &mut dyn FnMut(&str, Field<'a>)) {
+        f(&join(p, "enabled"), Field::Bool(&self.enabled));
+        f(&join(p, "sizes"), Field::IntList(&self.sizes));
+        f(&join(p, "steps"), Field::StrList(&self.steps));
+        f(&join(p, "step_sec"), Field::Int(&self.step_sec));
+        f(&join(p, "open_min"), Field::Int(&self.open_min));
+        f(&join(p, "from"), Field::StrList(&self.from));
+        f(&join(p, "ports"), Field::IntList(&self.ports));
+        f(&join(p, "forwards"), Field::StrList(&self.forwards));
+    }
+
+    pub fn field_mut(&mut self, path: &str) -> Option<FieldMut<'_>> {
+        let (head, rest) = match path.split_once('.') { Some((h, r)) => (h, Some(r)), None => (path, None) };
+        match (head, rest) {
+            ("enabled", None) => Some(FieldMut::Bool(&mut self.enabled)),
+            ("sizes", None) => Some(FieldMut::IntList(&mut self.sizes)),
+            ("steps", None) => Some(FieldMut::StrList(&mut self.steps)),
+            ("step_sec", None) => Some(FieldMut::Int(&mut self.step_sec)),
+            ("open_min", None) => Some(FieldMut::Int(&mut self.open_min)),
+            ("from", None) => Some(FieldMut::StrList(&mut self.from)),
+            ("ports", None) => Some(FieldMut::IntList(&mut self.ports)),
+            ("forwards", None) => Some(FieldMut::StrList(&mut self.forwards)),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Default, PartialEq)]
 pub struct VulnScanConfig {
     /// off | manual | weekly — проверка пакетов, ядра, настроек и устройств LAN
     pub mode: String,
@@ -1632,6 +1754,9 @@ pub struct VulnScanConfig {
     pub state_file: String,
     /// MAC устройств, изолированных от интернета (только LAN)
     pub isolate: Vec<String>,
+    /// исправления из главного репозитория OpenWrt, если в репозитории прошивки их нет:
+    /// off | stable | beta (stable + ветка-SNAPSHOT для серьёзных и критичных)
+    pub upstream: String,
 }
 
 impl VulnScanConfig {
@@ -1648,6 +1773,7 @@ impl VulnScanConfig {
                 "lan" => self.lan = dec_bool(x, &q)?,
                 "state_file" => self.state_file = dec_str(x, &q)?,
                 "isolate" => self.isolate = dec_str_list(x, &q)?,
+                "upstream" => self.upstream = dec_str(x, &q)?,
                 _ => {}
             }
         }
@@ -1659,6 +1785,7 @@ impl VulnScanConfig {
         f(&join(p, "lan"), Field::Bool(&self.lan));
         f(&join(p, "state_file"), Field::Str(&self.state_file));
         f(&join(p, "isolate"), Field::StrList(&self.isolate));
+        f(&join(p, "upstream"), Field::Str(&self.upstream));
     }
 
     pub fn field_mut(&mut self, path: &str) -> Option<FieldMut<'_>> {
@@ -1668,6 +1795,7 @@ impl VulnScanConfig {
             ("lan", None) => Some(FieldMut::Bool(&mut self.lan)),
             ("state_file", None) => Some(FieldMut::Str(&mut self.state_file)),
             ("isolate", None) => Some(FieldMut::StrList(&mut self.isolate)),
+            ("upstream", None) => Some(FieldMut::Str(&mut self.upstream)),
             _ => None,
         }
     }
@@ -1735,6 +1863,8 @@ pub struct DNSGuardConfig {
     pub persite_file: String,
     /// доменам списка — пустой AAAA (::) в dnsmasq: клиент идёт по IPv4 через гейт
     pub persite_aaaa: bool,
+    /// off | observe | active: перезапуск зависшего DNS роутера (dnsheal)
+    pub local_heal: String,
 }
 
 impl DNSGuardConfig {
@@ -1778,6 +1908,7 @@ impl DNSGuardConfig {
                 "persite" => self.persite = dec_str(x, &q)?,
                 "persite_file" => self.persite_file = dec_str(x, &q)?,
                 "persite_aaaa" => self.persite_aaaa = dec_bool(x, &q)?,
+                "local_heal" => self.local_heal = dec_str(x, &q)?,
                 _ => {}
             }
         }
@@ -1816,6 +1947,7 @@ impl DNSGuardConfig {
         f(&join(p, "persite"), Field::Str(&self.persite));
         f(&join(p, "persite_file"), Field::Str(&self.persite_file));
         f(&join(p, "persite_aaaa"), Field::Bool(&self.persite_aaaa));
+        f(&join(p, "local_heal"), Field::Str(&self.local_heal));
     }
 
     /// Поле на запись по пути относительно этой структуры.
@@ -1852,6 +1984,7 @@ impl DNSGuardConfig {
             ("persite", None) => Some(FieldMut::Str(&mut self.persite)),
             ("persite_file", None) => Some(FieldMut::Str(&mut self.persite_file)),
             ("persite_aaaa", None) => Some(FieldMut::Bool(&mut self.persite_aaaa)),
+            ("local_heal", None) => Some(FieldMut::Str(&mut self.local_heal)),
             _ => None,
         }
     }
@@ -2471,6 +2604,8 @@ pub struct Config {
     pub log_level: String,
     /// язык сообщений демона: auto | en | ru | uz | kk | zh
     pub lang: String,
+    /// автообновление cgmon с GitHub: off | on
+    pub auto_update: String,
     pub dry_run: bool,
     pub enable_limiter: bool,
     pub startup_grace_sec: i64,
@@ -2514,6 +2649,8 @@ pub struct Config {
     /// общий виновник деградации (pathtrace.go)
     pub path_trace: PathTraceConfig,
     pub vuln_scan: VulnScanConfig,
+    pub knock: KnockConfig,
+    pub threat_watch: ThreatWatchConfig,
     pub integration: IntegrationConfig,
     /// DNS-страховка при сбое IPv4/IPv6 (dnsguard.go)
     pub dns_guard: DNSGuardConfig,
@@ -2548,6 +2685,7 @@ impl Config {
             match k.as_str() {
                 "log_level" => self.log_level = dec_str(x, &q)?,
                 "lang" => self.lang = dec_str(x, &q)?,
+                "auto_update" => self.auto_update = dec_str(x, &q)?,
                 "dry_run" => self.dry_run = dec_bool(x, &q)?,
                 "enable_limiter" => self.enable_limiter = dec_bool(x, &q)?,
                 "startup_grace_sec" => self.startup_grace_sec = dec_int(x, &q)?,
@@ -2589,6 +2727,8 @@ impl Config {
                 "down_detector" => self.down_detector.apply(x, &q)?,
                 "path_trace" => self.path_trace.apply(x, &q)?,
                 "vuln_scan" => self.vuln_scan.apply(x, &q)?,
+                "knock" => self.knock.apply(x, &q)?,
+                "threat_watch" => self.threat_watch.apply(x, &q)?,
                 "integration" => self.integration.apply(x, &q)?,
                 "dns_guard" => self.dns_guard.apply(x, &q)?,
                 "witness" => self.witness.apply(x, &q)?,
@@ -2610,6 +2750,7 @@ impl Config {
     pub fn walk<'a>(&'a self, p: &str, f: &mut dyn FnMut(&str, Field<'a>)) {
         f(&join(p, "log_level"), Field::Str(&self.log_level));
         f(&join(p, "lang"), Field::Str(&self.lang));
+        f(&join(p, "auto_update"), Field::Str(&self.auto_update));
         f(&join(p, "dry_run"), Field::Bool(&self.dry_run));
         f(&join(p, "enable_limiter"), Field::Bool(&self.enable_limiter));
         f(&join(p, "startup_grace_sec"), Field::Int(&self.startup_grace_sec));
@@ -2651,6 +2792,8 @@ impl Config {
         self.down_detector.walk(&join(p, "down_detector"), f);
         self.path_trace.walk(&join(p, "path_trace"), f);
         self.vuln_scan.walk(&join(p, "vuln_scan"), f);
+        self.knock.walk(&join(p, "knock"), f);
+        self.threat_watch.walk(&join(p, "threat_watch"), f);
         self.integration.walk(&join(p, "integration"), f);
         self.dns_guard.walk(&join(p, "dns_guard"), f);
         self.witness.walk(&join(p, "witness"), f);
@@ -2670,6 +2813,7 @@ impl Config {
         match (head, rest) {
             ("log_level", None) => Some(FieldMut::Str(&mut self.log_level)),
             ("lang", None) => Some(FieldMut::Str(&mut self.lang)),
+            ("auto_update", None) => Some(FieldMut::Str(&mut self.auto_update)),
             ("dry_run", None) => Some(FieldMut::Bool(&mut self.dry_run)),
             ("enable_limiter", None) => Some(FieldMut::Bool(&mut self.enable_limiter)),
             ("startup_grace_sec", None) => Some(FieldMut::Int(&mut self.startup_grace_sec)),
@@ -2710,6 +2854,8 @@ impl Config {
             ("down_detector", Some(r)) => self.down_detector.field_mut(r),
             ("path_trace", Some(r)) => self.path_trace.field_mut(r),
             ("vuln_scan", Some(r)) => self.vuln_scan.field_mut(r),
+            ("knock", Some(r)) => self.knock.field_mut(r),
+            ("threat_watch", Some(r)) => self.threat_watch.field_mut(r),
             ("integration", Some(r)) => self.integration.field_mut(r),
             ("dns_guard", Some(r)) => self.dns_guard.field_mut(r),
             ("witness", Some(r)) => self.witness.field_mut(r),

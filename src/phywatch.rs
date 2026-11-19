@@ -26,7 +26,7 @@ pub const STATE: &str = "/etc/cgmon/phy.json";
 const SAVE_GAP: i64 = 10 * 60_000;
 const DAY: i64 = 24 * 3_600_000;
 /// лучшая скорость и события помнятся 30 дней
-const BEST_KEEP: i64 = 30 * DAY;
+const BEST_KEEP: i64 = 7 * DAY;
 const EV_KEEP: i64 = 30 * DAY;
 /// оценка CRC «с загрузки роутера» держится неделю с первого опроса
 const BOOT_KEEP: i64 = 7 * DAY;

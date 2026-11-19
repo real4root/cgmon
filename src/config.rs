@@ -280,12 +280,47 @@ impl Config {
         or_s(&mut h.journal_file, "/tmp/cgmon/hub.jsonl");
         or_s(&mut self.log_level, "info");
         or_s(&mut self.lang, "auto");
+        if self.auto_update != "on" {
+            self.auto_update = "off".into();
+        }
         or_s(&mut self.vuln_scan.mode, "weekly");
         or_s(&mut self.integration.home, "luci");
+        // стук: по умолчанию 100, 100, 122 (`ping -s`), шаг 30 с, доступ 10 мин, отовсюду, SSH и веб
+        // шаги: старые sizes (только ping) → steps; по умолчанию ping 100, 100, 122
+        if self.knock.steps.is_empty() {
+            let s = if self.knock.sizes.is_empty() { vec![100, 100, 122] } else { self.knock.sizes.clone() };
+            self.knock.steps = s.iter().map(|n| format!("ping:{n}")).collect();
+        }
+        if self.knock.step_sec <= 0 {
+            self.knock.step_sec = 30;
+        }
+        if self.knock.open_min <= 0 {
+            self.knock.open_min = 10;
+        }
+        if self.knock.from.is_empty() {
+            self.knock.from = ["wan4", "zerotier", "tailscale"].iter().map(|s| s.to_string()).collect();
+        }
+        if self.knock.ports.is_empty() {
+            self.knock.ports = vec![22, 80];
+        }
+        // имя роутера для cgmon по умолчанию — cgmon.lan
+        if self.integration.names.iter().all(|n| n.trim().is_empty()) {
+            self.integration.names = vec!["cgmon.lan".into()];
+        }
         if self.integration.home != "cgmon" {
             self.integration.home = "luci".into();
         }
         or_s(&mut self.vuln_scan.state_file, "/etc/cgmon/vulnscan.json");
+        if self.threat_watch.mode != "off" {
+            self.threat_watch.mode = "on".into();
+        }
+        if !matches!(self.threat_watch.lists.as_str(), "small" | "medium" | "large") {
+            self.threat_watch.lists = "auto".into();
+        }
+        or_s(&mut self.threat_watch.state_file, "/etc/cgmon/threat.json");
+        if !matches!(self.vuln_scan.upstream.as_str(), "off" | "stable") {
+            self.vuln_scan.upstream = "beta".into();
+        }
         or_s(&mut self.dns_guard.persite, "off");
         or_s(&mut self.dns_guard.persite_file, "/etc/cgmon/persite.list");
 
@@ -478,6 +513,9 @@ impl Config {
             dg.backend = "auto".into();
         }
         or_s(&mut dg.state_file, "/etc/cgmon/dnsguard.json");
+        if !matches!(dg.local_heal.as_str(), "off" | "observe") {
+            dg.local_heal = "active".into();
+        }
         pos_i(&mut dg.v6_enter_sec, 300);
         pos_i(&mut dg.v4_enter_sec, 60);
         pos_i(&mut dg.recover_sec, 600);

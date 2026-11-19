@@ -64,6 +64,7 @@ fn link(name: &str, target: &str) -> Result<bool, String> {
 pub fn install(force: bool) {
     ON.store(true, std::sync::atomic::Ordering::Relaxed);
     let page = format!("{DIR}/status.html");
+    server_setup(DIR);
     if !force && std::path::Path::new(&page).exists() && links_ok() {
         return;
     }
@@ -97,6 +98,148 @@ pub fn install(force: bool) {
         Err(e) => crate::log_err!("web: link {e}"),
     }
     crate::log_info!("web: page unpacked to {DIR} ({n} files){}", if made.is_empty() { String::new() } else { format!(", /www links: {}", made.join(", ")) });
+}
+
+// ---- веб-сервер роутера: CGI /cgi-bin/api_* ----
+// uhttpd (OpenWrt по умолчанию, и Gargoyle) сам запускает /www/cgi-bin/* — ничего не нужно.
+// nginx (luci-nginx) CGI не запускает и отдаёт текст скрипта («#!/bin/sh…» вместо
+// JSON): LuCI под nginx работает через uwsgi (emperor + плагин cgi) — кладём рядом
+// свой vassal и location для /cgi-bin/api_*. Корень CGI — там, где файлы лежат на
+// самом деле: uwsgi раскрывает ссылки и не запускает скрипт вне корня.
+// lighttpd: mod_cgi, правило для /cgi-bin/api_* в conf.d. Скрипты ходят к демону
+// через сокет только для root — lighttpd должен работать от root (иначе в лог совет).
+const NGINX_LOC: &str = "/etc/nginx/conf.d/cgmon.locations";
+const UWSGI_INI: &str = "/etc/uwsgi/vassals/cgmon-cgi.ini";
+const LIGHTTPD_CONF: &str = "/etc/lighttpd/conf.d/90-cgmon.conf";
+const MARK: &str = "# cgmon: CGI /cgi-bin/api_* — generated, do not edit";
+
+/// Текст location для nginx; сокет emperor создаёт сам по имени vassal (on-demand).
+pub fn nginx_locations() -> String {
+    format!("{MARK}\nlocation ~ ^/cgi-bin/api_[a-z_]+$ {{\n\t\tinclude uwsgi_params;\n\t\tuwsgi_param SERVER_ADDR $server_addr;\n\t\tuwsgi_modifier1 9;\n\t\tuwsgi_read_timeout 120;\n\t\tuwsgi_pass unix:////var/run/cgmon-cgi.socket;\n}}\n")
+}
+
+/// vassal uwsgi: CGI из `root` (без ссылок), 2 процесса, засыпает без запросов.
+pub fn uwsgi_ini(root: &str) -> String {
+    format!("{MARK}\n[uwsgi]\nstrict = true\nif-not-env = UWSGI_EMPEROR_FD\nsocket = /var/run/cgmon-cgi.socket\nchmod-socket = 666\ncheap = true\nend-if =\nplugin = cgi\ncgi-mode = true\ncgi = {root}/\nchdir = {root}/\nbuffer-size = 10000\npost-buffering = 8192\nsocket-timeout = 120\nharakiri = 120\nprocesses = 2\nmaster = true\nno-orphans = true\ndisable-logging = true\nidle = 360\n")
+}
+
+/// lighttpd: запускать /cgi-bin/api_* как программы (mod_cgi, пустое расширение).
+pub fn lighttpd_conf() -> String {
+    format!("{MARK}\n$HTTP[\"url\"] =~ \"^/cgi-bin/api_[a-z_]+$\" {{\n\tcgi.assign = ( \"\" => \"\" )\n}}\n")
+}
+
+fn exists(p: &str) -> bool {
+    std::path::Path::new(p).exists()
+}
+
+/// Записать, если отличается; true — записали.
+fn put(path: &str, text: &str) -> Result<bool, String> {
+    if std::fs::read_to_string(path).ok().as_deref() == Some(text) {
+        return Ok(false);
+    }
+    crate::util::write_atomic(path, text.as_bytes(), 0o644).map_err(|e| format!("{path}: {e}"))?;
+    Ok(true)
+}
+
+/// Убрать свой файл (только с меткой); true — убрали.
+fn drop_own(path: &str) -> bool {
+    std::fs::read_to_string(path).map_or(false, |t| t.starts_with(MARK)) && std::fs::remove_file(path).is_ok()
+}
+
+/// Перечитать только работающий сервер (reload остановленного его бы запустил).
+fn reload(svc: &str) -> &'static str {
+    let running = std::process::Command::new("pidof").arg(svc).stdout(std::process::Stdio::null()).status().map_or(false, |s| s.success());
+    if !running {
+        return "not running";
+    }
+    let ok = std::process::Command::new(format!("/etc/init.d/{svc}")).arg("reload").stdout(std::process::Stdio::null()).stderr(std::process::Stdio::null()).status().map_or(false, |s| s.success());
+    if ok { "reloaded" } else { "reload failed" }
+}
+
+/// Пользователь lighttpd из lighttpd.conf (`server.username = "http"`), по умолчанию root.
+pub fn lighttpd_user(conf: &str) -> String {
+    conf.lines()
+        .map(|l| l.trim())
+        .filter(|l| !l.starts_with('#'))
+        .find_map(|l| l.strip_prefix("server.username").and_then(|r| r.trim_start().strip_prefix('=')).map(|v| v.trim().trim_matches('"').to_string()))
+        .unwrap_or_else(|| "root".into())
+}
+
+/// Настроить веб-сервер роутера под CGI cgmon. Возвращает строки «что сделано/что не так»
+/// (для `cgmon web-setup`); в лог — только изменения и предупреждения (раз за запуск).
+pub fn server_setup(root: &str) -> Vec<String> {
+    static WARNED: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+    let mut out = Vec::new();
+    let mut warn = Vec::new();
+    if crate::util::readonly() {
+        out.push("read-only mode: web server config untouched".to_string());
+        return out;
+    }
+    if exists("/usr/sbin/uhttpd") {
+        out.push("uhttpd: runs /cgi-bin/* itself — nothing to do".into());
+    }
+    if std::path::Path::new("/etc/nginx/conf.d").is_dir() {
+        if std::path::Path::new("/etc/uwsgi/vassals").is_dir() && exists("/usr/lib/uwsgi/cgi_plugin.so") {
+            let r = put(UWSGI_INI, &uwsgi_ini(root)).and_then(|a| put(NGINX_LOC, &nginx_locations()).map(|b| (a, b)));
+            match r {
+                Ok((_, true)) => {
+                    let m = format!("web: nginx: {NGINX_LOC} + {UWSGI_INI} (CGI root {root}), nginx {}", reload("nginx"));
+                    crate::log_info!("{m}");
+                    out.push(m);
+                }
+                Ok((a, false)) => {
+                    if a {
+                        crate::log_info!("web: nginx: {UWSGI_INI} updated (CGI root {root})");
+                    }
+                    out.push(format!("nginx: {NGINX_LOC} + {UWSGI_INI} in place (CGI root {root})"));
+                }
+                Err(e) => warn.push(format!("web: nginx: {e}")),
+            }
+        } else {
+            warn.push("web: nginx without uwsgi cgi plugin — /cgi-bin/api_* will not run; install uwsgi uwsgi-cgi-plugin (luci-nginx does)".into());
+        }
+    }
+    if std::path::Path::new("/etc/lighttpd/conf.d").is_dir() {
+        if exists("/usr/lib/lighttpd/mod_cgi.so") && exists("/etc/lighttpd/conf.d/30-cgi.conf") {
+            match put(LIGHTTPD_CONF, &lighttpd_conf()) {
+                Ok(true) => {
+                    let m = format!("web: lighttpd: {LIGHTTPD_CONF}, lighttpd {}", reload("lighttpd"));
+                    crate::log_info!("{m}");
+                    out.push(m);
+                }
+                Ok(false) => out.push(format!("lighttpd: {LIGHTTPD_CONF} in place")),
+                Err(e) => warn.push(format!("web: lighttpd: {e}")),
+            }
+            let user = lighttpd_user(&std::fs::read_to_string("/etc/lighttpd/lighttpd.conf").unwrap_or_default());
+            if user != "root" {
+                warn.push(format!("web: lighttpd runs CGI as '{user}': the page shows data, but settings and history need root — remove server.username and server.groupname from /etc/lighttpd/lighttpd.conf (lighttpd refuses uid 0 there)"));
+            }
+        } else {
+            warn.push("web: lighttpd without mod_cgi — /cgi-bin/api_* will not run; install lighttpd-mod-cgi".into());
+        }
+    }
+    if !warn.is_empty() && !WARNED.swap(true, std::sync::atomic::Ordering::Relaxed) {
+        for w in &warn {
+            crate::log_err!("{w}");
+        }
+    }
+    out.extend(warn);
+    out
+}
+
+/// Снять настройку веб-сервера (`--uninstall`): только свои файлы (с меткой).
+fn server_remove() -> Vec<&'static str> {
+    let mut gone = Vec::new();
+    let nginx = [NGINX_LOC, UWSGI_INI].iter().fold(false, |n, p| drop_own(p) || n);
+    if nginx {
+        reload("nginx");
+        gone.extend([NGINX_LOC, UWSGI_INI]);
+    }
+    if drop_own(LIGHTTPD_CONF) {
+        reload("lighttpd");
+        gone.push(LIGHTTPD_CONF);
+    }
+    gone
 }
 
 fn links_ok() -> bool {
@@ -138,6 +281,10 @@ pub fn uninstall() -> i32 {
             n += 1;
         }
     }
+    let gone = server_remove();
+    if !gone.is_empty() {
+        println!("{}", tr!("настройка веб-сервера убрана: {}", gone.join(", ")));
+    }
     crate::luci::uninstall();
     let _ = std::fs::remove_dir_all(crate::util::RUN_DIR);
     println!("{}", tr!("ссылок страницы убрано: {}; /tmp/cgmon очищен", n));
@@ -157,6 +304,13 @@ mod tests {
         for n in ["cgi-bin/api_status", "cgi-bin/api_router", "cgi-bin/api_set", "cgi-bin/api_hist"] {
             assert!(FILES.iter().any(|f| f.0 == n && f.1 == 0o755), "{n}");
         }
+        let ini = uwsgi_ini(DIR);
+        assert!(ini.contains("cgi = /tmp/cgmon/www/\n") && ini.contains("plugin = cgi") && ini.starts_with(MARK));
+        assert!(lighttpd_conf().contains("cgi.assign = ( \"\" => \"\" )"));
+        assert_eq!(lighttpd_user("# server.username = \"x\"\nserver.username             = \"http\"\n"), "http");
+        assert_eq!(lighttpd_user("server.port = 80\n"), "root");
+        let loc = nginx_locations();
+        assert!(loc.contains("uwsgi_modifier1 9;") && loc.contains("cgmon-cgi.socket") && loc.matches('{').count() == loc.matches('}').count());
         let b = gunzip(page.2).unwrap();
         assert!(String::from_utf8_lossy(&b).contains("<title>"));
     }

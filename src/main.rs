@@ -23,6 +23,10 @@ mod pkgsetup;
 mod unblock;
 mod persite;
 mod integration;
+mod dnsheal;
+mod knock;
+mod threatwatch;
+mod devname;
 mod textenc;
 mod vulnscan;
 mod dgroute;
@@ -265,6 +269,40 @@ fn main() {
                 1
             }
         },
+        "dev-name" => {
+            // cgmon dev-name MAC IP [ИМЯ] — имя устройства в DHCP и имена хостов (без имени — убрать)
+            let a: Vec<String> = std::env::args().skip(2).collect();
+            let (Some(mac), Some(ip)) = (a.first().and_then(|m| resolver::norm_mac(m)), a.get(1).and_then(|i| i.parse::<std::net::Ipv4Addr>().ok())) else {
+                eprintln!("cgmon dev-name MAC IP [NAME]");
+                std::process::exit(2);
+            };
+            let name = a.get(2).cloned().unwrap_or_default();
+            if !name.is_empty() && !devname::name_ok(&name) {
+                eprintln!("{}", tr!("имя: латинские буквы, цифры и «-», до 63 знаков"));
+                std::process::exit(2);
+            }
+            match devname::apply(&mac, ip, &name) {
+                Ok(()) => println!("ok"),
+                Err(e) => {
+                    eprintln!("{e}");
+                    std::process::exit(1);
+                }
+            }
+            return;
+        }
+        "web-setup" => {
+            // настроить веб-сервер роутера (nginx/lighttpd) под CGI cgmon и показать итог
+            let root = if std::fs::read_link("/www/cgi-bin/api_router").is_ok() { webfiles::DIR } else { "/www" };
+            for l in webfiles::server_setup(root) {
+                println!("{l}");
+            }
+            return;
+        }
+        "dns-check" => {
+            // проверка DNS роутера, как у самолечения (ничего не перезапускает)
+            print!("{}", dnsheal::report());
+            return;
+        }
         "vuln-scan" => {
             // проверка уязвимостей сразу, без демона (устройства LAN — из ARP)
             let c = match load() {
@@ -286,7 +324,7 @@ fn main() {
                     }
                 }
             }
-            println!("{}", vulnscan::scan_now(vulnscan::Input { lan: c.vuln_scan.lan, lan_devices: lan, own }));
+            println!("{}", vulnscan::scan_now(vulnscan::Input { lan: c.vuln_scan.lan, lan_devices: lan, own, upstream: c.vuln_scan.upstream.clone() }));
             0
         }
         "hints-dump" => {

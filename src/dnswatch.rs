@@ -129,6 +129,8 @@ pub struct DnsWatch {
     last_sweep: u64,
     /// новые адреса (или сменившие имя) с прошлого забора — обход их ждёт сразу
     pub fresh: Vec<(IpAddr, Rc<str>)>,
+    /// для слежения за угрозами: (кто спросил, имя, rcode) — в т. ч. NXDOMAIN; None — не собирать
+    pub tap: Option<Vec<(IpAddr, String, u8)>>,
 }
 
 impl DnsWatch {
@@ -202,6 +204,17 @@ impl DnsWatch {
             }
             _ => return,
         };
+        if let Some(tap) = self.tap.as_mut() {
+            let m = &udp[8..];
+            // ответ (QR), один вопрос; имя — из вопроса (есть и у NXDOMAIN)
+            if tap.len() < 4096 && m.len() > 12 && m[2] & 0x80 != 0 && u16::from_be_bytes([m[4], m[5]]) >= 1 {
+                if let Some((q, _)) = dns_name(m, 12) {
+                    if !q.is_empty() && !client.is_loopback() {
+                        tap.push((client, q.to_ascii_lowercase(), m[3] & 0x0f));
+                    }
+                }
+            }
+        }
         let Some((name, ips)) = parse_answer(&udp[8..]) else { return };
         if self.ips.len() >= MAX_IPS {
             self.ips.clear(); // перебор — начать заново, чем раздуваться

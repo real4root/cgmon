@@ -101,6 +101,8 @@ pub struct Snapshot {
     pub clients: HashMap<String, ClientStats>,
     /// «proto local>remote» → счётчики
     pub wan_flows: HashMap<String, WanFlow>,
+    /// устройство LAN → поведение (только при Ctx.beh)
+    pub beh: HashMap<IpAddr, crate::threatwatch::Beh>,
 }
 
 /// Что нужно разбору: сети и адреса роутера.
@@ -115,6 +117,8 @@ pub struct Ctx<'a> {
     pub mode: &'a str,
     pub tv_ports: &'a [u16],
     pub want_flows: bool,
+    /// поведение устройств для слежения за угрозами (разные адреса, сканирование)
+    pub beh: bool,
 }
 
 #[derive(Clone, Copy, Default)]
@@ -453,6 +457,11 @@ fn add(s: &mut Snapshot, l: Line, c: &Ctx) {
         if (c.mode == "lan_to_wan" && cat != "wan" && cat != "incoming_forwarded") || cat.is_empty() {
             return;
         }
+        if c.beh && cat == "wan" {
+            if let Some(d) = l.orig.dst {
+                s.beh.entry(src).or_default().add(&d, l.orig.dport, l.proto == "tcp" && l.state == "SYN_SENT");
+            }
+        }
         let cl = client(&mut s.clients, &src);
         cl.total += 1;
         match cat {
@@ -658,7 +667,7 @@ garbage line
         let local: Vec<IpAddr> = vec!["192.168.1.1".parse().unwrap()];
         let tun = vec![IpNet::new("100.64.0.0".parse().unwrap(), 10)];
         let probes = vec![("1.1.1.1".parse().unwrap(), 443u16)];
-        let c = Ctx { lan_nets: &lan, wan_ips: &wan, local_ips: &local, ignored_ips: &[], tunnel_nets: &tun, probes: &probes, mode: "lan_to_wan", tv_ports: &[], want_flows: true };
+        let c = Ctx { lan_nets: &lan, wan_ips: &wan, local_ips: &local, ignored_ips: &[], tunnel_nets: &tun, probes: &probes, mode: "lan_to_wan", tv_ports: &[], want_flows: true, beh: false };
         let s = parse(SAMPLE.as_bytes(), &c);
         assert_eq!(s.parsed_total, 6);
         assert_eq!(s.ignored_total, 1); // туннель

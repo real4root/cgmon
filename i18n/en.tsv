@@ -831,5 +831,44 @@ integration.home: {} — luci или cgmon	integration.home: {} — luci or cgmo
 integration.names: нужны DNS-имена (router.lan, cgmon.lan) без пробелов и повторов	integration.names: DNS names are needed (router.lan, cgmon.lan), no spaces or duplicates
 cfg:integration	==== OpenWrt integration ====
 cfg:integration.home	What opens at the router address (http://192.168.1.1/): luci — OpenWrt settings as usual; cgmon — the cgmon page (OpenWrt settings via the «OpenWrt» link in its header). The previous /www/index.html is kept next to it and restored when luci is chosen.
-cfg:integration.names	DNS names of the router that always open cgmon (e.g. router.lan, cgmon.lan) — dnsmasq answers with the router address in the network the question came from.
+cfg:integration.names	DNS names of the router that always open cgmon (e.g. cgmon.lan; router.lan) — dnsmasq answers with the router address in the network the question came from. Empty — cgmon.lan.
 не хватает места на {}: нужно ≈ {} МБ, свободно {} МБ — ничего не обновлено	not enough space on {}: ≈ {} MB needed, {} MB free — nothing was updated
+DNS: не удалось перезапустить {}: {}	DNS: failed to restart {}: {}
+DNS: после перезапуска {} снова работает	DNS: {} works again after the restart
+DNS: {} не отвечает ({}), интернет есть — нужен перезапуск {} (режим наблюдения)	DNS: {} is not answering ({}) while the internet works — {} needs a restart (observe mode)
+DNS: {} не отвечает ({}), перезапуски за сутки исчерпаны — только журнал	DNS: {} is not answering ({}), no restarts left for today — journal only
+DNS: {} не отвечает ({}), интернет есть — перезапускаю {}	DNS: {} is not answering ({}) while the internet works — restarting {}
+ошибка или таймаут	error or timeout
+DNS: {} не отвечает ({}), а интернет есть; своей службы для перезапуска нет	DNS: {} is not answering ({}) while the internet works; no local service to restart
+dns_guard.local_heal: {} — off, observe или active	dns_guard.local_heal: {} — off, observe or active
+cfg:dns_guard.local_heal	Router DNS self-healing (SmartDNS, AdGuard Home, dnsmasq): once a minute cgmon asks dnsmasq for a non-existent name (never cached); three failures in a row while public DNS answers directly — the service that does not answer is restarted (at most once in 15 min, 4 times a day). off | observe (journal only) | active.
+настройка веб-сервера убрана: {}	web server setup removed: {}
+vuln_scan.upstream: {} — off, stable или beta	vuln_scan.upstream: {} — off, stable or beta
+cfg:vuln_scan.upstream	Fixes from the main OpenWrt repository (downloads.openwrt.org) when the firmware repository (a fork such as ImmortalWrt, or a lagging mirror) has no fixed version yet; same branch and architecture, signature checked by apk/opkg with the OpenWrt key. off | stable (latest release of the branch) | beta (also the branch SNAPSHOT, only for high and critical vulnerabilities). Installed only with the Update button.
+auto_update: {} — off или on	auto_update: {} — off or on
+cfg:auto_update	Auto-update cgmon: on — every 6 hours cgmon checks the latest GitHub release and, if it is newer, downloads it, verifies SHA256, installs it and restarts. Not with paid traffic or in read-only mode. off — only the button on the page.
+cgmon {} (автообновление)	cgmon {} (auto-update)
+автообновление cgmon до {}: {}	cgmon auto-update to {}: {}
+Вышла новая версия cgmon {} (установлена {}) — кнопка «Обновить» в событиях и в разделе «Безопасность»	A new cgmon version {} is out (installed {}): the Update button is in the events and in the Security section
+knock.forwards: {} — нужно «порты=адрес», напр. 3389=192.168.1.10	knock.forwards: {} — «ports=address» is needed, e.g. 3389=192.168.1.10
+Стук: доступ открыт для {} на {} мин	Knock: access opened for {} for {} min
+cfg:knock.enabled	Port knocking: access opens for the address that sent pings of the given sizes in order; router ports go to its LAN address, forwards to LAN devices.
+knock.steps: {} — нужно ping:размер, tcp:порт или udp:порт	knock.steps: {} — ping:size, tcp:port or udp:port is needed
+knock.steps: нужно от 2 до 6 шагов	knock.steps: 2 to 6 steps are needed
+knock.from: {} — нужно имя интерфейса	knock.from: {} — an interface name is needed
+threat_watch: mode — off или on, lists — auto, small, medium или large	threat_watch: mode — off or on, lists — auto, small, medium or large
+Ботнет: {} обращается к командному серверу {} ({})	Botnet: {} talks to a command server {} ({})
+Угроза: {} обращается к узлу раздачи вредоносов {} ({})	Threat: {} talks to a malware distribution host {} ({})
+Угроза: {} обращается к адресу из списка угроз {} ({})	Threat: {} talks to an address from a threat list {} ({})
+Ботнет: {} сканирует интернет ({}) — так распространяются черви вроде Mirai	Botnet: {} scans the internet ({}) — this is how worms like Mirai spread
+Подозрительно: {} запрашивает много случайных несуществующих доменов ({}) — признак генерации доменов (DGA)	Suspicious: {} asks for many random non-existent domains ({}) — a sign of domain generation (DGA)
+Подозрительно: {} держит соединения с очень многими адресами ({}) — так работают прокси-ботнеты (или торрент)	Suspicious: {} keeps connections to very many addresses ({}) — this is how proxy botnets work (or torrents)
+{} за час	{} in an hour
+порт {}, {} адресов	port {}, {} addresses
+до {} адресов одновременно	up to {} addresses at once
+cfg:threat_watch.mode	Botnet and threat watch: devices talking to botnet command servers, malware hosts and threat-list addresses (lists updated daily), plus behavior signs (scanning, domain generation, proxy). off | on.
+нужен MAC-адрес устройства	a device MAC address is needed
+нужен адрес устройства в локальной сети	a device address in the local network is needed
+имя: латинские буквы, цифры и «-», до 63 знаков	name: Latin letters, digits and “-”, up to 63 characters
+Имя устройства {} ({}) убрано	Device name {} ({}) removed
+Устройство {} ({}) названо {}	Device {} ({}) named {}

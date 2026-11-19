@@ -173,7 +173,13 @@ pub struct Daemon {
     pub unblock: crate::unblock::Unblock,
     pub persite: crate::persite::PerSite,
     pub vuln: crate::vulnscan::VulnScan,
+    /// стук (port-knocking) и устройства WAN для него
+    pub knock: crate::knock::Knock,
+    /// слежение за ботнетами и угрозами
+    pub threat: crate::threatwatch::ThreatWatch,
+    pub wan_devs: Vec<String>,
     pub integr: crate::integration::Integration,
+    pub dnsheal: crate::dnsheal::DnsHeal,
     pub plugins: crate::plugins::Plugins,
 }
 
@@ -268,6 +274,8 @@ impl Daemon {
         // страница и CGI из бинарника — в /tmp/cgmon/www, в /www — ссылки
         if cfg.web.embedded {
             crate::webfiles::install(true);
+        } else {
+            crate::webfiles::server_setup("/www"); // файлы страницы прямо в /www
         }
         crate::luci::install(); // «Службы → cgmon» в LuCI: пароль, центр сбора
         crate::storage::apply(&cfg.storage, &cfg.storage_files(), false);
@@ -361,7 +369,11 @@ impl Daemon {
             unblock: Default::default(),
             persite: Default::default(),
             vuln: Default::default(),
+            knock: Default::default(),
+            threat: Default::default(),
+            wan_devs: Vec::new(),
             integr: Default::default(),
+            dnsheal: Default::default(),
             plugins: Default::default(),
         };
         d.prober.mode = d.rt.cur.wan_check.clone();
@@ -425,6 +437,7 @@ impl Daemon {
         // не-WAN сети: tunnel_networks + всё, что маршрутизируется мимо WAN
         let mut tunnel = crate::netx::parse_nets(&self.cfg.tunnel_networks).unwrap_or_default();
         self.phy.set_wan(&topo.wan_devs); // порты LAN: по ним только CRC
+        self.wan_devs = topo.wan_devs.clone();
         let (routed, routed_tun) = topo::routed_local_nets(&topo.wan_devs);
         let mut acct_nets = tunnel.clone();
         acct_nets.extend(routed.iter().copied());
@@ -495,7 +508,12 @@ impl Daemon {
         if let Some(fd) = new {
             let _ = self.poller.add(fd, libc::EPOLLIN as u32, TOK_L2);
         }
-        self.dnsw.on = self.cfg.down_detector.enabled || targeted;
+        let tw = self.cfg.threat_watch.mode == "on";
+        self.dnsw.on = self.cfg.down_detector.enabled || targeted || tw;
+        // слежению за угрозами — имена из DNS-ответов устройствам (в т. ч. несуществующие)
+        if tw != self.dnsw.tap.is_some() {
+            self.dnsw.tap = if tw { Some(Vec::new()) } else { None };
+        }
         let (old, new) = self.dnsw.ensure();
         if let Some(fd) = old {
             self.poller.del(fd);
@@ -1120,6 +1138,7 @@ impl Daemon {
             mode: &self.cfg.counting.mode,
             tv_ports: &tv,
             want_flows: self.extended || self.cfg.flow_watch.enabled || !self.cfg.peers.list.is_empty(),
+            beh: self.cfg.threat_watch.mode == "on" && self.cfg.threat_watch.behavior,
         };
         let mut snap = match conntrack::read(&ctx) {
             Ok(s) => s,
@@ -1140,6 +1159,18 @@ impl Daemon {
         let _p = crate::prof::scope(tr!("clients (динамика)"));
         if let Some(m) = self.clients.update(&mut snap, now, wall, self.cfg.interval_sec, self.cfg.stat_long_window_sec, self.cfg.client_retention_sec) {
             self.add_event(wall, "alert", &m);
+        }
+        // поведение устройств: сканирование портов, «прокси» (сотни адресов)
+        if !snap.beh.is_empty() {
+            let beh = std::mem::take(&mut snap.beh);
+            let wms = wall.0 * 1000 + (wall.1 / 1_000_000) as i64;
+            let (res, acct) = (&self.resolver, &self.acct);
+            let namer = |ip: &IpAddr| threat_name(res, acct, ip);
+            let msgs = self.threat.on_conntrack(wms, &beh, &namer);
+            for m in msgs {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "threat", &m);
+            }
         }
         self.snap = Some(snap);
     }
@@ -1291,6 +1322,40 @@ impl Daemon {
             }
         }
         {
+            // зависший DNS роутера (SmartDNS / AdGuard Home / dnsmasq) — перезапуск
+            let mode = self.cfg.dns_guard.local_heal.clone();
+            for m in self.dnsheal.tick(evloop::now_ms(), &mode) {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "dns", &m);
+            }
+        }
+        {
+            // слежение за ботнетами: списки (раз в сутки), попадания по адресам и DNS, находки
+            let wms = wall.0 * 1000 + (wall.1 / 1_000_000) as i64;
+            let tw = self.cfg.threat_watch.clone();
+            let seen = self.dnsw.tap.as_mut().map(std::mem::take).unwrap_or_default();
+            let (res, acct) = (&self.resolver, &self.acct);
+            let namer = |ip: &IpAddr| threat_name(res, acct, ip);
+            let mut msgs = self.threat.tick(wms, tw.mode == "on", &tw.lists, &tw.state_file, &namer);
+            if !seen.is_empty() {
+                msgs.extend(self.threat.on_dns(wms, &seen, &namer));
+            }
+            self.vuln.extra = if tw.mode == "on" { self.threat.findings(&namer) } else { Vec::new() };
+            for m in msgs {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "threat", &m);
+            }
+        }
+        {
+            // стук (port-knocking): таблица по настройкам, правила fw4, кому открыт доступ
+            let wms = wall.0 * 1000 + (wall.1 / 1_000_000) as i64;
+            let msgs = self.knock.tick(wms, &self.cfg.knock, &self.wan_devs, &self.router_wan_ips);
+            for m in msgs {
+                crate::log_info!("{}", m);
+                self.add_event(wall, "knock", &m);
+            }
+        }
+        {
             // сканер уязвимостей: итоги фонового потока и плановый запуск
             let _p = crate::prof::scope("vulnscan");
             let wms = wall.0 * 1000 + (wall.1 / 1_000_000) as i64;
@@ -1299,6 +1364,7 @@ impl Daemon {
             let (resolver, acct) = (&self.resolver, &self.acct);
             let lan_ifs = topo::lan_interface_names(&self.lan_nets);
             let input = || vuln_input(&vs, resolver, acct, &lan_ifs);
+            self.vuln.auto_update(wms, self.cfg.auto_update == "on", billed);
             for m in self.vuln.tick(wms, &vs.mode, billed, &vs.state_file, input) {
                 crate::log_info!("{}", m);
                 self.add_event(wall, "vuln", &m);
@@ -1596,6 +1662,30 @@ impl Daemon {
                     }
                 }
                 format!("{{\"ok\":true,\"nets\":{n}}}")
+            }
+            "dev_name" => {
+                // имя устройства со страницы → DHCP (статическая привязка) и имена хостов
+                let cfg = self.cfg.clone();
+                if let Err(e) = self.rt.check_password(&cfg, &password, now) {
+                    return err_json(&e);
+                }
+                let g = |k: &str| v.get(k).and_then(|x| x.as_str()).unwrap_or("").trim().to_string();
+                let (mac, ip, name) = (g("mac"), g("ip"), g("text"));
+                let Some(mac) = crate::resolver::norm_mac(&mac) else { return err_json(&tr!("нужен MAC-адрес устройства")) };
+                let ip: Option<std::net::Ipv4Addr> = ip.parse().ok().filter(|a: &std::net::Ipv4Addr| a.is_private());
+                let Some(ip) = ip else { return err_json(&tr!("нужен адрес устройства в локальной сети")) };
+                if !name.is_empty() && !crate::devname::name_ok(&name) {
+                    return err_json(&tr!("имя: латинские буквы, цифры и «-», до 63 знаков"));
+                }
+                match crate::devname::apply(&mac, ip, &name) {
+                    Ok(()) => {
+                        self.resolver.reload(&self.cfg.dns.r#static);
+                        let m = if name.is_empty() { tr!("Имя устройства {} ({}) убрано", ip, mac).to_string() } else { tr!("Устройство {} ({}) названо {}", ip, mac, name).to_string() };
+                        crate::log_info!("{}", m);
+                        "{\"ok\":true}".to_string()
+                    }
+                    Err(e) => err_json(&e),
+                }
             }
             "set_lang" => {
                 let cfg = self.cfg.clone();
@@ -1928,6 +2018,14 @@ impl dg::Feed for DgFeed<'_> {
 
 /// Данные для сканера: устройства LAN из ARP (имена — как в таблице устройств) и
 /// собственные адреса роутера.
+/// Устройство для текстов слежения за угрозами: «имя (адрес)» и MAC (для изоляции).
+fn threat_name(res: &crate::resolver::Resolver, acct: &crate::acct::Acct, ip: &IpAddr) -> (String, String) {
+    let s = ip.to_string();
+    let mac = acct.mac_of(&s);
+    let n = res.name_for(&s, &mac);
+    (if n.is_empty() || n == s { s } else { format!("{n} ({s})") }, mac)
+}
+
 fn vuln_input(vs: &crate::config::VulnScanConfig, resolver: &crate::resolver::Resolver, acct: &crate::acct::Acct, lan_ifs: &[String]) -> crate::vulnscan::Input {
     let own: Vec<IpAddr> = crate::netx::if_addrs().into_iter().map(|x| x.1).collect();
     let mut lan = Vec::new();
@@ -1947,5 +2045,5 @@ fn vuln_input(vs: &crate::config::VulnScanConfig, resolver: &crate::resolver::Re
             lan.push((ip, name, c[3].to_string(), d + u));
         }
     }
-    crate::vulnscan::Input { lan: vs.lan, lan_devices: lan, own }
+    crate::vulnscan::Input { lan: vs.lan, lan_devices: lan, own, upstream: vs.upstream.clone() }
 }

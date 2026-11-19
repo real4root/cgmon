@@ -24,9 +24,8 @@ ssh -o ConnectTimeout=8 "$HOST" 'touch /tmp/cgmon/web_hb; sleep 6; cat /var/run/
 ssh -o ConnectTimeout=8 "$HOST" 'REQUEST_METHOD=GET /www/cgi-bin/api_router' | strip_hdr > "$W/cgi-bin/api_router" || true
 ssh -o ConnectTimeout=8 "$HOST" 'cd /www/cgi-bin && QUERY_STRING=sec=3600 ./api_hist' | strip_hdr > "$W/cgi-bin/api_hist" || true
 if [ -n "$JS" ]; then
-	# & и | в js — экранировать для sed
-	JSE=$(printf '%s' "$JS" | sed 's/[&|\\]/\\&/g')
-	sed "s|</body>|<script>setTimeout(() => { $JSE }, 4000)</script></body>|" "$ROOT/www/status.html" > "$W/status.html"
+	# только перед ПОСЛЕДНИМ </body>: в JS страницы есть строки с </body> (окно полного отчёта)
+	JS="$JS" python3 -c 'import os,sys; s=open(sys.argv[1],encoding="utf-8").read(); i=s.rfind("</body>"); open(sys.argv[2],"w",encoding="utf-8").write(s[:i]+"<script>setTimeout(() => { "+os.environ["JS"]+" }, 4000)</script>"+s[i:])' "$ROOT/www/status.html" "$W/status.html"
 else
 	cp "$ROOT/www/status.html" "$W/status.html"
 fi
